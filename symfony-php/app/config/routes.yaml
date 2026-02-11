@@ -1,0 +1,11 @@
+index:
+    path: /
+    controller: App\Controller\DefaultController::index
+
+producto_detalle:
+    path: /producto/{idProducto}
+    controller: App\Controller\ProductosController::detalle
+
+error_test:
+    path: /error-test
+    controller: App\Controller\ErrorController::error

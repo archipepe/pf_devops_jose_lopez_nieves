@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: symfony-deployment
+  namespace: symfony-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: symfony-app
+  template:
+    metadata:
+      labels:
+        app: symfony-app
+    spec:
+      volumes:
+        - name: app-code
+          # Cambiar esto a PersistentVolumeClaim en producción
+          emptyDir: {}
+
+      initContainers:
+        - name: init-code
+          image: mysymfony/symfony-php:1.0
+          # TODO: cambiar a rsync para solo copiar cambios. Después de varios despliegues, se pueden quedar archivos obsoletos en el contenedor
+          command: ["sh", "-c", "rsync -r /app/ /var/www/html && chown -R www-data:www-data /var/www/html/var && chown -R www-data:www-data /var/www/html/public"]
+          volumeMounts:
+            - name: app-code
+              mountPath: /var/www/html
+
+      containers:
+        - name: php-container
+          image: mysymfony/symfony-php:1.0
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: symfony-secret
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: app-code
+              mountPath: /var/www/html
+          ports:
+            - containerPort: 9000
+
+        - name: nginx-container
+          image: mysymfony/symfony-nginx:1.0
+          env:
+            - name: FASTCGI_HOST
+              value: "localhost"
+            - name: FASTCGI_PORT
+              value: "9000"
+          volumeMounts:
+            - name: app-code
+              mountPath: /var/www/html
+          ports:
+            - containerPort: 80

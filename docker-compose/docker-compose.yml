@@ -1,0 +1,36 @@
+services:
+  symfony-nginx-service:
+    build: ../symfony-nginx/
+    ports:
+      - "80:80"
+    environment:
+      - FASTCGI_HOST=symfony-php-service
+      - FASTCGI_PORT=9000
+    volumes:
+      - ../symfony-php/app:/var/www/html
+    depends_on:
+      - mysql-service
+
+  symfony-php-service:
+    build:
+      context: ../symfony-php/
+      dockerfile: Dockerfile.app
+    ports:
+      - "9000:9000"
+    volumes:
+      - ../symfony-php/app:/var/www/html
+    depends_on:
+      - mysql-service
+
+  mysql-service:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

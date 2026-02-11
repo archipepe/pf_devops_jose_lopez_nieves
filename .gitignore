@@ -1,0 +1,14 @@
+# Secrets de Kubernetes
+k8s/secrets/
+secrets/
+
+# Archivos de entorno
+# .env
+# *.env
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/

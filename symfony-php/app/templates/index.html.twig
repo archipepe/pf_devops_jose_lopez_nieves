@@ -1,0 +1,29 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Inicio - Mi Tienda Online{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <h2>Bienvenido a nuestra tienda</h2>
+        <p>Descubre nuestros productos destacados</p>
+    </section>
+
+    <section class="productos-destacados">
+        <h2>Productos Destacados</h2>
+        <div class="grid-productos">
+            {% for id, producto in productos %}
+                <div class="producto-card">
+                    <div class="producto-imagen">
+                        <img src="{{ asset('images/' ~ producto.imagen) }}" 
+                            alt="{{ producto.nombre }}" onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
+                    </div>
+                    <div class="producto-info">
+                        <h3>{{ producto.nombre }}</h3>
+                        <p class="precio">€{{ producto.precio }}</p>
+                        <a href="{{ path('producto_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

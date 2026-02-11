@@ -1,0 +1,21 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ producto.nombre }} - Mi Tienda Online{% endblock %}
+
+{% block content %}
+    <section class="detalle-producto">
+        <div class="producto-container">
+            <div class="producto-imagen">
+                <img src="{{ asset('images/' ~ producto.imagen) }}" 
+                    alt="{{ producto.nombre }}" onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
+            </div>
+            <div class="producto-detalles">
+                <h1>{{ producto.nombre }}</h1>
+                <p class="precio">€{{ producto.precio }}</p>
+                <p class="descripcion">{{ producto.descripcion }}</p>
+                <a href="javascript:void(0)" class="btn btn-primary">Añadir al carrito</button>
+                <a href="{{ path('index') }}" class="btn">Volver al inicio</a>
+            </div>
+        </div>
+    </section>
+{% endblock %}
