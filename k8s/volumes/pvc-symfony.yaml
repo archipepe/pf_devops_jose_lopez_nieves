@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: symfony-pvc
+  namespace: symfony-ns
+spec:
+  accessModes:
+    - ReadWriteOnce # TODO: comprobar que funciona para varias réplicas y/o varios nodos # Probar con ReadWriteMany, aunque no todos los drivers lo soportan
+  resources:
+    requests:
+      storage: 1Gi
+  # Sin storageClassName → usa el default

@@ -14,8 +14,8 @@ spec:
     spec:
       volumes:
         - name: mysql-data
-          # Cambiar esto a PersistentVolumeClaim en producción
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mysql-pvc
 
       containers:
         - name: mysql-container

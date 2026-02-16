@@ -45,12 +45,23 @@ review_hosts() {
     cat /etc/hosts
 }
 
+review_volumes() {
+    log_info "Listado de volúmenes de Minikube:"
+    for namespace_name in ${NAMESPACES_NAMES[@]}; do
+        log_info "PersistentVolume en el namespace $namespace_name:"
+        kubectl get pv -n $namespace_name
+        log_info "PersistentVolumeClaims en el namespace $namespace_name:"
+        kubectl get pvc -n $namespace_name
+    done
+}
+
 delete_k8s_resources() {
     delete_all
     delete_ingress
     delete_secrets
     # delete_configmaps
-    delete_namespace
+    # delete_namespace # Se comenta para no borrar los volúmenes que ya puedan tener algo de datos
+    review_volumes
     review_hosts
 }
 

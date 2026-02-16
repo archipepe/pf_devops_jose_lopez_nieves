@@ -19,6 +19,10 @@ export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $S
 
 export INGRESS_HOST="symfony.local"
 
+VOLUMECLAIMS_MYSQL="volumes/pvc-mysql.yaml"
+VOLUMECLAIMS_SYMFONY="volumes/pvc-symfony.yaml"
+export VOLUMECLAIMS=($VOLUMECLAIMS_MYSQL $VOLUMECLAIMS_SYMFONY)
+
 MYSQL_SECRET="secrets/secret-mysql.yaml"
 SYMFONY_ENV="secrets/secret-symfony.yaml"
 export SECRETS=($MYSQL_SECRET $SYMFONY_ENV)
@@ -30,7 +34,7 @@ export SYMFONY_PHP_BASE_IMAGE_PATH="../symfony-php/"
 export SYMFONY_PHP_BASE_IMAGE="php:8.2-fpm-1.0"
 export SYMFONY_PHP_BASE_IMAGE_DOCKERFILE="../symfony-php/Dockerfile.base"
 export SYMFONY_PHP_IMAGE_PATH="../symfony-php/"
-export SYMFONY_PHP_IMAGE="symfony-php:1.0"
+export SYMFONY_PHP_IMAGE="symfony-php:1.1"
 export SYMFONY_PHP_IMAGE_DOCKERFILE="../symfony-php/Dockerfile.app"
 export SYMFONY_NGINX_IMAGE_PATH="../symfony-nginx/"
 export SYMFONY_NGINX_IMAGE="symfony-nginx:1.0"

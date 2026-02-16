@@ -15,13 +15,13 @@ spec:
     spec:
       volumes:
         - name: app-code
-          # Cambiar esto a PersistentVolumeClaim en producción
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: symfony-pvc
 
       initContainers:
         - name: init-code
-          image: mysymfony/symfony-php:1.0
-          # TODO: cambiar a rsync para solo copiar cambios. Después de varios despliegues, se pueden quedar archivos obsoletos en el contenedor
+          image: mysymfony/symfony-php:1.1
+          # Se cambia a rsync. Después de varios despliegues, se pueden quedar archivos obsoletos en el contenedor
           command: ["sh", "-c", "rsync -r /app/ /var/www/html && chown -R www-data:www-data /var/www/html/var && chown -R www-data:www-data /var/www/html/public"]
           volumeMounts:
             - name: app-code
@@ -29,13 +29,21 @@ spec:
 
       containers:
         - name: php-container
-          image: mysymfony/symfony-php:1.0
+          image: mysymfony/symfony-php:1.1
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: symfony-secret
                   key: DATABASE_URL
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           volumeMounts:
             - name: app-code
               mountPath: /var/www/html

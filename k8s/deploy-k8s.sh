@@ -34,6 +34,13 @@ create_configmaps() {
     done
 }
 
+create_volumeclaims() {
+    for pvc in ${VOLUMECLAIMS[@]}; do
+        log_info "Creating PersistentVolumeClaim $pvc..."
+        kubectl apply -f "$pvc"
+    done
+}
+
 apply_deployments_and_services() {
     for file in ${DEPLOYMENT_ORDER[@]}; do
         if [ -f "$file" ]; then
@@ -50,6 +57,7 @@ apply_k8s_resources() {
     create_namespaces
     create_secrets
     # create_configmaps
+    create_volumeclaims
     apply_deployments_and_services
 }
 
