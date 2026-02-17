@@ -16,6 +16,8 @@ use App\Entity\User;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordCredentials;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\CsrfTokenBadge;
 
 class LoginFormAuthenticator extends AbstractAuthenticator
 {
@@ -46,9 +48,10 @@ class LoginFormAuthenticator extends AbstractAuthenticator
                 }
                 return $user;
             }),
-            new CustomCredentials(function($credentials, User $user) {
-                return $credentials === 'tada';
-            }, $password)
+            new PasswordCredentials($password),
+            [
+                new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),
+            ]
         );
     }
 
