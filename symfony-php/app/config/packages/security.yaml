@@ -18,8 +18,13 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            custom_authenticator: App\Security\LoginFormAuthenticator
-            entry_point: App\Security\LoginFormAuthenticator # No es necesario si sólo usamos un autenticador
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                username_parameter: email
+                password_parameter: password
+                enable_csrf: true
+            entry_point: form_login # No es necesario si sólo usamos un autenticador
             logout: true
             remember_me:
                 secret: '%kernel.secret%'
