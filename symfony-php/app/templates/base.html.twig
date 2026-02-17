@@ -10,6 +10,11 @@
         <header>
             <h1>Mi Tienda Online</h1>
             <nav>
+                {% if app.user %}
+                    <a class="nav-link text-black-50" href="{{ path('app_logout') }}">Cerrar sesión</a>
+                {% else %}
+                    <a class="nav-link text-black-50" href="{{ path('app_login') }}">Iniciar sesión</a>
+                {% endif %}
             </nav>
         </header>        
         <main>

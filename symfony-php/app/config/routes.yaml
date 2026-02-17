@@ -9,3 +9,11 @@ producto_detalle:
 error_test:
     path: /error-test
     controller: App\Controller\ErrorController::error
+
+app_login:
+    path: /login
+    controller: App\Controller\SecurityController::login
+
+app_logout:
+    path: /logout
+    controller: App\Controller\SecurityController::logout
