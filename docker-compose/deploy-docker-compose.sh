@@ -29,7 +29,7 @@ change_permissions() {
     log_info "Changing permissions of the app directory to www-data..."
     docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/var
     docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/public
-    docker compose exec symfony-php-service chmod -R 777 /var/www/html/public
+    docker compose exec symfony-php-service chmod -R 777 /var/www/html
 }
 
 build_php_base_image
