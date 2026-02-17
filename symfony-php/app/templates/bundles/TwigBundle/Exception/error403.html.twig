@@ -1,0 +1,11 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Acceso denegado{% endblock %}
+
+{% block content %}
+    <section class="error-container">
+        <h1>403 - Acceso denegado</h1>
+        <p>Lo sentimos, no puedes acceder a esta página.</p>
+        <a href="{{ path('index') }}" class="btn">Volver al inicio</a>
+    </section>
+{% endblock %}

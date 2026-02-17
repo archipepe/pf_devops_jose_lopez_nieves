@@ -19,6 +19,7 @@ security:
             lazy: true
             provider: app_user_provider
             custom_authenticator: App\Security\LoginFormAuthenticator
+            entry_point: App\Security\LoginFormAuthenticator # No es necesario si sólo usamos un autenticador
             logout: true
             remember_me:
                 secret: '%kernel.secret%'
@@ -36,6 +37,8 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
+        # - { path: ^/error-test, roles: ROLE_USER }
+        # - { path: ^/pedidos, roles: ROLE_USER }
 
 when@test:
     security:
