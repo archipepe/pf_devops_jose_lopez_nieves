@@ -523,6 +523,11 @@ footer {
     margin-bottom: 0.25rem;
 }
 
+.form-group li {
+    list-style-type: none;
+    color: #e74c3c;
+}
+
 /* Estilos para el botón de registro */
 .registro-form .btn-block {
     background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);

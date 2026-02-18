@@ -1,0 +1,2 @@
+Your password should be at least {{ limit }} characters: "La contraseña debe tener al menos {{ limit }} caracteres"
+There is already an account with this email: "Ya existe una cuenta con este email"
