@@ -3,6 +3,13 @@ kind: Ingress
 metadata:
   name: symfony-ingress
   namespace: symfony-ns
+  annotations:
+    # Habilitar sticky sessions con cookie
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "SYMFONY_SERVER"
+    # Duración de la cookie (2 días en segundos)
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
 spec:
   rules:
     - host: symfony.local

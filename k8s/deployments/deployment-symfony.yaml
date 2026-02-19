@@ -4,7 +4,7 @@ metadata:
   name: symfony-deployment
   namespace: symfony-ns
 spec:
-  replicas: 1
+  replicas: 2 # Revisar sticky sessions en el ingres y en AWS ALB
   selector:
     matchLabels:
       app: symfony-app
