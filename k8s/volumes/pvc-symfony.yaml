@@ -8,5 +8,5 @@ spec:
     - ReadWriteOnce # TODO: comprobar que funciona para varias réplicas y/o varios nodos # Probar con ReadWriteMany, aunque no todos los drivers lo soportan
   resources:
     requests:
-      storage: 1Gi
+      storage: 250Mi # Uso inicial de 90M, ir ajustando conforme vayas terminando
   # Sin storageClassName → usa el default

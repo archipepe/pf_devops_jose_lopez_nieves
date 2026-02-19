@@ -20,7 +20,7 @@ spec:
 
       initContainers:
         - name: init-code
-          image: mysymfony/symfony-php:1.1
+          image: mysymfony/symfony-php:2.0
           # Se cambia a rsync. Después de varios despliegues, se pueden quedar archivos obsoletos en el contenedor
           command: ["sh", "-c", "rsync -r /app/ /var/www/html && chown -R www-data:www-data /var/www/html/var && chown -R www-data:www-data /var/www/html/public"]
           volumeMounts:
@@ -29,7 +29,7 @@ spec:
 
       containers:
         - name: php-container
-          image: mysymfony/symfony-php:1.1
+          image: mysymfony/symfony-php:2.0
           env:
             - name: DATABASE_URL
               valueFrom:

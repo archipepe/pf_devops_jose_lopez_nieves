@@ -14,9 +14,9 @@ DEPLOYMENT_MYSQL="deployments/deployment-mysql.yaml"
 DEPLOYMENT_SYMFONY="deployments/deployment-symfony.yaml"
 SERVICE_MYSQL="services/service-mysql.yaml"
 SERVICE_NGINX="services/service-nginx.yaml"
-export INGRESS_SYMFONY="ingress/ingress-symfony.yaml"
-export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $SERVICE_NGINX $INGRESS_SYMFONY)
+export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $SERVICE_NGINX)
 
+export INGRESS_SYMFONY="ingress/ingress-symfony.yaml"
 export INGRESS_HOST="symfony.local"
 
 VOLUMECLAIMS_MYSQL="volumes/pvc-mysql.yaml"
@@ -34,7 +34,7 @@ export SYMFONY_PHP_BASE_IMAGE_PATH="../symfony-php/"
 export SYMFONY_PHP_BASE_IMAGE="php:8.2-fpm-1.0"
 export SYMFONY_PHP_BASE_IMAGE_DOCKERFILE="../symfony-php/Dockerfile.base"
 export SYMFONY_PHP_IMAGE_PATH="../symfony-php/"
-export SYMFONY_PHP_IMAGE="symfony-php:1.1"
+export SYMFONY_PHP_IMAGE="symfony-php:2.0"
 export SYMFONY_PHP_IMAGE_DOCKERFILE="../symfony-php/Dockerfile.app"
 export SYMFONY_NGINX_IMAGE_PATH="../symfony-nginx/"
 export SYMFONY_NGINX_IMAGE="symfony-nginx:1.0"
@@ -64,6 +64,13 @@ review_images() {
     log_info "Revisa imágenes antiguas que puedas querer eliminar mediante:"
     log_info "minikube image rm docker.io/$REGISTRY/symfony-php:X.X"
     log_info "minikube image rm docker.io/library/mysql:X.X"
+}
+
+enable_addons() {
+    log_info "Habilitando addons de Minikube..."
+    minikube addons enable ingress
+    minikube addons enable default-storageclass
+    minikube addons enable storage-provisioner
 }
 
 verify_commands() {

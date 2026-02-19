@@ -48,10 +48,17 @@ review_hosts() {
 review_volumes() {
     log_info "Listado de volúmenes de Minikube:"
     for namespace_name in ${NAMESPACES_NAMES[@]}; do
-        log_info "PersistentVolume en el namespace $namespace_name:"
-        kubectl get pv -n $namespace_name
         log_info "PersistentVolumeClaims en el namespace $namespace_name:"
         kubectl get pvc -n $namespace_name
+        log_info "Elimina los volumeclaims mediante:"
+        log_info "kubectl delete pvc mysql-pvc -n $namespace_name"
+        echo ""
+        log_info "PersistentVolume en el namespace $namespace_name:"
+        kubectl get pv -n $namespace_name
+        log_info "Elimina los volúmenes mediante (no hay que poner el namespace):"
+        log_info "kubectl delete pv pvc-96760041-2b17-43c5-9a47-5f83acd2a5bf"
+        echo ""
+        log_info "Para asegurarte bien, entra con "minikube ssh" y revisa el directorio /tmp/hostpath-provisioner/$namespace_name para eliminar los volúmenes que ya no necesites."
     done
 }
 
@@ -59,7 +66,7 @@ delete_k8s_resources() {
     delete_all
     delete_ingress
     delete_secrets
-    # delete_configmaps
+    delete_configmaps
     # delete_namespace # Se comenta para no borrar los volúmenes que ya puedan tener algo de datos
     review_volumes
     review_hosts

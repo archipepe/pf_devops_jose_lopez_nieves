@@ -52,13 +52,35 @@ apply_deployments_and_services() {
     done
 }
 
+create_ingress() {
+    log_info "Intentando aplicar el Ingress $INGRESS_SYMFONY..."
+
+    local MAX_RETRIES=10
+    local RETRY_DELAY=10
+    local COUNT=1
+
+    until kubectl apply -f "$INGRESS_SYMFONY"; do
+        if [ $COUNT -ge $MAX_RETRIES ]; then
+            log_error "No se pudo aplicar el Ingress después de $MAX_RETRIES intentos"
+            exit 1
+        fi
+
+        log_warn "El webhook aún no está listo. Reintentando en $RETRY_DELAY segundos... ($COUNT/$MAX_RETRIES)"
+        sleep $RETRY_DELAY
+        COUNT=$((COUNT+1))
+    done
+
+    log_info "Ingress aplicado correctamente"
+}
+
 apply_k8s_resources() {
     log_info "Desplegando en Kubernetes..."
     create_namespaces
     create_secrets
-    # create_configmaps
+    create_configmaps
     create_volumeclaims
     apply_deployments_and_services
+    create_ingress
 }
 
 # Build images if they don't exist in Minikube's registry and send them to Minikube
@@ -108,6 +130,7 @@ add_ingress_to_hosts() {
     fi
 }
 
+enable_addons
 build_images
 apply_k8s_resources
 verify_services

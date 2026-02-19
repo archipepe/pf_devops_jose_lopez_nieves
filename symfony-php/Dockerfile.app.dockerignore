@@ -1,0 +1,5 @@
+app/migrations
+app/sql
+app/var/cache
+app/var/log
+app/vendor
