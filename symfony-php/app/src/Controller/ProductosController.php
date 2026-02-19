@@ -2,31 +2,39 @@
 
 namespace App\Controller;
 
+use App\Entity\Producto;
+use App\Repository\ProductoRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class ProductosController extends AbstractController
 {
-    public static array $productos = [
-        1 => ['id' => 1, 'nombre' => 'Zapatillas Running', 'precio' => 89.99, 'descripcion' => 'Zapatillas ideales para running con amortiguación de alta calidad.', 'imagen' => 'sneakers.jpg'],
-        2 => ['id' => 2, 'nombre' => 'Camiseta Deportiva', 'precio' => 29.99, 'descripcion' => 'Camiseta transpirable para actividades deportivas.', 'imagen' => 't-shirt.jpg'],
-        3 => ['id' => 3, 'nombre' => 'Riñonera', 'precio' => 19.99, 'descripcion' => 'Riñonera práctica con múltiples compartimentos.', 'imagen' => 'fanny-pack.jpg'],
-    ];
-
-    public function detalle(int $idProducto): Response
+    public function index(ProductoRepository $productoRepository): Response
     {
-        if (array_key_exists($idProducto, self::$productos)) {
-            $producto = $this->recuperarProducto($idProducto);
-    
-            $this->actualizarMetadata($idProducto);
-    
-            $this->enviarFacebookPixel($idProducto);
-        } else {
+        $productos = $productoRepository->findAll();
+        
+        return $this->render('producto/index.html.twig', [
+            'productos' => $productos,
+        ]);
+    }
+
+    public function detalle(int $idProducto, ProductoRepository $productoRepository): Response
+    {
+        $producto = $productoRepository->findOneBy(['id' => $idProducto]);
+
+        if (!$producto) {
             throw $this->createNotFoundException('Producto no encontrado');
         }
+        
+        // TODO: si generas con AppFixtures, asegúrate de que al menos tres productos tengan los IDs 1, 2 y 3 para que se puedan probar los tiempos de espera simulados.
+        $this->recuperarProducto($idProducto);
 
-        return $this->render('producto.html.twig', [
+        $this->actualizarMetadata($idProducto);
+
+        $this->enviarFacebookPixel($idProducto);
+        
+        return $this->render('producto/producto.html.twig', [
             'producto' => $producto
         ]);
     }

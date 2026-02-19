@@ -2,6 +2,10 @@ index:
     path: /
     controller: App\Controller\DefaultController::index
 
+producto_index:
+    path: /productos
+    controller: App\Controller\ProductosController::index
+
 producto_detalle:
     path: /producto/{idProducto}
     controller: App\Controller\ProductosController::detalle
