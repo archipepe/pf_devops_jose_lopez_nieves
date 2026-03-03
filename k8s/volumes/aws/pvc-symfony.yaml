@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: symfony-pvc
+  namespace: symfony-ns
+spec:
+  accessModes:
+    - ReadWriteMany # Para que funcione con varias réplicas y/o varios nodos
+  resources:
+    requests:
+      storage: 250Mi # Uso inicial de 90M, ir ajustando conforme vayas terminando
+      
+  storageClassName: symfony-sc # Usar la StorageClass definida en efs.tf

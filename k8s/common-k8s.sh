@@ -10,17 +10,17 @@ export NAMESPACES=($SYMFONY_NAMESPACE)
 CONFIGMAP_MYSQL="configmaps/configmap-mysql.yaml"
 export CONFIGMAPS=($CONFIGMAP_MYSQL)
 
-DEPLOYMENT_MYSQL="deployments/deployment-mysql.yaml"
-DEPLOYMENT_SYMFONY="deployments/deployment-symfony.yaml"
-SERVICE_MYSQL="services/service-mysql.yaml"
-SERVICE_NGINX="services/service-nginx.yaml"
+DEPLOYMENT_MYSQL="deployments/local/deployment-mysql.yaml"
+DEPLOYMENT_SYMFONY="deployments/local/deployment-symfony.yaml"
+SERVICE_MYSQL="services/local/service-mysql.yaml"
+SERVICE_NGINX="services/local/service-nginx.yaml"
 export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $SERVICE_NGINX)
 
-export INGRESS_SYMFONY="ingress/ingress-symfony.yaml"
+export INGRESS_SYMFONY="ingresses/local/ingress-symfony.yaml"
 export INGRESS_HOST="symfony.local"
 
-VOLUMECLAIMS_MYSQL="volumes/pvc-mysql.yaml"
-VOLUMECLAIMS_SYMFONY="volumes/pvc-symfony.yaml"
+VOLUMECLAIMS_MYSQL="volumes/local/pvc-mysql.yaml"
+VOLUMECLAIMS_SYMFONY="volumes/local/pvc-symfony.yaml"
 export VOLUMECLAIMS=($VOLUMECLAIMS_MYSQL $VOLUMECLAIMS_SYMFONY)
 
 MYSQL_SECRET="secrets/secret-mysql.yaml"
@@ -52,12 +52,6 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-# Declare kubectl function to use minikube's kubectl
-kubectl() {
-    minikube kubectl -- "$@"
-    # alias kubectl="minikube kubectl --"
-}
-
 review_images() {
     log_info "Listado de imágenes de Minikube:"
     minikube image ls
@@ -74,7 +68,7 @@ enable_addons() {
 }
 
 verify_commands() {
-    for cmd in docker minikube; do
+    for cmd in docker minikube kubectl; do
         command -v $cmd >/dev/null 2>&1 || { echo "$cmd not installed."; exit 1; }
     done
 }
