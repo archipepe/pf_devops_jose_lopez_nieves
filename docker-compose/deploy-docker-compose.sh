@@ -28,15 +28,12 @@ start_docker_containers() {
 install_vendor_dependencies() {
     log_info "Installing vendor dependencies inside the symfony-php container..."
     # Instalar vendor en /var/www/html para que se refleje en el host
-    docker compose exec symfony-php-service composer install --optimize-autoloader --working-dir=/var/www/html
+    docker compose exec symfony-php-nginx-service composer install --optimize-autoloader --working-dir=/var/www/html
 }
 
 change_permissions() {
     log_info "Changing permissions of the app directory..."
     sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app && chmod -R 777 ../php-nginx/symfony-app
-    # docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/var
-    # docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/public
-    # docker compose exec symfony-php-service chmod -R 777 /var/www/html
 }
 
 build_images
