@@ -1,0 +1,64 @@
+# Dockerfile.base
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar Nginx, PHP y dependencias necesarias
+RUN apt update && apt install -y \
+    git \
+    zip \
+    unzip \
+    nginx \
+    php8.3-fpm \
+    php8.3-mysql \
+    php8.3-pdo \
+    php8.3-opcache \
+    php8.3-xml \
+    php8.3-dom \
+    php-cli \
+    curl \
+    && apt-get clean
+
+# Instalar composer
+RUN curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+RUN php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+# Configuración de PHP
+# Configuración de opcache en dev, comentar para prod
+RUN echo "opcache.enable=0" > /etc/php/8.3/mods-available/opcache.ini \
+    && echo "opcache.enable_cli=0" >> /etc/php/8.3/mods-available/opcache.ini \
+    && echo "opcache.validate_timestamps=1" >> /etc/php/8.3/mods-available/opcache.ini
+
+RUN sed -i 's/^listen = .*/listen = 9000/' /etc/php/8.3/fpm/pool.d/www.conf \
+    && sed -i 's/^;listen.allowed_clients/listen.allowed_clients/' /etc/php/8.3/fpm/pool.d/www.conf \
+    && sed -i 's/^;clear_env = no/clear_env = no/' /etc/php/8.3/fpm/pool.d/www.conf
+    
+# memory_limit = 128M por defecto, está bien
+# RUN sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini
+
+# Configuración de Nginx
+COPY nginx/default.conf /etc/nginx/sites-available/default
+    
+# Crear un usuario no root para ejecutar la aplicación
+RUN addgroup --system symfonyapp && adduser --system --ingroup symfonyapp symfonyapp
+
+# Configuración rootless
+RUN mkdir -p /run/php \
+    && chown -R symfonyapp:symfonyapp /run/php
+RUN sed -i 's/^error_log = .*/error_log = \/dev\/stderr/' /etc/php/8.3/fpm/php-fpm.conf
+
+RUN mkdir -p /run/nginx \
+    && chown -R symfonyapp:symfonyapp /run/nginx \
+    && chown -R symfonyapp:symfonyapp /var/lib/nginx
+RUN sed -i 's/^user www-data;/# user www-data;/' /etc/nginx/nginx.conf \
+    && sed -i 's/^pid \/run\/nginx.pid;/pid \/run\/nginx\/nginx.pid;/' /etc/nginx/nginx.conf \
+    && sed -i 's|/var/log/nginx/error.log|/dev/stderr|' /etc/nginx/nginx.conf \
+    && sed -i 's|/var/log/nginx/access.log|/dev/stdout|' /etc/nginx/nginx.conf
+
+# Script de entrada
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT ["/entrypoint.sh"]

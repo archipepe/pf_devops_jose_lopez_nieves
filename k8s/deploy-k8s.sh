@@ -34,7 +34,7 @@ create_configmaps() {
     done
 }
 
-create_volumeclaims() {
+create_volume_claims() {
     for pvc in ${VOLUMECLAIMS[@]}; do
         log_info "Creating PersistentVolumeClaim $pvc..."
         kubectl apply -f "$pvc"
@@ -78,7 +78,7 @@ apply_k8s_resources() {
     create_namespaces
     create_secrets
     create_configmaps
-    create_volumeclaims
+    create_volume_claims
     apply_deployments_and_services
     create_ingress
 }

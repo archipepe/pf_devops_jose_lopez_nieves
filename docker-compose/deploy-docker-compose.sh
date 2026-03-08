@@ -5,13 +5,19 @@
 
 source ./common-docker-compose.sh
 
-build_php_base_image() {
-    if [[ "$(docker images -q mysymfony/php:8.2-fpm-1.0 2>/dev/null)" == "" ]]; then
-        log_info "Building mysymfony/php:8.2-fpm-1.0 image..."
-        docker build -t mysymfony/php:8.2-fpm-1.0 -f ../symfony-php/Dockerfile.base ../symfony-php/
-    else
-        log_info "Image mysymfony/php:8.2-fpm-1.0 already exists. Skipping build."
-    fi
+build_images() {
+    log_info "Building Docker images..."
+    for image in ${IMAGES[@]}; do
+        path_var="${image}_IMAGE_PATH"
+        tag_var="${image}_IMAGE"
+        dockerfile_var="${image}_IMAGE_DOCKERFILE"
+        if [[ "$(docker images -q "$REGISTRY/${!tag_var}" 2>/dev/null)" == "" ]]; then
+            log_info "Building ${!tag_var}..."
+            docker build -t $REGISTRY/${!tag_var} -f ${!path_var}/${!dockerfile_var} ${!path_var} || log_error "Error building ${!tag_var}"
+        else
+            log_info "${!tag_var} already exists. Skipping build."
+        fi
+    done
 }
 
 start_docker_containers() {
@@ -26,13 +32,16 @@ install_vendor_dependencies() {
 }
 
 change_permissions() {
-    log_info "Changing permissions of the app directory to www-data..."
-    docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/var
-    docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/public
-    docker compose exec symfony-php-service chmod -R 777 /var/www/html
+    log_info "Changing permissions of the app directory..."
+    sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app && chmod -R 777 ../php-nginx/symfony-app
+    # docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/var
+    # docker compose exec symfony-php-service chown -R www-data:www-data /var/www/html/public
+    # docker compose exec symfony-php-service chmod -R 777 /var/www/html
 }
 
-build_php_base_image
+build_images
+
+change_permissions
 
 start_docker_containers
 

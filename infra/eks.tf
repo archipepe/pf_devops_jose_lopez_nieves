@@ -23,16 +23,16 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_group_defaults = {
-    ami_type = "AL2023_x86_64_STANDARD"
-    # ami_type = "AL2023_ARM_64_STANDARD" # ARM es más barato, pero me ha dado problemas con las imágenes
+    # ami_type = "AL2023_x86_64_STANDARD"
+    ami_type = "AL2023_ARM_64_STANDARD" # ARM es más barato, parece que Ubuntu funciona con estos procesadores
   }
 
   eks_managed_node_groups = {
     one = {
       name = "node-group-1"
 
-      # instance_types = ["t4g.medium"] # ARM_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
-      instance_types = ["t3.medium"] # x86_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
+      instance_types = ["t4g.medium"] # ARM_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
+      # instance_types = ["t3.medium"] # x86_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
       min_size     = 2
       max_size     = 2
       desired_size = 2

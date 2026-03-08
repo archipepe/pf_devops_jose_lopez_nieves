@@ -1,0 +1,17 @@
+# Dockerfile.app
+FROM mysymfony/ubuntu:24.04-2.0
+
+# Copiar el código fuente
+WORKDIR /var/www/html
+RUN rm -rf /var/www/html/*
+COPY symfony-app/ .
+
+RUN chown -R symfonyapp:symfonyapp . && chmod -R 755 .
+
+# Cambiar al usuario symfonyapp
+USER symfonyapp
+
+RUN php /usr/local/bin/composer install
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:80 || exit 1
