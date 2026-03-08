@@ -1,27 +1,14 @@
 services:
-  symfony-nginx-service:
-    build: ../symfony-nginx/
-    ports:
-      - "80:80"
-    environment:
-      - FASTCGI_HOST=symfony-php-service
-      - FASTCGI_PORT=9000
-    volumes:
-      - ../symfony-php/app:/var/www/html
-    depends_on:
-      - mysql-service
-
-  symfony-php-service:
+  symfony-php-nginx-service:
     build:
-      context: ../symfony-php/
+      context: ../php-nginx/
       dockerfile: Dockerfile.app
     ports:
-      - "9000:9000"
+      - "80:80"
     volumes:
-      - ../symfony-php/app:/var/www/html
+      - ../php-nginx/symfony-app:/var/www/html
     depends_on:
       - mysql-service
-
   mysql-service:
     image: mysql:8.0
     environment:

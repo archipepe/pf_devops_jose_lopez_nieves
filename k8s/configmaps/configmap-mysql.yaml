@@ -34,10 +34,11 @@ data:
       PRIMARY KEY (`version`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
-    -- Dumping data for table app.doctrine_migration_versions: ~1 rows (approximately)
+    -- Dumping data for table app.doctrine_migration_versions: ~0 rows (approximately)
     DELETE FROM `doctrine_migration_versions`;
     INSERT INTO `doctrine_migration_versions` (`version`, `executed_at`, `execution_time`) VALUES
-      ('DoctrineMigrations\\Version20260217100651', '2026-02-17 10:08:21', 163);
+      ('DoctrineMigrations\\Version20260217100651', '2026-02-17 10:08:21', 163),
+      ('DoctrineMigrations\\Version20260219121845', '2026-02-19 12:19:50', 63);
 
     -- Dumping structure for table app.messenger_messages
     CREATE TABLE IF NOT EXISTS `messenger_messages` (
@@ -57,6 +58,27 @@ data:
     -- Dumping data for table app.messenger_messages: ~0 rows (approximately)
     DELETE FROM `messenger_messages`;
 
+    -- Dumping structure for table app.producto
+    CREATE TABLE IF NOT EXISTS `producto` (
+      `id` int NOT NULL AUTO_INCREMENT,
+      `nombre` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+      `descripcion` longtext COLLATE utf8mb4_unicode_ci,
+      `precio` decimal(10,2) DEFAULT NULL,
+      `imagen` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+      `created_at` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- Dumping data for table app.producto: ~6 rows (approximately)
+    DELETE FROM `producto`;
+    INSERT INTO `producto` (`id`, `nombre`, `descripcion`, `precio`, `imagen`, `created_at`) VALUES
+      (1, 'Zapatillas Running', 'Zapatillas ideales para running con amortiguación de alta calidad.', 89.99, 'sneakers.jpg', '2026-02-19 00:00:00'),
+      (2, 'Camiseta Deportiva', 'Camiseta transpirable para actividades deportivas.', 29.99, 't-shirt.jpg', '2026-02-18 00:00:00'),
+      (3, 'Riñonera', 'Riñonera práctica con múltiples compartimentos.', 19.99, 'fanny-pack.jpg', '2026-02-17 00:00:00'),
+      (4, 'Calcetines Técnicos (Pack 3)', 'Calcetines acolchados con tecnología antiolor y refuerzos en zonas de impacto.', 19.99, 'socks-pack.jpg', '2026-02-16 00:00:00'),
+      (5, 'Gorra Running UV', 'Gorra transpirable con protección UV y banda antisuor. Ajuste regulable.', 15.99, 'cap-running.jpg', '2026-02-15 00:00:00'),
+      (6, 'Mochila Hidratación', 'Mochila ligera con bolsa de agua incluida. Ideal para trails y largas distancias.', 45.99, 'backpack-water.jpg', '2026-02-14 00:00:00');
+
     -- Dumping structure for table app.user
     CREATE TABLE IF NOT EXISTS `user` (
       `id` int NOT NULL AUTO_INCREMENT,
@@ -66,22 +88,22 @@ data:
       `first_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
       PRIMARY KEY (`id`),
       UNIQUE KEY `UNIQ_8D93D649E7927C74` (`email`)
-    ) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ) ENGINE=InnoDB AUTO_INCREMENT=118 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Dumping data for table app.user: ~11 rows (approximately)
     DELETE FROM `user`;
     INSERT INTO `user` (`id`, `email`, `roles`, `password`, `first_name`) VALUES
-      (23, 'abraca_admin@example.com', '[]', '$2y$13$N3I2aIgvatro1/19dX0yeOmb/e.ib9BvsOkXqy2x5r5MBzQmyQ7na', 'William'),
-      (24, 'mstehr@hotmail.com', '[]', '$2y$13$OZaJ.sCUC7JeysiZL7jlDuQ457e.YM9YHTjs9TbLv1bEFJsHKSK7S', 'Willis'),
-      (25, 'bell76@veum.org', '[]', '$2y$13$PKJ29WfEDlJ2D9qS84TDS.xSdonP6qIOnnNS1Ks.0g.WMibqCtc/2', 'Ansel'),
-      (26, 'emily.shanahan@gaylord.com', '[]', '$2y$13$rZ4Hnu9fwzD2.rIpmDXcbOWjYau63VTVM1sTYV5hNYY.m9JsmoyA6', 'Geraldine'),
-      (27, 'aubree82@hotmail.com', '[]', '$2y$13$4zgwTVDSbsclaDGdMAcRG.o2SQu6f6/9OkI5vvlprGcTX85uCF9IW', 'Chelsey'),
-      (28, 'heaven.mann@little.com', '[]', '$2y$13$Zc9KgwkIhQSg8zG4hyNhsuJXAp7Uq0s8WFeSVlxYHp8TZ5HjCprgK', 'Royce'),
-      (29, 'bertha.jacobi@reichert.com', '[]', '$2y$13$vTlwZA918sxipYyehMoJaOosFyMwFklmaRca5HK3JE5Q2UW9b2b4m', 'Sofia'),
-      (30, 'anastasia.morar@hotmail.com', '[]', '$2y$13$2JCrcCJ4mZroApDWB6/OEO4oVnt0uLqSBf9X2Ig6CTrXL1SzffAjS', 'Bernadette'),
-      (31, 'chackett@haag.com', '[]', '$2y$13$bUdsyoGfrgxwNNMzPJdra.A3BuN8mGkzkJU9zPxizhzuiH0S7rCvS', 'Lane'),
-      (32, 'fdurgan@luettgen.biz', '[]', '$2y$13$amOJ.OoXVdzN.iksBJ/HAeCY1QXu//kyCy6fSwJwz3xqqNqIjbHNa', 'Alessandro'),
-      (33, 'judson.johns@yahoo.com', '[]', '$2y$13$B0JCdb4B21nxhFpKpWNxi.wMT/dUdduOYam26hZe31kB6r6rstn4W', 'Mack');
+      (107, 'abraca_admin@example.com', '[]', '$2y$13$1RkjZnqADmHTpwVdw03PUe0CqxeicZ6KlPzb70kSf8I.SmFy1/fx2', 'Fermin'),
+      (108, 'ischroeder@kling.biz', '[]', '$2y$13$NQTzmmxEr7Arz8rbrPmCz.ioEC2iaiIWONPKkpBnQ6FZ0X.8Cjhm6', 'Humberto'),
+      (109, 'ivy53@windler.com', '[]', '$2y$13$8pMCnpQJ1mKhEl1p0.tG1.L7iPjI1BRyjOTdr8PPPsBhQH5v.3GOq', 'Lily'),
+      (110, 'lhermiston@hotmail.com', '[]', '$2y$13$EnhThvLx.wdY75757dLguufUOtOqdCmgTSvyMcP3bE60UyuTQkoVO', 'Tia'),
+      (111, 'mekhi.jenkins@hotmail.com', '[]', '$2y$13$iZEpNcJ4UmPC5n3H.n539OKzsFp0o31zwFcUeRO6dC0yLWd3kgBy.', 'Marcella'),
+      (112, 'triston86@marvin.net', '[]', '$2y$13$822oQOGxoLm9.iIz5B.2ouINjQ9PMR/GgSwYVNesjmJUGOC7RHr0G', 'Cora'),
+      (113, 'molly59@hill.info', '[]', '$2y$13$paW7goIIafn9nhTn56utiuIt8sLmj9EsMol.KM2QHzx8m43ZZh/Ki', 'Louie'),
+      (114, 'nienow.sarah@casper.org', '[]', '$2y$13$39W4VNtefZ/smKKjLHGn/ul1e3lDFzk2Xux0okE6CzMR5Ben.sb.y', 'Kelli'),
+      (115, 'craig.berge@schaefer.biz', '[]', '$2y$13$kggeZ0EjMLmF7X39I4eUmexJGtaJzOZWeScjxPkund7xRSIcSTX.G', 'Leta'),
+      (116, 'towne.muhammad@beier.org', '[]', '$2y$13$FhzUp4u2sUdV4cmBRokFo.8cmvdp5ojcEbPLppZgYBDYIkSmzEQqS', 'Rosemary'),
+      (117, 'nickolas25@gmail.com', '[]', '$2y$13$.300UxcH0Zv1BAAvrxfBLu1xrP4DMeKJIYWFDk4yngEYB0sQhQjAq', 'Maya');
 
     /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
     /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

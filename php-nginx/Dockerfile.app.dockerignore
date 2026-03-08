@@ -1,0 +1,6 @@
+# Dockerfile.app.dockerignore
+symfony-app/migrations
+symfony-app/sql
+symfony-app/var/cache
+symfony-app/var/log
+symfony-app/vendor

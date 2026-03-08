@@ -14,22 +14,13 @@ spec:
         app: symfony-app
     spec:
       volumes:
-        - name: app-code
+        - name: app-logs
           persistentVolumeClaim:
             claimName: symfony-pvc
 
-      initContainers:
-        - name: init-code
-          image: mysymfony/symfony-php:2.0
-          # Se cambia a rsync. Después de varios despliegues, se pueden quedar archivos obsoletos en el contenedor
-          command: ["sh", "-c", "rsync -r /app/ /var/www/html && chown -R www-data:www-data /var/www/html/var && chown -R www-data:www-data /var/www/html/public"]
-          volumeMounts:
-            - name: app-code
-              mountPath: /var/www/html
-
       containers:
-        - name: php-container
-          image: mysymfony/symfony-php:2.0
+        - name: php-nginx-container
+          image: mysymfony/php-nginx:3.1
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -45,20 +36,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
           volumeMounts:
-            - name: app-code
-              mountPath: /var/www/html
-          ports:
-            - containerPort: 9000
-
-        - name: nginx-container
-          image: mysymfony/symfony-nginx:1.0
-          env:
-            - name: FASTCGI_HOST
-              value: "localhost"
-            - name: FASTCGI_PORT
-              value: "9000"
-          volumeMounts:
-            - name: app-code
-              mountPath: /var/www/html
+            - name: app-logs
+              mountPath: /var/www/html/var/log
           ports:
             - containerPort: 80

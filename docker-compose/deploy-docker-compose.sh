@@ -6,11 +6,11 @@
 source ./common-docker-compose.sh
 
 build_php_base_image() {
-    if [[ "$(docker images -q mysymfony/php:8.2-fpm-1.0 2>/dev/null)" == "" ]]; then
-        log_info "Building mysymfony/php:8.2-fpm-1.0 image..."
-        docker build -t mysymfony/php:8.2-fpm-1.0 -f ../symfony-php/Dockerfile.base ../symfony-php/
+    if [[ "$(docker images -q mysymfony/ubuntu:24.04-1.0 2>/dev/null)" == "" ]]; then
+        log_info "Building mysymfony/ubuntu:24.04-1.0 image..."
+        docker build -t mysymfony/ubuntu:24.04-1.0 -f ../php-nginx/Dockerfile.base ../php-nginx/
     else
-        log_info "Image mysymfony/php:8.2-fpm-1.0 already exists. Skipping build."
+        log_info "Image mysymfony/ubuntu:24.04-1.0 already exists. Skipping build."
     fi
 }
 

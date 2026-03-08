@@ -30,16 +30,13 @@ export SECRETS=($MYSQL_SECRET $SYMFONY_ENV)
 
 # export must be in all variables
 export REGISTRY="mysymfony"
-export SYMFONY_PHP_BASE_IMAGE_PATH="../symfony-php/"
-export SYMFONY_PHP_BASE_IMAGE="php:8.2-fpm-1.0"
-export SYMFONY_PHP_BASE_IMAGE_DOCKERFILE="../symfony-php/Dockerfile.base"
-export SYMFONY_PHP_IMAGE_PATH="../symfony-php/"
-export SYMFONY_PHP_IMAGE="symfony-php:2.0"
-export SYMFONY_PHP_IMAGE_DOCKERFILE="../symfony-php/Dockerfile.app"
-export SYMFONY_NGINX_IMAGE_PATH="../symfony-nginx/"
-export SYMFONY_NGINX_IMAGE="symfony-nginx:1.0"
-export SYMFONY_NGINX_IMAGE_DOCKERFILE="../symfony-nginx/Dockerfile"
-export IMAGES=("SYMFONY_PHP_BASE" "SYMFONY_PHP" "SYMFONY_NGINX")
+export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
+export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-1.0"
+export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
+export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
+export SYMFONY_APP_IMAGE="php-nginx:3.1"
+export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
+export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
 
 # Colours for output
 RED='\033[0;31m'
