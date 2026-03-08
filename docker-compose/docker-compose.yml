@@ -1,8 +1,7 @@
 services:
   symfony-php-nginx-service:
-    build:
-      context: ../php-nginx/
-      dockerfile: Dockerfile.app
+    image: ${REGISTRY}/${SYMFONY_APP_IMAGE}
+    # image: mysymfony/php-nginx:4.1
     ports:
       - "80:80"
     volumes:

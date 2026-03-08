@@ -27,7 +27,6 @@ MYSQL_SECRET="secrets/secret-mysql.yaml"
 SYMFONY_ENV="secrets/secret-symfony.yaml"
 export SECRETS=($MYSQL_SECRET $SYMFONY_ENV)
 
-
 # export must be in all variables
 export REGISTRY="mysymfony"
 export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"

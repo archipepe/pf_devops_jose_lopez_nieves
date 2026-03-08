@@ -6,6 +6,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# export must be in all variables
+export REGISTRY="mysymfony"
+export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
+export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-2.0"
+export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
+export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
+export SYMFONY_APP_IMAGE="php-nginx:4.1"
+export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
+export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
+
 # Logging functions
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -14,7 +24,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 review_images() {
     log_info "Listado de imágenes de Docker:"
     docker images --format table | grep "docker-compose-symfony"
-    docker images --format table | grep "mysymfony"
+    docker images --format table | grep "$REGISTRY"
     docker images --format table | grep "mysql"
     log_info "Revisa imágenes antiguas que puedas querer eliminar mediante:"
     log_info "docker compose down"

@@ -5,13 +5,19 @@
 
 source ./common-docker-compose.sh
 
-build_php_base_image() {
-    if [[ "$(docker images -q mysymfony/ubuntu:24.04-2.0 2>/dev/null)" == "" ]]; then
-        log_info "Building mysymfony/ubuntu:24.04-2.0 image..."
-        docker build -t mysymfony/ubuntu:24.04-2.0 -f ../php-nginx/Dockerfile.base ../php-nginx/
-    else
-        log_info "Image mysymfony/ubuntu:24.04-2.0 already exists. Skipping build."
-    fi
+build_images() {
+    log_info "Building Docker images..."
+    for image in ${IMAGES[@]}; do
+        path_var="${image}_IMAGE_PATH"
+        tag_var="${image}_IMAGE"
+        dockerfile_var="${image}_IMAGE_DOCKERFILE"
+        if [[ "$(docker images -q "$REGISTRY/${!tag_var}" 2>/dev/null)" == "" ]]; then
+            log_info "Building ${!tag_var}..."
+            docker build -t $REGISTRY/${!tag_var} -f ${!path_var}/${!dockerfile_var} ${!path_var} || log_error "Error building ${!tag_var}"
+        else
+            log_info "${!tag_var} already exists. Skipping build."
+        fi
+    done
 }
 
 start_docker_containers() {
@@ -33,7 +39,7 @@ change_permissions() {
     # docker compose exec symfony-php-service chmod -R 777 /var/www/html
 }
 
-build_php_base_image
+build_images
 
 change_permissions
 
