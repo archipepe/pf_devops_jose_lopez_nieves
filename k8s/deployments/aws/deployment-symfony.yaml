@@ -39,7 +39,7 @@ spec:
       containers:
         - name: php-nginx-container
           # TODO
-          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:3.0
+          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:4.1
           # securityContext:
           #   runAsUser: 1000
           #   runAsGroup: 1000

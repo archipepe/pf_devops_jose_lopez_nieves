@@ -20,7 +20,7 @@ spec:
 
       containers:
         - name: php-nginx-container
-          image: mysymfony/php-nginx:3.1
+          image: mysymfony/php-nginx:4.1
           env:
             - name: DATABASE_URL
               valueFrom:

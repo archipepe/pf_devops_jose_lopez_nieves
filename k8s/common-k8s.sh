@@ -31,10 +31,10 @@ export SECRETS=($MYSQL_SECRET $SYMFONY_ENV)
 # export must be in all variables
 export REGISTRY="mysymfony"
 export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
-export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-1.0"
+export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-2.0"
 export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
 export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
-export SYMFONY_APP_IMAGE="php-nginx:3.1"
+export SYMFONY_APP_IMAGE="php-nginx:4.1"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
 export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
 
