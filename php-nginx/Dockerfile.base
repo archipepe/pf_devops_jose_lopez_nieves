@@ -1,4 +1,5 @@
 # Dockerfile.base
+# mysymfony/ubuntu:24.04-3.0-debug
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -16,6 +17,7 @@ RUN apt update && apt install -y \
     php8.3-xml \
     php8.3-dom \
     php-cli \
+    php-xdebug \
     curl \
     && apt-get clean
 
@@ -32,6 +34,8 @@ RUN echo "opcache.enable=0" > /etc/php/8.3/mods-available/opcache.ini \
 RUN sed -i 's/^listen = .*/listen = 9000/' /etc/php/8.3/fpm/pool.d/www.conf \
     && sed -i 's/^;listen.allowed_clients/listen.allowed_clients/' /etc/php/8.3/fpm/pool.d/www.conf \
     && sed -i 's/^;clear_env = no/clear_env = no/' /etc/php/8.3/fpm/pool.d/www.conf
+
+COPY php/xdebug.ini /etc/php/8.3/fpm/conf.d/20-xdebug.ini
     
 # memory_limit = 128M por defecto, está bien
 # RUN sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini

@@ -25,3 +25,27 @@ app_logout:
 app_register:
     path: /register
     controller: App\Controller\RegistrationController::register
+
+carrito_index:
+    path: /carrito
+    controller: App\Controller\CarritoController::index
+
+carrito_add:
+    path: /carrito/add/{id}
+    methods: POST
+    controller: App\Controller\CarritoController::add
+
+carrito_update:
+    path: /carrito/update/{id}
+    methods: POST
+    controller: App\Controller\CarritoController::update
+
+carrito_remove:
+    path: /carrito/remove/{id}
+    methods: POST
+    controller: App\Controller\CarritoController::remove
+
+carrito_clear:
+    path: /carrito/clear
+    methods: POST
+    controller: App\Controller\CarritoController::clear

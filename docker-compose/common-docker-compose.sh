@@ -9,10 +9,10 @@ NC='\033[0m' # No Color
 # export must be in all variables
 export REGISTRY="mysymfony"
 export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
-export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-2.0"
+export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-3.0-debug"
 export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
 export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
-export SYMFONY_APP_IMAGE="php-nginx:4.1"
+export SYMFONY_APP_IMAGE="php-nginx:4.2-debug"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
 export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
 

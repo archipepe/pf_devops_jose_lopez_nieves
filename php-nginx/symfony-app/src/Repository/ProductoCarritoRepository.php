@@ -21,6 +21,16 @@ class ProductoCarritoRepository extends ServiceEntityRepository
         parent::__construct($registry, ProductoCarrito::class);
     }
 
+    public function findByCarritoId(int $carritoId): array
+    {
+        return $this->createQueryBuilder('pc')
+            ->where('pc.carrito = :carritoId')
+            ->setParameter('carritoId', $carritoId)
+            ->orderBy('pc.agregadoEn', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return ProductoCarrito[] Returns an array of ProductoCarrito objects
 //     */

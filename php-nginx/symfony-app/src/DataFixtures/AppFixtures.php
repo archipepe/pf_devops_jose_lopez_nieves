@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\EstadoCarrito;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use App\Factory\UserFactory;
@@ -70,6 +71,14 @@ class AppFixtures extends Fixture
                     ->setCreatedAt($datos['createdAt']);
             
             $manager->persist($producto);
+        }
+
+        $estados = [EstadoCarrito::ACTIVO, EstadoCarrito::FUSIONADO, EstadoCarrito::FINALIZADO];
+
+        foreach ($estados as $control) {
+            $estado = new EstadoCarrito();
+            $estado->setControl($control);
+            $manager->persist($estado);
         }
 
         $manager->flush();

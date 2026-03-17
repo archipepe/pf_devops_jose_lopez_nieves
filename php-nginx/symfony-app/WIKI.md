@@ -42,10 +42,39 @@ php bin/console make:entity
 
 ```
 
+### Crear entidades ProductoCarrito y EstadoCarrito
+
 En caso de error, leerlo y comprobar la compatibilidad de versiones.
 Para "symfony/maker-bundle": "^1.0" hay que usar "doctrine/orm": "^2.15"
 Borrar lo que se haya creado, normalmente Carrito y CarritoRepository, borrar caché y volver a empezar.
 
+### Crear fixtures con los estados iniciales
 
+```bash
+composer require --dev "doctrine/doctrine-fixtures-bundle:^4.0"
+```
 
+Implementar la creación de los estados en AppFixtures->load()
 
+### Crear la migración
+
+```bash
+php bin/console make:migration
+```
+
+### Ejecutar la migración
+
+```bash
+php bin/console doctrine:migrations:migrate
+```
+
+### Cargar los datos de prueba
+
+```bash
+php bin/console doctrine:fixtures:load
+```
+
+### Nuevo controlador
+```bash
+php bin/console make:controller
+```

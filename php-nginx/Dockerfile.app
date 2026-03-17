@@ -1,5 +1,5 @@
 # Dockerfile.app
-FROM mysymfony/ubuntu:24.04-2.0
+FROM mysymfony/ubuntu:24.04-3.0-debug
 
 # Copiar el código fuente
 WORKDIR /var/www/html

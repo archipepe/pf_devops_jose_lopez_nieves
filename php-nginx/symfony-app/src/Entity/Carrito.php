@@ -41,14 +41,14 @@ class Carrito
     // #[ORM\OneToOne(mappedBy: 'carrito', targetEntity: Pedido::class)]
     // private ?Pedido $pedido = null;
     
-    public function __construct(EstadoCarritoRepository $estadoCarritoRepository)
+    public function __construct()
     {
         // TODO
         // $this->usuario = null;
         // $this->sessionId = null;
         $this->creadoEn = new \DateTimeImmutable();
         $this->actualizadoEn = new \DateTimeImmutable();
-        $this->estado = $estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO);
+        // $this->estado = $estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO);
         $this->productos = new ArrayCollection();
     }
 

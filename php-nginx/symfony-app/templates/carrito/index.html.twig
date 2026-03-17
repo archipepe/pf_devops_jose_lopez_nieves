@@ -1,0 +1,151 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mi Carrito - Mi Tienda Online{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ asset('css/carrito.css') }}">
+{% endblock %}
+
+{% block body %}
+<section class="carrito-section">
+    <div class="container">
+        <h1 class="section-title">Mi Carrito</h1>
+        
+        {% if carrito.productos|length > 0 %}
+            <div class="carrito-container">
+                <div class="carrito-productos">
+                    <table class="carrito-tabla">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th>Cantidad</th>
+                                <th>Subtotal</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in carrito.productos %}
+                            <tr class="carrito-item">
+                                <td class="producto-info">
+                                    <img src="{{ asset('images/' ~ item.producto.imagen) }}" 
+                                         alt="{{ item.producto.nombre }}"
+                                         class="producto-imagen-mini">
+                                    <div>
+                                        <h3>{{ item.producto.nombre }}</h3>
+                                        <p class="producto-descripcion-mini">{{ item.producto.descripcion|slice(0, 50) }}...</p>
+                                    </div>
+                                </td>
+                                <td class="producto-precio">
+                                    {{ item.producto.precio|number_format(2, ',', '.') }} €
+                                </td>
+                                <td class="producto-cantidad">
+                                    <form action="{{ path('carrito_update', {'id': item.id}) }}" 
+                                          method="post" 
+                                          class="form-cantidad">
+                                        <input type="number" 
+                                               name="cantidad" 
+                                               value="{{ item.cantidad }}" 
+                                               min="1" 
+                                               max="10"
+                                               class="input-cantidad"
+                                               onchange="this.form.submit()">
+                                    </form>
+                                </td>
+                                <td class="producto-subtotal">
+                                    {{ item.subtotal|number_format(2, ',', '.') }} €
+                                </td>
+                                <td class="producto-acciones">
+                                    <a href="{{ path('carrito_remove', {'id': item.id}) }}" 
+                                       class="btn-eliminar"
+                                       onclick="return confirm('¿Eliminar producto del carrito?')">
+                                        Eliminar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <div class="carrito-acciones">
+                        <a href="{{ path('producto_index') }}" class="btn-seguir-comprando">
+                            ← Seguir comprando
+                        </a>
+                        <a href="{{ path('carrito_clear') }}" 
+                           class="btn-vaciar"
+                           onclick="return confirm('¿Vaciar el carrito?')">
+                            Vaciar carrito
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="carrito-resumen">
+                    <h2>Resumen del pedido</h2>
+                    
+                    <div class="resumen-detalles">
+                        <div class="resumen-fila">
+                            <span>Productos ({{ totalProductos }})</span>
+                            <span>{{ total|number_format(2, ',', '.') }} €</span>
+                        </div>
+                        <div class="resumen-fila">
+                            <span>Envío</span>
+                            <span>Gratis</span>
+                        </div>
+                        <div class="resumen-fila total">
+                            <span>Total</span>
+                            <span>{{ total|number_format(2, ',', '.') }} €</span>
+                        </div>
+                    </div>
+                    
+                    <a {#href="{{ path('app_pedido_checkout') }}"#} class="btn-checkout">
+                        Proceder al pago
+                    </a>
+                    
+                    {% if carrito.esAnonimo %}
+                        <div class="info-login">
+                            <p>¿Ya tienes cuenta? <a href="{{ path('app_login') }}">Inicia sesión</a> para guardar tu carrito</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="carrito-vacio">
+                <div class="carrito-vacio-icono">🛒</div>
+                <h2>Tu carrito está vacío</h2>
+                <p>¡Explora nuestros productos y encuentra lo que buscas!</p>
+                <a href="{{ path('producto_index') }}" class="btn-ver-productos">
+                    Ver productos
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+
+
+
+
+
+{#
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello CarritoController!{% endblock %}
+
+{% block body %}
+<style>
+    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
+    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+</style>
+
+<div class="example-wrapper">
+    <h1>Hello {{ controller_name }}! ✅</h1>
+
+    This friendly message is coming from:
+    <ul>
+        <li>Your controller at <code><a href="{{ '/var/www/html/src/Controller/CarritoController.php'|file_link(0) }}">src/Controller/CarritoController.php</a></code></li>
+        <li>Your template at <code><a href="{{ '/var/www/html/templates/carrito/index.html.twig'|file_link(0) }}">templates/carrito/index.html.twig</a></code></li>
+    </ul>
+</div>
+{% endblock %}
+#}
