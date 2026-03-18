@@ -9,6 +9,12 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class DefaultController extends AbstractController
 {
+    /**
+     * Home del proyecto.
+     *
+     * @param ProductoRepository $productoRepository
+     * @return Response
+     */
     public function index(ProductoRepository $productoRepository): Response
     {
         $productosDestacados = $productoRepository->findDestacados(4);

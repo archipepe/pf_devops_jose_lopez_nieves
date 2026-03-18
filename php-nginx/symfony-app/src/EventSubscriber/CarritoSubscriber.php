@@ -101,9 +101,9 @@ class CarritoSubscriber implements EventSubscriberInterface
         $response = $event->getResponse();
         
         // Asegurar que la cookie existe (por si acaso)
-        // TODO: Prevalece la fecha de caducidad de primera creación. Si el usuario entra más veces, no se actualiza
+        // TODO: Actualizamos siempre de vuelta la cookie por si hubiera cambiado el hash a un nuevo carrito
         $carritoId = $request->attributes->get('carrito_id');
-        if ($carritoId && !$request->cookies->has(CarritoIdGenerator::COOKIE_NAME)) {
+        if ($carritoId/* && !$request->cookies->has(CarritoIdGenerator::COOKIE_NAME)*/) {
             $response->headers->setCookie(
                 Cookie::create(
                     CarritoIdGenerator::COOKIE_NAME, 

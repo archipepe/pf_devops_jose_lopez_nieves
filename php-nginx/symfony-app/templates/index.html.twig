@@ -19,7 +19,7 @@
                     </div>
                     <div class="producto-info-index">
                         <h3>{{ producto.nombre }}</h3>
-                        <p class="precio">€{{ producto.precio }}</p>
+                        <p class="precio">€{{ producto.precio|number_format(2, ',', '.') }}</p>
                         <a href="{{ path('producto_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
                     </div>
                 </div>

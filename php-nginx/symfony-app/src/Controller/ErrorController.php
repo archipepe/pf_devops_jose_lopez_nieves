@@ -9,6 +9,11 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ErrorController extends AbstractController
 {
+    /**
+     * Página de error forzado.
+     *
+     * @return Response
+     */
     public function error(): Response
     {
         # En caso de que quieras denegar acceso por Controller en lugar de access_control

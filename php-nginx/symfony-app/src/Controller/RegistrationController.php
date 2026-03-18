@@ -16,6 +16,16 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge
 
 class RegistrationController extends AbstractController
 {
+    /**
+     * Formulario de registro de nuevo usuario.
+     *
+     * @param Request $request
+     * @param UserPasswordHasherInterface $userPasswordHasher
+     * @param EntityManagerInterface $entityManager
+     * @param UserAuthenticatorInterface $userAuthenticator
+     * @param FormLoginAuthenticator $formLoginAuthenticator
+     * @return Response
+     */
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, UserAuthenticatorInterface $userAuthenticator, FormLoginAuthenticator $formLoginAuthenticator): Response
     {
         $user = new User();

@@ -8,6 +8,11 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class HealthController extends AbstractController
 {
+    /**
+     * Comprobación de la salud del proyecto.
+     *
+     * @return Response
+     */
     public function check(): Response
     {
         $forceHealthCheckError = false;

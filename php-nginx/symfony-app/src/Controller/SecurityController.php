@@ -9,7 +9,14 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
 {
-    // TODO: fusionarCarritoAlLogin
+    /**
+     * Formulario de login.
+     * 
+     * TODO: fusionarCarritoAlLogin
+     *
+     * @param AuthenticationUtils $authenticationUtils
+     * @return Response
+     */
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
         return $this->render('security/login.html.twig', [
@@ -18,6 +25,12 @@ class SecurityController extends AbstractController
         ]);
     }
 
+    /**
+     * Logout.
+     *
+     * @param AuthenticationUtils $authenticationUtils
+     * @return Response
+     */
     public function logout(AuthenticationUtils $authenticationUtils): Response
     {
         throw new \Exception('logout() should never be reached');

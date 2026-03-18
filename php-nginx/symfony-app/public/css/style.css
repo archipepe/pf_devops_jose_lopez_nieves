@@ -219,31 +219,6 @@ main {
     background: #c0392b;
 }
 
-/* Product detail page */
-.detalle-producto {
-    padding: 2rem 0;
-}
-
-.producto-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3rem;
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.producto-detalles h1 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-}
-
-.descripcion {
-    margin: 1.5rem 0;
-    line-height: 1.8;
-}
-
 /* Error pages */
 .error-container {
     text-align: center;

@@ -4,12 +4,26 @@ namespace App\Controller;
 
 use App\Entity\Producto;
 use App\Repository\ProductoRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class ProductosController extends AbstractController
 {
+    private LoggerInterface $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * Listado de productos.
+     *
+     * @param ProductoRepository $productoRepository
+     * @return Response
+     */
     public function index(ProductoRepository $productoRepository): Response
     {
         $productos = $productoRepository->findAll();
@@ -19,6 +33,13 @@ class ProductosController extends AbstractController
         ]);
     }
 
+    /**
+     * Detalle del producto.
+     *
+     * @param integer $idProducto
+     * @param ProductoRepository $productoRepository
+     * @return Response
+     */
     public function detalle(int $idProducto, ProductoRepository $productoRepository): Response
     {
         $producto = $productoRepository->findOneBy(['id' => $idProducto]);
@@ -39,44 +60,62 @@ class ProductosController extends AbstractController
         ]);
     }
 
+    /**
+     * Simulación de recuperación de producto para logs, métricas y trazas.
+     *
+     * @param integer $idProducto
+     * @return array|null
+     */
     private function recuperarProducto(int $idProducto): ?array
     {
         if ($idProducto === 1) {
             $tiempoEspera = rand(3, 5);
             sleep($tiempoEspera);
             # Registrarlo en el monolog
-            // $this->get('logger')->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
         } else {
             $tiempoEspera = rand(0.5, 1);
-            // $this->get('logger')->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
         }
 
         return self::$productos[$idProducto] ?? null;
     }
 
+    /**
+     * Simulación de actualización de metadata de producto para logs, métricas y trazas.
+     *
+     * @param integer $idProducto
+     * @return void
+     */
     private function actualizarMetadata(int $idProducto): void
     {
         if ($idProducto === 2) {
             $tiempoEspera = rand(3, 5);
             sleep($tiempoEspera);
             # Registrarlo en el monolog
-            // $this->get('logger')->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
         } else {
             $tiempoEspera = rand(0.5, 1);
-            // $this->get('logger')->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
         }
     }
 
+    /**
+     * Simulación de envío a Facebook Pixel para logs, métricas y trazas.
+     *
+     * @param integer $idProducto
+     * @return void
+     */
     private function enviarFacebookPixel(int $idProducto): void
     {
         if ($idProducto === 3) {
             $tiempoEspera = rand(3, 5);
             sleep($tiempoEspera);
             # Registrarlo en el monolog
-            // $this->get('logger')->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
         } else {
             $tiempoEspera = rand(0.5, 1);
-            // $this->get('logger')->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
         }
     }
 }

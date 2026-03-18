@@ -11,8 +11,6 @@ use App\Repository\EstadoCarritoRepository;
 use App\Repository\ProductoRepository;
 use App\Repository\ProductoCarritoRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Security\Core\Security;
 
 class CarritoService
@@ -26,7 +24,6 @@ class CarritoService
     
     public function __construct(
         Security $security,
-        RequestStack $requestStack,
         EntityManagerInterface $entityManager,
         CarritoRepository $carritoRepository,
         ProductoRepository $productoRepository,
@@ -43,6 +40,9 @@ class CarritoService
 
     /**
      * Obtiene o crea el carrito actual basado en la sesión/usuario
+     *
+     * @param string|null $hash
+     * @return Carrito
      */
     public function getCarritoActual(?string $hash): Carrito
     {
@@ -69,44 +69,53 @@ class CarritoService
 
     /**
      * Añade un producto al carrito
+     *
+     * @param Carrito $carrito
+     * @param integer $productoId
+     * @param integer $cantidad
+     * @return void
      */
-    // public function addProducto(int $productoId, int $cantidad = 1): void
-    // {
-    //     $producto = $this->productoRepository->find($productoId);
-    //     if (!$producto) {
-    //         throw new \Exception('Producto no encontrado');
-    //     }
+    public function addProducto(Carrito $carrito, int $productoId, int $cantidad = 1): void
+    {
+        $producto = $this->productoRepository->find($productoId);
+        if (!$producto) {
+            throw new \Exception('Producto no encontrado');
+        }
 
-    //     $carrito = $this->getCarritoActual();
+        // Buscar si el producto ya está en el carrito
+        $productoCarrito = null;
+        foreach ($carrito->getProductos() as $item) {
+            if ($item->getProducto()->getId() === $productoId) {
+                $productoCarrito = $item;
+                break;
+            }
+        }
         
-    //     // Buscar si el producto ya está en el carrito
-    //     $productoCarrito = null;
-    //     foreach ($carrito->getProductos() as $item) {
-    //         if ($item->getProducto()->getId() === $productoId) {
-    //             $productoCarrito = $item;
-    //             break;
-    //         }
-    //     }
+        if ($productoCarrito) {
+            // Actualizar cantidad
+            $nuevaCantidad = $productoCarrito->getCantidad() + $cantidad;
+            $productoCarrito->setCantidad($nuevaCantidad);
+        } else {
+            // Crear nuevo item
+            $productoCarrito = new ProductoCarrito();
+            $productoCarrito->setCarrito($carrito);
+            $productoCarrito->setProducto($producto);
+            $productoCarrito->setCantidad($cantidad);
+            $this->entityManager->persist($productoCarrito);
+
+            $carrito->addProducto($productoCarrito);
+        }
         
-    //     if ($productoCarrito) {
-    //         // Actualizar cantidad
-    //         $nuevaCantidad = $productoCarrito->getCantidad() + $cantidad;
-    //         $productoCarrito->setCantidad($nuevaCantidad);
-    //     } else {
-    //         // Crear nuevo item
-    //         $productoCarrito = new ProductoCarrito();
-    //         $productoCarrito->setCarrito($carrito);
-    //         $productoCarrito->setProducto($producto);
-    //         $productoCarrito->setCantidad($cantidad);
-    //         $this->entityManager->persist($productoCarrito);
-    //     }
-        
-    //     $carrito->setActualizadoEn(new \DateTimeImmutable());
-    //     $this->entityManager->flush();
-    // }
+        $carrito->setActualizadoEn(new \DateTimeImmutable());
+        $this->entityManager->flush();
+    }
 
     /**
      * Actualiza la cantidad de un producto en el carrito
+     *
+     * @param integer $productoCarritoId
+     * @param integer $cantidad
+     * @return void
      */
     public function updateCantidad(int $productoCarritoId, int $cantidad): void
     {
@@ -128,6 +137,9 @@ class CarritoService
 
     /**
      * Elimina un producto del carrito
+     *
+     * @param integer $productoCarritoId
+     * @return void
      */
     public function removeProducto(int $productoCarritoId): void
     {
@@ -264,6 +276,8 @@ class CarritoService
 
     /**
      * Obtiene el usuario actual si está autenticado
+     *
+     * @return User|null
      */
     private function getUser(): ?User
     {

@@ -17,6 +17,11 @@ class CarritoIdGenerator
         $this->requestStack = $requestStack;
     }
 
+    /**
+     * Obtiene carrito_id de la cookie o genera uno nuevo.
+     *
+     * @return string
+     */
     public function getCarritoId(): string
     {
         $request = $this->requestStack->getCurrentRequest();

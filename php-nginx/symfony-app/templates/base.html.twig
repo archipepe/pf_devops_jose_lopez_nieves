@@ -4,8 +4,10 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}Mi Tienda Online{% endblock %}</title>
-        <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-        {% block styles %}{% endblock %}
+        {% block styles %}
+            <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+            <link rel="stylesheet" href="{{ asset('css/carrito-badge.css') }}">
+        {% endblock %}
     </head>
     <body>
         <header>
@@ -13,6 +15,14 @@
             <nav>
                 <a class="nav-link text-black-50" href="{{ path('index') }}">Home</a>
                 <a class="nav-link text-black-50" href="{{ path('producto_index') }}">Productos</a>
+                <a href="{{ path('carrito_index') }}" class="carrito-link" aria-label="Carrito de compras">
+                    🛒 Carrito
+                    {% if app.request.attributes.get('carrito') is defined %}
+                        <span class="carrito-contador" data-total-productos="{{ app.request.attributes.get('carrito').totalProductos ?? 0 }}">
+                            {{ app.request.attributes.get('carrito').totalProductos ?? 0 }}
+                        </span>
+                    {% endif %}
+                </a>
                 {% if app.user %}
                     <a class="nav-link text-black-50" href="{{ path('app_logout') }}">Cerrar sesión</a>
                 {% else %}
@@ -27,15 +37,19 @@
                 {% if is_granted('IS_AUTHENTICATED_FULLY') %}
                 {% endif %}
                 #}
-                {# TODO: MOSTRAR CONTADOR DEL CARRITO #}
             </nav>
         </header>        
         <main>
             {% block body %}{% endblock %}
+            {# Contenedor para notificaciones #}
+            <div class="notification-container" id="notificationContainer"></div>
         </main>        
         <footer>
             <p>Proyecto Final DevOps | José López Nieves</p>
             <p>Sirviendo desde pod: {{ pod_name }} en nodo: {{ node_name }}</p>
         </footer>
+        {% block javascripts %}
+            <script type="text/javascript" src="{{ asset('js/carrito-listener.js') }}"></script>
+        {% endblock %}
     </body>
 </html>
