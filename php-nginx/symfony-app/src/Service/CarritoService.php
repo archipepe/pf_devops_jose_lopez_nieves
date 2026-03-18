@@ -18,8 +18,6 @@ use Symfony\Component\Security\Core\Security;
 class CarritoService
 {
     private Security $security;
-    private SessionInterface $session;
-    private ?Carrito $carritoActual = null; // TODO: revisar, no tiene ningún sentido, al principio de cada petición siempre va a ser null
     private EntityManagerInterface $entityManager;
     private CarritoRepository $carritoRepository;
     private ProductoRepository $productoRepository;
@@ -36,7 +34,6 @@ class CarritoService
         EstadoCarritoRepository $estadoCarritoRepository
     ) {
         $this->security = $security;
-        $this->session = $requestStack->getSession();
         $this->entityManager = $entityManager;
         $this->carritoRepository = $carritoRepository;
         $this->productoRepository = $productoRepository;
@@ -47,34 +44,25 @@ class CarritoService
     /**
      * Obtiene o crea el carrito actual basado en la sesión/usuario
      */
-    public function getCarritoActual(): Carrito
+    public function getCarritoActual(?string $hash): Carrito
     {
-        if ($this->carritoActual) {
-            return $this->carritoActual;
-        }
-
         $user = $this->getUser();
+
         if ($user) {
             $carrito = $this->carritoRepository->findCarritoActivo($user);
-            if ($carrito) {
-                $this->carritoActual = $carrito;
-                return $carrito;
+            
+            if (!$carrito) {
+                $nuevoCarrito = new Carrito();
+                $nuevoCarrito->setUsuario($user);
+                $nuevoCarrito->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO));
+                $this->entityManager->persist($nuevoCarrito);
+                $this->entityManager->flush();
+                
+                $carrito = $nuevoCarrito;
             }
-            
-            // Si no hay carrito activo, crear uno nuevo
-            $nuevoCarrito = new Carrito();
-            $nuevoCarrito->setUsuario($user);
-            $nuevoCarrito->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO));
-            $this->entityManager->persist($nuevoCarrito);
-            $this->entityManager->flush();
-            
-            $this->carritoActual = $nuevoCarrito;
-            return $nuevoCarrito;
+        } else {
+            $carrito = $this->carritoRepository->findOrCreateByHash($hash);
         }
-
-        $sessionId = $this->session->getId();
-        $carrito = $this->carritoRepository->findOrCreateBySessionId($sessionId);
-        $this->carritoActual = $carrito;
         
         return $carrito;
     }
@@ -82,40 +70,40 @@ class CarritoService
     /**
      * Añade un producto al carrito
      */
-    public function addProducto(int $productoId, int $cantidad = 1): void
-    {
-        $producto = $this->productoRepository->find($productoId);
-        if (!$producto) {
-            throw new \Exception('Producto no encontrado');
-        }
+    // public function addProducto(int $productoId, int $cantidad = 1): void
+    // {
+    //     $producto = $this->productoRepository->find($productoId);
+    //     if (!$producto) {
+    //         throw new \Exception('Producto no encontrado');
+    //     }
 
-        $carrito = $this->getCarritoActual();
+    //     $carrito = $this->getCarritoActual();
         
-        // Buscar si el producto ya está en el carrito
-        $productoCarrito = null;
-        foreach ($carrito->getProductos() as $item) {
-            if ($item->getProducto()->getId() === $productoId) {
-                $productoCarrito = $item;
-                break;
-            }
-        }
+    //     // Buscar si el producto ya está en el carrito
+    //     $productoCarrito = null;
+    //     foreach ($carrito->getProductos() as $item) {
+    //         if ($item->getProducto()->getId() === $productoId) {
+    //             $productoCarrito = $item;
+    //             break;
+    //         }
+    //     }
         
-        if ($productoCarrito) {
-            // Actualizar cantidad
-            $nuevaCantidad = $productoCarrito->getCantidad() + $cantidad;
-            $productoCarrito->setCantidad($nuevaCantidad);
-        } else {
-            // Crear nuevo item
-            $productoCarrito = new ProductoCarrito();
-            $productoCarrito->setCarrito($carrito);
-            $productoCarrito->setProducto($producto);
-            $productoCarrito->setCantidad($cantidad);
-            $this->entityManager->persist($productoCarrito);
-        }
+    //     if ($productoCarrito) {
+    //         // Actualizar cantidad
+    //         $nuevaCantidad = $productoCarrito->getCantidad() + $cantidad;
+    //         $productoCarrito->setCantidad($nuevaCantidad);
+    //     } else {
+    //         // Crear nuevo item
+    //         $productoCarrito = new ProductoCarrito();
+    //         $productoCarrito->setCarrito($carrito);
+    //         $productoCarrito->setProducto($producto);
+    //         $productoCarrito->setCantidad($cantidad);
+    //         $this->entityManager->persist($productoCarrito);
+    //     }
         
-        $carrito->setActualizadoEn(new \DateTimeImmutable());
-        $this->entityManager->flush();
-    }
+    //     $carrito->setActualizadoEn(new \DateTimeImmutable());
+    //     $this->entityManager->flush();
+    // }
 
     /**
      * Actualiza la cantidad de un producto en el carrito
@@ -157,46 +145,46 @@ class CarritoService
     /**
      * Vacía el carrito actual
      */
-    public function vaciarCarrito(): void
-    {
-        $carrito = $this->getCarritoActual();
+    // public function vaciarCarrito(): void
+    // {
+    //     $carrito = $this->getCarritoActual();
         
-        foreach ($carrito->getProductos() as $productoCarrito) {
-            $this->entityManager->remove($productoCarrito);
-        }
+    //     foreach ($carrito->getProductos() as $productoCarrito) {
+    //         $this->entityManager->remove($productoCarrito);
+    //     }
         
-        $carrito->setActualizadoEn(new \DateTimeImmutable());
-        $this->entityManager->flush();
-    }
+    //     $carrito->setActualizadoEn(new \DateTimeImmutable());
+    //     $this->entityManager->flush();
+    // }
 
     /**
      * Fusiona el carrito anónimo con el del usuario al hacer login
      */
-    public function fusionarCarritoAlLogin(User $usuario): void
-    {
-        $sessionId = $this->session->getId();
+    // public function fusionarCarritoAlLogin(User $usuario): void
+    // {
+    //     $hash = $this->session->getId();
         
-        // Buscar carrito anónimo ACTIVO
-        $carritoAnonimo = $this->carritoRepository->findCarritoAnonimo($sessionId);
+    //     // Buscar carrito anónimo ACTIVO
+    //     $carritoAnonimo = $this->carritoRepository->findCarritoAnonimo($hash);
         
-        if ($carritoAnonimo && $carritoAnonimo->getProductos()->count() > 0) {
-            // Buscar carrito ACTIVO del usuario
-            $carritoUsuario = $this->carritoRepository->findCarritoActivo($usuario);
+    //     if ($carritoAnonimo && $carritoAnonimo->getProductos()->count() > 0) {
+    //         // Buscar carrito ACTIVO del usuario
+    //         $carritoUsuario = $this->carritoRepository->findCarritoActivo($usuario);
             
-            if (!$carritoUsuario) {
-                // Si el usuario no tiene carrito activo, convertir el anónimo
-                $carritoAnonimo->setUsuario($usuario);
-                $carritoAnonimo->setSessionId(null);
-                $this->carritoActual = $carritoAnonimo;
-                $this->entityManager->flush();
-            } else {
-                // Si tiene, fusionar y eliminar el anónimo
-                $carritoFusionado = $this->carritoRepository->fusionarCarritos($carritoAnonimo, $usuario);
-                $this->carritoActual = $carritoFusionado;
-            }
+    //         if (!$carritoUsuario) {
+    //             // Si el usuario no tiene carrito activo, convertir el anónimo
+    //             $carritoAnonimo->setUsuario($usuario);
+    //             $carritoAnonimo->setHash(null);
+    //             // $this->carritoActual = $carritoAnonimo;
+    //             $this->entityManager->flush();
+    //         } else {
+    //             // Si tiene, fusionar y eliminar el anónimo
+    //             $carritoFusionado = $this->carritoRepository->fusionarCarritos($carritoAnonimo, $usuario);
+    //             // $this->carritoActual = $carritoFusionado;
+    //         }
             
-        }
-    }
+    //     }
+    // }
 
     /**
      * Finaliza el carrito actual y crea uno nuevo
@@ -235,7 +223,7 @@ class CarritoService
     //     // Por ahora, solo un placeholder
     //     $pedido = new Pedido();
     //     $pedido->setUsuario($carrito->getUsuario());
-    //     $pedido->setSessionId($carrito->getSessionId());
+    //     $pedido->setHash($carrito->getHash());
     //     $pedido->setTotal($carrito->getTotal());
     //     $pedido->setEstado('pendiente');
         
@@ -264,7 +252,7 @@ class CarritoService
     //         $nuevoCarrito->setUsuario($carritoAnterior->getUsuario());
     //     } else {
     //         // Si era anónimo, mantener la misma sesión
-    //         $nuevoCarrito->setSessionId($carritoAnterior->getSessionId());
+    //         $nuevoCarrito->setHash($carritoAnterior->getHash());
     //     }
         
     //     $nuevoCarrito->setEstado('activo');

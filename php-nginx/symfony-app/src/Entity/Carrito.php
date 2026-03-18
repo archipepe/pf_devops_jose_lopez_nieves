@@ -16,11 +16,11 @@ class Carrito
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'carritos')]
+    #[ORM\ManyToOne]
     private ?User $usuario = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $sessionId = null;
+    #[ORM\Column(length: 255, nullable: true, unique: true)]
+    private ?string $hash = null;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $creadoEn = null;
@@ -45,7 +45,7 @@ class Carrito
     {
         // TODO
         // $this->usuario = null;
-        // $this->sessionId = null;
+        // $this->hash = null;
         $this->creadoEn = new \DateTimeImmutable();
         $this->actualizadoEn = new \DateTimeImmutable();
         // $this->estado = $estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO);
@@ -69,14 +69,14 @@ class Carrito
         return $this;
     }
 
-    public function getSessionId(): ?string
+    public function getHash(): ?string
     {
-        return $this->sessionId;
+        return $this->hash;
     }
 
-    public function setSessionId(?string $sessionId): static
+    public function setHash(?string $hash): static
     {
-        $this->sessionId = $sessionId;
+        $this->hash = $hash;
 
         return $this;
     }

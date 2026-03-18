@@ -26,6 +26,10 @@ app_register:
     path: /register
     controller: App\Controller\RegistrationController::register
 
+health_check:
+    path: /health
+    controller: App\Controller\HealthController::check
+
 carrito_index:
     path: /carrito
     controller: App\Controller\CarritoController::index

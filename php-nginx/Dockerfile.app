@@ -13,5 +13,6 @@ USER symfonyapp
 
 RUN php /usr/local/bin/composer install
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80 || exit 1
+# TODO: Comentado hasta que se terminen las pruebas del carrito
+# HEALTHCHECK --interval=300s --timeout=5s --start-period=5s --retries=3 \
+#     CMD curl -f http://localhost:80/health || exit 1

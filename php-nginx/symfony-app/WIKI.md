@@ -78,3 +78,7 @@ php bin/console doctrine:fixtures:load
 ```bash
 php bin/console make:controller
 ```
+
+### Cambiar propiedad sessionId por hash en Carrito
+Editar la clase Carrito.
+Crear y ejecutar la migración.

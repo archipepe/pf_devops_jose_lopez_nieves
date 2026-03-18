@@ -39,6 +39,7 @@ COPY php/xdebug.ini /etc/php/8.3/fpm/conf.d/20-xdebug.ini
     
 # memory_limit = 128M por defecto, está bien
 # RUN sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini
+RUN sed -i 's/^max_execution_time = .*/max_execution_time = 0/' /etc/php/8.3/fpm/php.ini
 
 # Configuración de Nginx
 COPY nginx/default.conf /etc/nginx/sites-available/default

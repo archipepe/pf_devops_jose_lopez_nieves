@@ -26,19 +26,19 @@ class CarritoRepository extends ServiceEntityRepository
         $this->estadoCarritoRepository = $registry->getRepository("App\Entity\EstadoCarrito");
     }
 
-    public function findCarritoAnonimo(string $sessionId) : ?Carrito
+    public function findCarritoAnonimo(string $hash) : ?Carrito
     {
-        return $this->findOneBy(['sessionId' => $sessionId, 'usuario' => null, 'estado' => $this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO)]);
+        return $this->findOneBy(['hash' => $hash, 'usuario' => null, 'estado' => $this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO)]);
     }
 
-    public function findOrCreateBySessionId(string $sessionId): Carrito
+    public function findOrCreateByHash(string $hash): Carrito
     {
         
-        $carrito = $this->findCarritoAnonimo($sessionId);
+        $carrito = $this->findCarritoAnonimo($hash);
         
         if (!$carrito) {
             $carrito = new Carrito();
-            $carrito->setSessionId($sessionId);
+            $carrito->setHash($hash);
             $carrito->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO));
             $this->getEntityManager()->persist($carrito);
             $this->getEntityManager()->flush();
@@ -53,7 +53,7 @@ class CarritoRepository extends ServiceEntityRepository
             ->where('c.usuario = :usuario')
             ->andWhere('c.estado = :estado')
             ->setParameter('usuario', $usuario)
-            ->setParameter('estado', EstadoCarrito::ACTIVO)
+            ->setParameter('estado', $this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO))
             ->orderBy('c.actualizadoEn', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
@@ -74,7 +74,7 @@ class CarritoRepository extends ServiceEntityRepository
         if (!$carritoUsuario) {
             // Si no tiene carrito, convertir el anónimo en carrito de usuario
             $carritoAnonimo->setUsuario($usuario);
-            $carritoAnonimo->setSessionId(null);
+            $carritoAnonimo->setHash(null);
             $carritoAnonimo->setActualizadoEn(new \DateTimeImmutable());
             $entityManager->flush();
             

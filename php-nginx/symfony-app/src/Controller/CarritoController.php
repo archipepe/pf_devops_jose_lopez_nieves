@@ -18,9 +18,10 @@ class CarritoController extends AbstractController
         $this->carritoService = $carritoService;
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $carrito = $this->carritoService->getCarritoActual();
+        // TODO
+        $carrito = $request->attributes->get('carrito');
         
         return $this->render('carrito/index.html.twig', [
             'carrito' => $carrito,
@@ -29,19 +30,19 @@ class CarritoController extends AbstractController
         ]);
     }
 
-    public function add(int $id, Request $request): Response
-    {
-        $cantidad = $request->request->get('cantidad', 1);
+    // public function add(int $id, Request $request): Response
+    // {
+    //     $cantidad = $request->request->get('cantidad', 1);
         
-        try {
-            $this->carritoService->addProducto($id, $cantidad);
-            $this->addFlash('success', 'Producto añadido al carrito');
-        } catch (\Exception $e) {
-            $this->addFlash('error', 'Error al añadir el producto');
-        }
+    //     try {
+    //         $this->carritoService->addProducto($id, $cantidad);
+    //         $this->addFlash('success', 'Producto añadido al carrito');
+    //     } catch (\Exception $e) {
+    //         $this->addFlash('error', 'Error al añadir el producto');
+    //     }
         
-        return $this->redirectToRoute('carrito_index');
-    }
+    //     return $this->redirectToRoute('carrito_index');
+    // }
 
     public function update(int $id, Request $request): Response
     {
@@ -69,11 +70,11 @@ class CarritoController extends AbstractController
         return $this->redirectToRoute('app_carrito_index');
     }
 
-    public function clear(): Response
-    {
-        $this->carritoService->vaciarCarrito();
-        $this->addFlash('success', 'Carrito vaciado');
+    // public function clear(): Response
+    // {
+    //     $this->carritoService->vaciarCarrito();
+    //     $this->addFlash('success', 'Carrito vaciado');
         
-        return $this->redirectToRoute('app_carrito_index');
-    }
+    //     return $this->redirectToRoute('app_carrito_index');
+    // }
 }
