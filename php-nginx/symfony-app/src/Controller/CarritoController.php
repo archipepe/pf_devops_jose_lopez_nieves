@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Service\CarritoService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Csrf\CsrfToken;
@@ -109,37 +110,119 @@ class CarritoController extends AbstractController
         }
     }
 
-    public function update(int $id, Request $request): Response
+    /**
+     * Actualizar la cantidad de un producto del carrito.
+     *
+     * @param Request $request
+     * @param integer $id
+     * @return JsonResponse
+     */
+    public function update(Request $request, int $id): JsonResponse
     {
-        $cantidad = $request->request->get('cantidad', 1);
-        
         try {
+            $this->verificarCsrf($request);
+            
+            if (!$request->isXmlHttpRequest()) {
+                return $this->json(['error' => 'Solo AJAX'], Response::HTTP_BAD_REQUEST);
+            }
+            
+            $cantidad = $request->request->getInt('cantidad', 1);
+            
+            if ($cantidad < 1 || $cantidad > 10) {
+                return $this->json(['error' => 'Cantidad inválida'], Response::HTTP_BAD_REQUEST);
+            }
+            
             $this->carritoService->updateCantidad($id, $cantidad);
-            $this->addFlash('success', 'Carrito actualizado');
+            $carrito = $request->attributes->get('carrito');
+            
+            // Buscar el item actualizado para devolver su nuevo subtotal
+            $itemActualizado = null;
+            foreach ($carrito->getProductos() as $item) {
+                if ($item->getId() === $id) {
+                    $itemActualizado = $item;
+                    break;
+                }
+            }
+            
+            return $this->json([
+                'success' => true,
+                'totalProductos' => $carrito->getTotalProductos(),
+                'total' => $carrito->getTotal(),
+                'nuevoSubtotal' => $itemActualizado ? number_format($itemActualizado->getSubtotal(), 2, ',', '.') : null
+            ]);
+            
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Error al actualizar el carrito');
+            $this->logger->error('Error actualizando cantidad', [
+                'item_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->json(['error' => 'Error al actualizar'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        
-        return $this->redirectToRoute('app_carrito_index');
     }
 
-    public function remove(int $id): Response
+    /**
+     * Verificar CSRF token.
+     *
+     * @param Request $request
+     * @return void
+     */
+    private function verificarCsrf(Request $request): void
+    {
+        $token = $request->headers->get('X-CSRF-TOKEN');
+        if (!$token || !$this->csrfTokenManager->isTokenValid(new CsrfToken('carrito', $token))) {
+            throw new \Exception('Token CSRF inválido');
+        }
+    }
+
+    /**
+     * Eliminar un producto del carrito. Equivale a poner cantidad a 0.
+     *
+     * @param Request $request
+     * @param integer $id
+     * @return JsonResponse
+     */
+    public function remove(Request $request, int $id): JsonResponse
     {
         try {
+            $this->verificarCsrf($request);
+            
             $this->carritoService->removeProducto($id);
-            $this->addFlash('success', 'Producto eliminado del carrito');
+            $carrito = $request->attributes->get('carrito');
+            
+            return $this->json([
+                'success' => true,
+                'totalProductos' => $carrito->getTotalProductos(),
+                'total' => $carrito->getTotal()
+            ]);
+            
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Error al eliminar el producto');
+            return $this->json(['error' => 'Error al eliminar'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        
-        return $this->redirectToRoute('app_carrito_index');
     }
 
-    // public function clear(): Response
-    // {
-    //     $this->carritoService->vaciarCarrito();
-    //     $this->addFlash('success', 'Carrito vaciado');
-        
-    //     return $this->redirectToRoute('app_carrito_index');
-    // }
+    /**
+     * Vaciar el carrito.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function clear(Request $request): JsonResponse
+    {
+        try {
+            $this->verificarCsrf($request);
+            
+            $carrito = $request->attributes->get('carrito');
+            $this->carritoService->vaciarCarrito($carrito);
+            
+            return $this->json([
+                'success' => true,
+                'totalProductos' => 0,
+                'total' => 0
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Error al vaciar'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

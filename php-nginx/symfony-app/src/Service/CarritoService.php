@@ -155,19 +155,20 @@ class CarritoService
     }
 
     /**
-     * Vacía el carrito actual
+     * Vaciar el carrito.
+     *
+     * @param Carrito $carrito
+     * @return void
      */
-    // public function vaciarCarrito(): void
-    // {
-    //     $carrito = $this->getCarritoActual();
+    public function vaciarCarrito(Carrito $carrito): void
+    {
+        foreach ($carrito->getProductos() as $productoCarrito) {
+            $this->entityManager->remove($productoCarrito);
+        }
         
-    //     foreach ($carrito->getProductos() as $productoCarrito) {
-    //         $this->entityManager->remove($productoCarrito);
-    //     }
-        
-    //     $carrito->setActualizadoEn(new \DateTimeImmutable());
-    //     $this->entityManager->flush();
-    // }
+        $carrito->setActualizadoEn(new \DateTimeImmutable());
+        $this->entityManager->flush();
+    }
 
     /**
      * Fusiona el carrito anónimo con el del usuario al hacer login
