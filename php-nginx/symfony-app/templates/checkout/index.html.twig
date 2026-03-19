@@ -1,0 +1,118 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Checkout - Mi Tienda Online{% endblock %}
+
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/checkout.css') }}">
+{% endblock %}
+
+{% block body %}
+<section class="checkout-section">
+    <div class="container">
+        <h1 class="section-title">Finalizar Compra</h1>
+        
+        <div class="checkout-container">
+            <div class="checkout-form">
+                <h2>Datos de envío</h2>
+                
+                <form id="checkout-form" method="post" action="{{ path('checkout_procesar') }}">
+                    <div class="form-group">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" 
+                               id="direccion" 
+                               name="direccion" 
+                               class="form-control" 
+                               required
+                               value="{{ app.user.direccion ?? '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ciudad" class="form-label">Ciudad</label>
+                        <input type="text" 
+                               id="ciudad" 
+                               name="ciudad" 
+                               class="form-control" 
+                               required
+                               value="{{ app.user.ciudad ?? '' }}">
+                    </div>
+                    
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="codigo_postal" class="form-label">Código Postal</label>
+                            <input type="text" 
+                                   id="codigo_postal" 
+                                   name="codigo_postal" 
+                                   class="form-control" 
+                                   required
+                                   value="{{ app.user.codigoPostal ?? '' }}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pais" class="form-label">País</label>
+                            <input type="text" 
+                                   id="pais" 
+                                   name="pais" 
+                                   class="form-control" 
+                                   required
+                                   value="{{ app.user.pais ?? 'España' }}">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="checkout-resumen">
+                <h2>Resumen del pedido</h2>
+                
+                <div class="checkout-items">
+                    {% for item in carrito.productos %}
+                        <div class="checkout-item">
+                            <div class="item-info">
+                                <img src="{{ asset('images/' ~ item.producto.imagen) }}" 
+                                     alt="{{ item.producto.nombre }}"
+                                     class="item-imagen"
+                                     onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
+                                <div>
+                                    <div class="item-nombre">{{ item.producto.nombre }}</div>
+                                    <div class="item-cantidad">Cantidad: {{ item.cantidad }}</div>
+                                </div>
+                            </div>
+                            <div class="item-precio">
+                                {{ item.subtotal|number_format(2, ',', '.') }} €
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="checkout-totales">
+                    <div class="total-row">
+                        <span>Subtotal</span>
+                        <span>{{ total|number_format(2, ',', '.') }} €</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Envío</span>
+                        <span>Gratis</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span>Total</span>
+                        <span>{{ total|number_format(2, ',', '.') }} €</span>
+                    </div>
+                </div>
+                
+                <button type="submit" form="checkout-form" class="btn-procesar" id="btn-procesar">
+                    Procesar pago
+                </button>
+                
+                <p style="text-align: center; margin-top: 1rem; color: #7f8c8d; font-size: 0.9rem;">
+                    <small>Modo simulación - No se realizará ningún cargo real</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript" src="{{ asset('js/checkout.js') }}"></script>
+{% endblock %}

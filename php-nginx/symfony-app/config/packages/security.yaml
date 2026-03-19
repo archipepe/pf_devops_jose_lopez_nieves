@@ -42,8 +42,9 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
-        # - { path: ^/error-test, roles: ROLE_USER }
-        # - { path: ^/pedidos, roles: ROLE_USER }
+        - { path: ^/checkout, roles: ROLE_USER }
+        - { path: ^/pedidos, roles: ROLE_USER }
+        - { path: ^/confirmacion, roles: ROLE_USER }
 
 when@test:
     security:

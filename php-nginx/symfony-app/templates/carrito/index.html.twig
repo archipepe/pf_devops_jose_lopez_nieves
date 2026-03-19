@@ -126,8 +126,7 @@
     <script type="text/javascript">
         {# Por simplicidad y por evitar errores con el botón atrás, no se regenera después de cada uso #}
         var productoCsrfToken = '{{ csrf_token('carrito')|escape('js') }}';
-        {# var checkoutURL = '{{ path('pedido_checkout') }}'; #}
-        var checkoutURL = 'test';
+        var checkoutURL = '{{ path('checkout') }}';
         var productosIndex = '{{ path('producto_index') }}';
     </script>
     <script type="text/javascript" src="{{ asset('js/carrito.js') }}"></script>

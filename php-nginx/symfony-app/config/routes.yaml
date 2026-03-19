@@ -53,3 +53,16 @@ carrito_clear:
     path: /carrito/clear
     methods: POST
     controller: App\Controller\CarritoController::clear
+
+checkout:
+    path: /checkout
+    controller: App\Controller\CheckoutController::checkout
+
+checkout_procesar:
+    path: /checkout/procesar
+    methods: POST
+    controller: App\Controller\CheckoutController::procesar
+
+pedido_confirmation:
+    path: /confirmacion/{id}
+    controller: App\Controller\CheckoutController::confirmation

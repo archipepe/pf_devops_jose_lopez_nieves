@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pedido Confirmado - Mi Tienda Online{% endblock %}
+
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/confirmacion.css') }}">
+{% endblock %}
+
+{% block body %}
+<section class="confirmation-section">
+    <div class="container">
+        <div class="confirmation-container">
+            <div class="success-icon">✅</div>
+            <h1>¡Gracias por tu compra!</h1>
+            <p>Tu pedido ha sido procesado correctamente.</p>
+            
+            <div class="order-number">
+                <strong>Número de pedido:</strong> #{{ pedido.id }}
+                <br>
+                <small>{{ pedido.creadoEn|date('d/m/Y H:i') }}</small>
+            </div>
+            
+            <div class="order-details">
+                <h3>Detalles del pedido</h3>
+                {% for linea in pedido.lineas %}
+                    <div class="order-item">
+                        <span>{{ linea.nombreProducto }} x{{ linea.cantidad }}</span>
+                        <span>{{ linea.subtotal|number_format(2, ',', '.') }} €</span>
+                    </div>
+                {% endfor %}
+                
+                <div class="order-total">
+                    Total: {{ pedido.total|number_format(2, ',', '.') }} €
+                </div>
+            </div>
+            
+            <div class="order-shipping">
+                <h3>Datos de envío</h3>
+                <p>
+                    {{ pedido.direccionEnvio }}<br>
+                    {{ pedido.ciudad }}, {{ pedido.codigoPostal }}<br>
+                    {{ pedido.pais }}
+                </p>
+            </div>
+            
+            <a href="{# path('app_pedidos_index') #}" class="btn-ver-pedidos">
+                Ver mis pedidos
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
