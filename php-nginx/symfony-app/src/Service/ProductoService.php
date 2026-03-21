@@ -42,7 +42,7 @@ class ProductoService
      */
     public function obtenerProductoPorId(int $idProducto) : ?Producto
     {
-        // TODO: si generas con AppFixtures, asegúrate de que al menos tres productos tengan los IDs 1, 2 y 3 para que se puedan probar los tiempos de espera simulados.
+        // TODO: si generas con AppFixtures, asegúrate de que al menos tres productos tengan los IDs 4, 5 y 6 para que se puedan probar los tiempos de espera simulados.
         $this->recuperarProducto($idProducto);
 
         $this->actualizarMetadata($idProducto);
@@ -60,7 +60,7 @@ class ProductoService
      */
     private function recuperarProducto(int $idProducto): ?array
     {
-        if ($idProducto === 1) {
+        if ($idProducto === 4) {
             $tiempoEspera = rand(3, 5);
             sleep($tiempoEspera);
             # Registrarlo en el monolog
@@ -81,7 +81,7 @@ class ProductoService
      */
     private function actualizarMetadata(int $idProducto): void
     {
-        if ($idProducto === 2) {
+        if ($idProducto === 5) {
             $tiempoEspera = rand(3, 5);
             sleep($tiempoEspera);
             # Registrarlo en el monolog
@@ -100,7 +100,7 @@ class ProductoService
      */
     private function enviarFacebookPixel(int $idProducto): void
     {
-        if ($idProducto === 3) {
+        if ($idProducto === 6) {
             $tiempoEspera = rand(3, 5);
             sleep($tiempoEspera);
             # Registrarlo en el monolog

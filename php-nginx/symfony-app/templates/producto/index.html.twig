@@ -2,6 +2,11 @@
 
 {% block title %}Productos - Mi Tienda Online{% endblock %}
 
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/notificaciones.css') }}">
+{% endblock %}
+
 {% block body %}
 <section class="productos-section">
     <div class="container">
@@ -15,13 +20,15 @@
                              alt="{{ producto.nombre }}"
                              onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
                     </div>
-                    <div class="producto-info">
+                    <div class="producto-info-index">
                         <h3>{{ producto.nombre }}</h3>
                         <p class="producto-descripcion">{{ producto.descripcion|slice(0, 100) ~ '...' }}</p>
-                        <div class="producto-footer">
-                            <span class="producto-precio">{{ producto.precio|number_format(2, ',', '.') }} €</span>
-                            <a href="{{ path('producto_detalle', {'idProducto': producto.id}) }}" class="btn-ver">Ver detalles</a>
-                        </div>
+                        <p class="precio">€{{ producto.precio|number_format(2, ',', '.') }}</p>
+                        <a href="javascript:void(0)" class="btn btn-primary btn-add-carrito" data-producto-id="{{ producto.id }}" data-producto-nombre="{{ producto.nombre }}">
+                            <span class="btn-text">🛒</span>
+                            <span class="spinner" aria-hidden="true"></span>
+                        </a>
+                        <a href="{{ path('producto_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
                     </div>
                 </div>
             {% else %}
@@ -32,4 +39,13 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        {# Por simplicidad y por evitar errores con el botón atrás, no se regenera después de cada uso #}
+        var productoCsrfToken = '{{ csrf_token('carrito')|escape('js') }}';
+    </script>
+    <script type="text/javascript" src="{{ asset('js/carrito.js') }}"></script>
 {% endblock %}
