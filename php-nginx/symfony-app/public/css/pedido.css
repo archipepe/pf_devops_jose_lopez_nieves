@@ -1,0 +1,198 @@
+/* Dashboard de estadísticas */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Filtros */
+.filtros-container {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filtro-label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.filtro-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filtro-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    text-decoration: none;
+    background: #ecf0f1;
+    color: #2c3e50;
+    transition: all 0.3s ease;
+}
+
+.filtro-btn.active {
+    background: #3498db;
+    color: white;
+}
+
+.filtro-btn:hover:not(.active) {
+    background: #bdc3c7;
+}
+
+/* Tabla de pedidos */
+.pedidos-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.pedidos-table thead {
+    background: #2c3e50;
+    color: white;
+}
+
+.pedidos-table th,
+.pedidos-table td {
+    padding: 1rem;
+    text-align: left;
+}
+
+.pedidos-table tbody tr {
+    border-bottom: 1px solid #ecf0f1;
+    transition: background-color 0.3s ease;
+}
+
+.pedidos-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.estado-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.estado-badge.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.estado-badge.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.estado-badge.info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.estado-badge.danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.estado-badge.secondary {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.btn-ver-detalle {
+    padding: 0.25rem 0.75rem;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn-ver-detalle:hover {
+    background: #2980b9;
+}
+
+.no-pedidos {
+    text-align: center;
+    padding: 4rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.no-pedidos-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.btn-seguir-comprando {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #27ae60;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-seguir-comprando:hover {
+    background: #219a52;
+}
+
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .pedidos-table {
+        font-size: 0.9rem;
+    }
+    
+    .pedidos-table th,
+    .pedidos-table td {
+        padding: 0.75rem 0.5rem;
+    }
+}

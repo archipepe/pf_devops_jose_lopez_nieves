@@ -66,3 +66,15 @@ checkout_procesar:
 pedido_confirmation:
     path: /confirmacion/{id}
     controller: App\Controller\CheckoutController::confirmation
+
+pedidos_index:
+    path: /pedidos
+    methods: [GET]
+    controller: App\Controller\PedidoController::index
+
+pedidos_show:
+    path: /pedidos/{id}
+    methods: [GET]
+    controller: App\Controller\PedidoController::show
+    requirements:
+        id: '\d+'

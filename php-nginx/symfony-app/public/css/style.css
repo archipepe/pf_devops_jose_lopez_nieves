@@ -373,6 +373,20 @@ footer {
     text-decoration: underline;
 }
 
+.btn-pedidos {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background-color: #9b59b6;
+    color: white;
+}
+
+.btn-pedidos:hover {
+    background-color: #8e44ad;
+}
+
 /* Alertas para mensajes flash y errores */
 .alert {
     padding: 1rem 1.25rem;

@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pedido #{{ pedido.id }} - Mi Tienda Online{% endblock %}
+
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/pedido-detalle.css') }}">
+{% endblock %}
+
+{% block body %}
+<section class="pedido-detalle-section">
+    <div class="container">
+        <div class="pedido-header">
+            <div class="pedido-info">
+                <h1>Pedido #{{ pedido.id }}</h1>
+                <p class="pedido-fecha">Realizado el {{ pedido.creadoEn|date('d/m/Y \a \l\a\s H:i') }}</p>
+            </div>
+            <div class="pedido-estado">
+                <span class="estado-badge-large {{ pedidoFormateado.estadoClase }}">
+                    {{ pedidoFormateado.estadoLabel }}
+                </span>
+                {% if pedido.referenciaPago %}
+                    <p class="referencia-pago">Referencia: {{ pedido.referenciaPago }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="pedido-grid">
+            <div class="pedido-detalle">
+                <h2>Detalles del pedido</h2>
+                
+                <table class="lineas-table">
+                    {% for linea in lineas %}
+                        <tr>
+                            <td>
+                                <div class="producto-nombre">{{ linea.nombreProducto }}</div>
+                                <div class="producto-precio">
+                                    {{ linea.precioUnitario|number_format(2, ',', '.') }} € x {{ linea.cantidad }}
+                                </div>
+                            </td>
+                            <td>{{ linea.subtotal|number_format(2, ',', '.') }} €</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                
+                <div class="pedido-totales">
+                    <div class="total-row">Subtotal: {{ pedido.total|number_format(2, ',', '.') }} €</div>
+                    <div class="total-row">Envío: Gratis</div>
+                    <div class="total-row"><strong>Total: {{ pedido.total|number_format(2, ',', '.') }} €</strong></div>
+                </div>
+            </div>
+            
+            <div class="pedido-envio">
+                <h2>Datos de envío</h2>
+                <div class="envio-info">
+                    <p><span class="envio-label">Dirección:</span> {{ pedido.direccionEnvio }}</p>
+                    <p><span class="envio-label">Ciudad:</span> {{ pedido.ciudad }}</p>
+                    <p><span class="envio-label">Código Postal:</span> {{ pedido.codigoPostal }}</p>
+                    <p><span class="envio-label">País:</span> {{ pedido.pais }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="{{ path('pedidos_index') }}" class="btn-volver">
+                ← Volver a mis pedidos
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

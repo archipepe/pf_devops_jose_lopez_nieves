@@ -62,6 +62,54 @@ class PedidoRepository extends ServiceEntityRepository
     }
 
     /**
+     * Obtiene estadísticas de pedidos para un usuario.
+     * 
+     * @param User $usuario
+     * @return array
+     */
+    public function getEstadisticas(User $usuario): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select(
+                'COUNT(p.id) as totalPedidos',
+                'SUM(p.total) as totalGastado',
+                'AVG(p.total) as promedioPedido',
+                'MAX(p.creadoEn) as ultimoPedido'
+            )
+            ->where('p.usuario = :usuario')
+            ->andWhere('p.estado = :estado')
+            ->setParameter('usuario', $usuario)
+            ->setParameter('estado', 'pagado')
+            ->getQuery();
+
+        return $qb->getOneOrNullResult() ?? [
+            'totalPedidos' => 0,
+            'totalGastado' => 0,
+            'promedioPedido' => 0,
+            'ultimoPedido' => null
+        ];
+    }
+
+    /**
+     * Obtener pedidos por estado.
+     * 
+     * @param User $usuario
+     * @param string $estado
+     * @return array
+     */
+    public function findByEstado(User $usuario, string $estado): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.usuario = :usuario')
+            ->andWhere('p.estado = :estado')
+            ->setParameter('usuario', $usuario)
+            ->setParameter('estado', $estado)
+            ->orderBy('p.creadoEn', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @param Request $request
      * @param Carrito $carrito
      * @param User $user

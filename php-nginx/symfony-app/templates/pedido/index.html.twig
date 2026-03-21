@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mis Pedidos - Mi Tienda Online{% endblock %}
+
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/pedido.css') }}">
+{% endblock %}
+
+{% block body %}
+<section class="pedidos-section">
+    <div class="container">
+        <h1 class="section-title">Mis Pedidos</h1>
+        
+        {# Estadísticas #}
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value">{{ estadisticas.totalPedidos }}</div>
+                <div class="stat-label">Pedidos realizados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">{{ (estadisticas.totalGastado)|number_format(2, ',', '.') }} €</div>
+                <div class="stat-label">Total gastado</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value">{{ (estadisticas.promedioPedido)|number_format(2, ',', '.') }} €</div>
+                <div class="stat-label">Promedio por pedido</div>
+            </div>
+        </div>
+        
+        {# Filtros #}
+        <div class="filtros-container">
+            <span class="filtro-label">Filtrar por estado:</span>
+            <div class="filtro-buttons">
+                {% for key, label in estadosDisponibles %}
+                    <a href="{{ path('pedidos_index', {'estado': key}) }}" 
+                       class="filtro-btn {% if estadoActual == key %}active{% endif %}">
+                        {{ label }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {# Listado de pedidos #}
+        {% if pedidos|length > 0 %}
+            <table class="pedidos-table">
+                <thead>
+                    <tr>
+                        <th>Pedido #</th>
+                        <th>Fecha</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.id }}</td>
+                            <td>{{ pedido.creadoEn|date('d/m/Y H:i') }}</td>
+                            <td>{{ pedido.totalProductos }} productos</td>
+                            <td>{{ pedido.total|number_format(2, ',', '.') }} €</td>
+                            <td>
+                                <span class="estado-badge {{ pedido.estado == 'pendiente' ? 'warning' : (pedido.estado == 'pagado' ? 'success' : (pedido.estado == 'enviado' ? 'info' : (pedido.estado == 'cancelado' ? 'danger' : 'secondary'))) }}">
+                                    {{ pedido.estado == 'pendiente' ? 'Pendiente' : (pedido.estado == 'pagado' ? 'Pagado' : (pedido.estado == 'enviado' ? 'Enviado' : (pedido.estado == 'cancelado' ? 'Cancelado' : pedido.estado|capitalize))) }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ path('pedidos_show', {'id': pedido.id}) }}" class="btn-ver-detalle">
+                                    Ver detalle
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="no-pedidos">
+                <div class="no-pedidos-icon">📦</div>
+                <h3>No tienes pedidos</h3>
+                <p>Realiza tu primera compra y aparecerá aquí</p>
+                <a href="{{ path('producto_index') }}" class="btn-seguir-comprando">
+                    Ir a la tienda
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

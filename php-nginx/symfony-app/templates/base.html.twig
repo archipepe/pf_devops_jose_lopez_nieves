@@ -15,6 +15,9 @@
             <nav>
                 <a class="nav-link text-black-50" href="{{ path('index') }}">Home</a>
                 <a class="nav-link text-black-50" href="{{ path('producto_index') }}">Productos</a>
+                {% if app.user %}
+                    <a href="{{ path('pedidos_index') }}" class="btn-pedidos">Mis pedidos</a>
+                {% endif %}
                 <a href="{{ path('carrito_index') }}" class="carrito-link" aria-label="Carrito de compras">
                     🛒 Carrito
                     {% if app.request.attributes.get('carrito') is defined %}
@@ -24,7 +27,11 @@
                     {% endif %}
                 </a>
                 {% if app.user %}
-                    <a class="nav-link text-black-50" href="{{ path('app_logout') }}">Cerrar sesión</a>
+                    {% set nombreUsuario = '' %}
+                    {% if app.user.firstName %}
+                        {% set nombreUsuario = '(' ~ app.user.firstName ~ ')' %}
+                    {% endif %}
+                    <a class="nav-link text-black-50" href="{{ path('app_logout') }}">Cerrar sesión {{ nombreUsuario }}</a>
                 {% else %}
                     <a class="nav-link text-black-50" href="{{ path('app_login') }}">Iniciar sesión</a>
                 {% endif %}
