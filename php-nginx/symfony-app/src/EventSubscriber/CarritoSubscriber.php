@@ -2,7 +2,6 @@
 
 namespace App\EventSubscriber;
 
-use App\Entity\Carrito;
 use App\Service\CarritoService;
 use App\Service\CarritoHashGenerator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

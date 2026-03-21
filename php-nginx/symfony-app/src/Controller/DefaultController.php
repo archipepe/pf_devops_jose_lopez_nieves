@@ -2,22 +2,28 @@
 
 namespace App\Controller;
 
-use App\Repository\ProductoRepository;
+use App\Service\ProductoService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 
 class DefaultController extends AbstractController
 {
+    private ProductoService $productoService;
+
+    public function __construct(
+        ProductoService $productoService
+    )
+    {
+        $this->productoService = $productoService;
+    }
     /**
      * Home del proyecto.
-     *
-     * @param ProductoRepository $productoRepository
+     * 
      * @return Response
      */
-    public function index(ProductoRepository $productoRepository): Response
+    public function index(): Response
     {
-        $productosDestacados = $productoRepository->findDestacados(4);
+        $productosDestacados = $this->productoService->obtenerProductosDestacados(4);
     
         return $this->render('index.html.twig', [
             'productos' => $productosDestacados
