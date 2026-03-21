@@ -3,7 +3,6 @@
 namespace App\Service;
 
 use App\Entity\Carrito;
-use App\Entity\EstadoCarrito;
 use App\Entity\ProductoCarrito;
 use App\Entity\User;
 use App\Repository\CarritoRepository;
@@ -11,11 +10,12 @@ use App\Repository\EstadoCarritoRepository;
 use App\Repository\ProductoRepository;
 use App\Repository\ProductoCarritoRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Security\Core\Security;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class CarritoService
 {
-    private Security $security;
+    private TokenStorageInterface $tokenStorage;
     private EntityManagerInterface $entityManager;
     private CarritoRepository $carritoRepository;
     private ProductoRepository $productoRepository;
@@ -23,14 +23,14 @@ class CarritoService
     private EstadoCarritoRepository $estadoCarritoRepository;
     
     public function __construct(
-        Security $security,
+        TokenStorageInterface $tokenStorage,
         EntityManagerInterface $entityManager,
         CarritoRepository $carritoRepository,
         ProductoRepository $productoRepository,
         ProductoCarritoRepository $productoCarritoRepository,
         EstadoCarritoRepository $estadoCarritoRepository
     ) {
-        $this->security = $security;
+        $this->tokenStorage = $tokenStorage;
         $this->entityManager = $entityManager;
         $this->carritoRepository = $carritoRepository;
         $this->productoRepository = $productoRepository;
@@ -39,32 +39,46 @@ class CarritoService
     }
 
     /**
-     * Obtiene o crea el carrito actual basado en la sesión/usuario
+     * Obtiene o crea el carrito actual basado en la sesión/usuario.
+     * Prevalece el carrito de un usuario.
      *
-     * @param string|null $hash
+     * @param string $hash
      * @return Carrito
      */
-    public function getCarritoActual(?string $hash): Carrito
+    public function getCarritoActual(string $hash): Carrito
     {
         $user = $this->getUser();
 
         if ($user) {
-            $carrito = $this->carritoRepository->findCarritoActivo($user);
-            
-            if (!$carrito) {
-                $nuevoCarrito = new Carrito();
-                $nuevoCarrito->setUsuario($user);
-                $nuevoCarrito->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO));
-                $this->entityManager->persist($nuevoCarrito);
-                $this->entityManager->flush();
-                
-                $carrito = $nuevoCarrito;
-            }
+            $carrito = $this->getCarritoActualByUser();
         } else {
-            $carrito = $this->carritoRepository->findOrCreateByHash($hash);
+            $carrito = $this->getCarritoActualByHash($hash);
         }
         
         return $carrito;
+    }
+
+    /**
+     * Obtiene o crea el carrito actual basado en la sesión.
+     *
+     * @param string $hash
+     * @return Carrito
+     */
+    public function getCarritoActualByHash(string $hash): Carrito
+    {
+        return $this->carritoRepository->findOrCreateByHash($hash);
+    }
+
+    /**
+     * Obtiene o crea el carrito actual basado en el usuario autenticado.
+     *
+     * @return Carrito
+     */
+    public function getCarritoActualByUser(): Carrito
+    {
+        $user = $this->getUser();
+        
+        return $this->carritoRepository->findOrCreateByUser($user);
     }
 
     /**
@@ -171,33 +185,24 @@ class CarritoService
     }
 
     /**
-     * Fusiona el carrito anónimo con el del usuario al hacer login
+     * Fusiona el carrito anónimo con el del usuario al hacer login.
+     *
+     * @param Request $request
+     * @return void
      */
-    // public function fusionarCarritoAlLogin(User $usuario): void
-    // {
-    //     $hash = $this->session->getId();
-        
-    //     // Buscar carrito anónimo ACTIVO
-    //     $carritoAnonimo = $this->carritoRepository->findCarritoAnonimo($hash);
-        
-    //     if ($carritoAnonimo && $carritoAnonimo->getProductos()->count() > 0) {
-    //         // Buscar carrito ACTIVO del usuario
-    //         $carritoUsuario = $this->carritoRepository->findCarritoActivo($usuario);
-            
-    //         if (!$carritoUsuario) {
-    //             // Si el usuario no tiene carrito activo, convertir el anónimo
-    //             $carritoAnonimo->setUsuario($usuario);
-    //             $carritoAnonimo->setHash(null);
-    //             // $this->carritoActual = $carritoAnonimo;
-    //             $this->entityManager->flush();
-    //         } else {
-    //             // Si tiene, fusionar y eliminar el anónimo
-    //             $carritoFusionado = $this->carritoRepository->fusionarCarritos($carritoAnonimo, $usuario);
-    //             // $this->carritoActual = $carritoFusionado;
-    //         }
-            
-    //     }
-    // }
+    public function fusionarCarritoAlLogin(Request $request): void
+    {
+        $carritoHash = $request->attributes->get('carrito_hash');
+        $carritoAnonimo = $this->getCarritoActualByHash($carritoHash);
+
+        $carrito = $this->getCarritoActualByUser();
+
+        $this->carritoRepository->fusionarCarritos($carritoAnonimo, $carrito);
+
+        // Actualizar los valores en el request
+        $request->attributes->set('carrito', $carrito);
+        $request->attributes->set('carrito_hash', $carrito->getHash());
+    }
 
     /**
      * Finaliza el carrito actual y crea uno nuevo
@@ -282,6 +287,6 @@ class CarritoService
      */
     private function getUser(): ?User
     {
-        return $this->security->getUser();
+        return $this->tokenStorage->getToken()?->getUser();
     }
 }

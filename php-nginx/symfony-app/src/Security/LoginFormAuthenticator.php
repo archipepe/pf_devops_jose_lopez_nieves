@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Entity\Carrito;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -13,6 +14,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\CustomCre
 use App\Repository\UserRepository;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use App\Entity\User;
+use App\Service\CarritoService;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Security\Core\Security;
@@ -25,11 +27,13 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
 {
     private UserRepository $userRepository;
     private RouterInterface $router;
+    private CarritoService $carritoService;
     
-    public function __construct(UserRepository $userRepository, RouterInterface $router)
+    public function __construct(UserRepository $userRepository, RouterInterface $router, CarritoService $carritoService)
     {
         $this->userRepository = $userRepository;
         $this->router = $router;
+        $this->carritoService = $carritoService;
     }
 
     public function supports(Request $request): ?bool
@@ -60,8 +64,11 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
+        // Fusionar el carrito anónimo con el del usuario al hacer login
+        $this->carritoService->fusionarCarritoAlLogin($request);
+
         // Redirigir al usuario a la página que estaba intentando acceder antes de iniciar sesión, o a la página de inicio si no hay una URL de referencia.
-        // Target path no será nulo cuando el usuario intente acceder a una página protegida sin estar autenticado, y se le redirija al login. En ese caso, Symfony guarda la URL original en la sesión para redirigir después del login exitoso.
+        // Target path no será nulo cuando el usuario intente acceder a una página protegida sin estar autenticado, y se le redirija al login. En ese caso, Symfony guarda la URL original en la sesión para redirigir después del login.
         // Útil para redirigir al checkout si venía de él y no tenía sesión.
         $targetPath = $request->getSession()->get('_security.' . $firewallName . '.target_path');
         
@@ -76,7 +83,7 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
         //     $this->router->generate('index')
         // );
 
-        // Si no quieres redirigir a una página específica, simplemente devuelve null para continuar con la solicitud original. Se quedará en la página de login
+        // Si no quieres redirigir a una página específica, simplemente devuelve null para continuar con la solicitud original. Se quedará en la página de login, lo que no tiene sentido
         // return null;
     }
 

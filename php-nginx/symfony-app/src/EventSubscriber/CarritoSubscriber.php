@@ -2,36 +2,44 @@
 
 namespace App\EventSubscriber;
 
+use App\Entity\Carrito;
 use App\Service\CarritoService;
-use App\Service\CarritoIdGenerator;
+use App\Service\CarritoHashGenerator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 class CarritoSubscriber implements EventSubscriberInterface
 {
     private CarritoService $carritoService;
-    private CarritoIdGenerator $carritoIdGenerator;
+    private CarritoHashGenerator $carritoHashGenerator;
     private LoggerInterface $logger;
 
     public function __construct(
         CarritoService $carritoService,
-        CarritoIdGenerator $carritoIdGenerator,
+        CarritoHashGenerator $carritoHashGenerator,
         LoggerInterface $logger
     ) {
         $this->carritoService = $carritoService;
-        $this->carritoIdGenerator = $carritoIdGenerator;
+        $this->carritoHashGenerator = $carritoHashGenerator;
         $this->logger = $logger;
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 20], // Prioridad alta
+            // La cookie sí es necesario establecerla lo más pronto posible para asegurarnos que se pueda enviar en la respuesta y el cliente la guarde:
+            // - Si se establece en onKernelController ocurre lo siguiente: al acceder al checkout sin haber iniciado sesión, salta el authenticator y el onKernelController no llega a dispararse, por lo que en onKernelResponse el hash no se puede recuperar y se envía vacío y el carrito se pierde.
+            // El carrito en cambio no es necesario inicializarlo tan pronto, ya que se inicializa automáticamente al acceder a él en el controlador o servicio después de que se haya resuelto el usuario autenticado (si existe)
+            KernelEvents::REQUEST => ['onKernelRequest', 20],  // Mayor prioridad
+            // Para poder obtener usuario en caso de existir, necesitamos ejecutar antes de que el controlador se ejecute (donde se resuelve el token de seguridad)
+            // Antes lo teníamos en el kernel.request pero eso es demasiado pronto para obtener el usuario autenticado, así que lo movemos al kernel.controller con prioridad alta para que se ejecute antes de la mayoría de los listeners
+            KernelEvents::CONTROLLER => ['onKernelController', 10],
             KernelEvents::RESPONSE => ['onKernelResponse', -10],
         ];
     }
@@ -44,35 +52,41 @@ class CarritoSubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
         
-        // IGNORAR HEALTH CHECKS COMPLETAMENTE
-        if ($this->esHealthCheck($request)) {
+        if ($this->esRequestIgnorable($request)) {
             return;
         }
-            
-        // IGNORAR RUTAS DE ASSETS ESTÁTICOS
-        if ($this->esAsset($request)) {
-            return;
-        }
-                
-        // IGNORAR RUTAS DE ADMIN/TOOLS
-        if ($this->esRutaIgnorable($request)) {
-            return;
-        }
+
+        // Obtener o generar hash de carrito
+        $carritoHash = $this->carritoHashGenerator->getCarritoHash();
+
+        // Establecemos el atributo carrito_hash en la request
+        $this->setCarritoHash($request, $carritoHash);
 
         // Log para debugging (luego lo quitas)
-        $this->logger->info('Inicializando carrito para ruta: ' . $request->getPathInfo());
+        $this->logger->info('Inicializado carrito_hash para ruta: ' . $request->getPathInfo());
+        $this->logger->info('Hash de carrito: ' . $carritoHash);
+    }
+
+    public function onKernelController(ControllerEvent $event): void
+    {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
         
-        // Obtener o generar ID de carrito
-        $carritoId = $this->carritoIdGenerator->getCarritoId();
+        if ($this->esRequestIgnorable($request)) {
+            return;
+        }
 
         // Guardar en request attributes para acceso fácil
-        $request->attributes->set('carrito_id', $carritoId);
-        
+        $carritoHash = $this->getCarritoHash($request);
+
         // Inicializar el carrito (esto crea el carrito en BD si no existe)
-        $carrito = $this->carritoService->getCarritoActual($carritoId);
-        
-        // Guardar carrito en request attributes
-        $request->attributes->set('carrito', $carrito);
+        $this->setCarritoActual($request, $carritoHash);
+
+        // Log para debugging (luego lo quitas)
+        $this->logger->info('Inicializado carrito para ruta: ' . $request->getPathInfo());
     }
 
     public function onKernelResponse(ResponseEvent $event): void
@@ -83,35 +97,71 @@ class CarritoSubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
 
-        // IGNORAR HEALTH CHECKS COMPLETAMENTE
-        if ($this->esHealthCheck($request)) {
-            return;
-        }
-            
-        // IGNORAR RUTAS DE ASSETS ESTÁTICOS
-        if ($this->esAsset($request)) {
-            return;
-        }
-                
-        // IGNORAR RUTAS DE ADMIN/TOOLS
-        if ($this->esRutaIgnorable($request)) {
+        if ($this->esRequestIgnorable($request)) {
             return;
         }
 
         $response = $event->getResponse();
         
-        // Asegurar que la cookie existe (por si acaso)
-        // TODO: Actualizamos siempre de vuelta la cookie por si hubiera cambiado el hash a un nuevo carrito
-        $carritoId = $request->attributes->get('carrito_id');
-        if ($carritoId/* && !$request->cookies->has(CarritoIdGenerator::COOKIE_NAME)*/) {
-            $response->headers->setCookie(
-                Cookie::create(
-                    CarritoIdGenerator::COOKIE_NAME, 
-                    $carritoId, 
-                    time() + CarritoIdGenerator::COOKIE_EXPIRY
-                )
-            );
-        }
+        // Actualizamos siempre de vuelta la cookie por si hubiera cambiado el hash a un nuevo carrito o, si es de usuario, que se elimine la cookie al ser el valor null
+        $carritoHash = $this->getCarritoHash($request);
+
+        $response->headers->setCookie(
+            Cookie::create(
+                CarritoHashGenerator::COOKIE_NAME, 
+                $carritoHash, 
+                time() + CarritoHashGenerator::COOKIE_EXPIRY
+            )
+        );
+
+        $this->logger->info('Asegurar hash de carrito: ' . $carritoHash);
+    }
+
+    /**
+     * Guardar en request attributes para acceso fácil.
+     *
+     * @param Request $request
+     * @param string|null $carritoHash
+     * @return void
+     */
+    private function setCarritoHash(Request $request, ?string $carritoHash): void
+    {
+        $request->attributes->set('carrito_hash', $carritoHash);
+    }
+
+    /**
+     * @param Request $request
+     * @return string|null
+     */
+    private function getCarritoHash(Request $request): ?string
+    {
+        return $request->attributes->get('carrito_hash');
+    }
+
+    /**
+     * @param Request $request
+     * @param string $carritoHash
+     * @return void
+     */
+    private function setCarritoActual(Request $request, string $carritoHash): void
+    {
+        $carrito = $this->carritoService->getCarritoActual($carritoHash);
+        
+        // Guardar carrito en request attributes
+        $this->setCarrito($request, $carrito);
+
+        // Actualizar el hash con el del carrito actual
+        $this->setCarritoHash($request, $carrito->getHash());
+    }
+
+    /**
+     * @param Request $request
+     * @param Carrito $carrito
+     * @return void
+     */
+    private function setCarrito(Request $request, Carrito $carrito) : void
+    {
+        $request->attributes->set('carrito', $carrito);
     }
 
     private function esHealthCheck(Request $request): bool
@@ -188,5 +238,31 @@ class CarritoSubscriber implements EventSubscriberInterface
         } else {
             return $ip === $range;
         }
+    }
+
+    /**
+     * Determina si la request actual es de un tipo que debería ser ignorada por el subscriber (health checks, assets, admin/tools).
+     *
+     * @param Request $request
+     * @return boolean
+     */
+    private function esRequestIgnorable(Request $request): bool
+    {
+        // IGNORAR HEALTH CHECKS COMPLETAMENTE
+        if ($this->esHealthCheck($request)) {
+            return true;
+        }
+            
+        // IGNORAR RUTAS DE ASSETS ESTÁTICOS
+        if ($this->esAsset($request)) {
+            return true;
+        }
+                
+        // IGNORAR RUTAS DE ADMIN/TOOLS
+        if ($this->esRutaIgnorable($request)) {
+            return true;
+        }
+        
+        return false;
     }
 }

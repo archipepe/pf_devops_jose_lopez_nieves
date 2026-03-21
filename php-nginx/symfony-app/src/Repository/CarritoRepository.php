@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Carrito;
 use App\Entity\EstadoCarrito;
+use App\Entity\ProductoCarrito;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -24,6 +25,11 @@ class CarritoRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Carrito::class);
         $this->estadoCarritoRepository = $registry->getRepository("App\Entity\EstadoCarrito");
+    }
+
+    public function findOneByHash(string $hash): ?Carrito
+    {
+        return $this->findOneBy(['hash' => $hash]);
     }
 
     public function findCarritoAnonimo(string $hash) : ?Carrito
@@ -47,6 +53,21 @@ class CarritoRepository extends ServiceEntityRepository
         return $carrito;
     }
 
+    public function findOrCreateByUser(User $usuario): Carrito
+    {
+        $carrito = $this->findCarritoActivo($usuario);
+        
+        if (!$carrito) {
+            $carrito = new Carrito();
+            $carrito->setUsuario($usuario);
+            $carrito->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO));
+            $this->getEntityManager()->persist($carrito);
+            $this->getEntityManager()->flush();
+        }
+        
+        return $carrito;
+    }
+
     public function findCarritoActivo(User $usuario): ?Carrito
     {
         return $this->createQueryBuilder('c')
@@ -60,28 +81,21 @@ class CarritoRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    // TODO
     /**
-     * Fusiona un carrito anónimo con el carrito de un usuario
+     * Fusiona un carrito anónimo con el carrito de un usuario.
+     *
+     * @param Carrito $carritoAnonimo
+     * @param Carrito $carritoUsuario
+     * @return void
      */
-    public function fusionarCarritos(Carrito $carritoAnonimo, User $usuario): Carrito
+    public function fusionarCarritos(?Carrito $carritoAnonimo, Carrito $carritoUsuario): void
     {
         $entityManager = $this->getEntityManager();
         
-        // Buscar si el usuario ya tiene un carrito
-        $carritoUsuario = $this->findCarritoActivo($usuario);
-        
-        if (!$carritoUsuario) {
-            // Si no tiene carrito, convertir el anónimo en carrito de usuario
-            $carritoAnonimo->setUsuario($usuario);
-            $carritoAnonimo->setHash(null);
-            $carritoAnonimo->setActualizadoEn(new \DateTimeImmutable());
-            $entityManager->flush();
-            
-            return $carritoAnonimo;
+        if (!$carritoAnonimo) {
+            return; // No hay carrito anónimo, nada que fusionar
         }
         
-        // Si tiene carrito, fusionar productos
         foreach ($carritoAnonimo->getProductos() as $productoAnonimo) {
             $productoExistente = null;
             
@@ -98,17 +112,22 @@ class CarritoRepository extends ServiceEntityRepository
                 $nuevaCantidad = $productoExistente->getCantidad() + $productoAnonimo->getCantidad();
                 $productoExistente->setCantidad($nuevaCantidad);
             } else {
-                // Mover el producto al carrito del usuario
-                $productoAnonimo->setCarrito($carritoUsuario);
+                // Para dejar el carritoAnonimo intacto, creamos un nuevo ProductoCarrito para el carritoUsuario
+                $nuevoProductoCarrito = new ProductoCarrito();
+                $nuevoProductoCarrito->setCarrito($carritoUsuario);
+                $nuevoProductoCarrito->setProducto($productoAnonimo->getProducto());
+                $nuevoProductoCarrito->setCantidad($productoAnonimo->getCantidad());
+                $entityManager->persist($nuevoProductoCarrito);
+
+                $carritoUsuario->addProducto($nuevoProductoCarrito);                
             }
         }
-        
-        // TODO: Cambiar el estado del carrito anónimo a fusionado
-        // $entityManager->remove($carritoAnonimo);
-        // $carritoUsuario->setActualizadoEn(new \DateTimeImmutable());
-        // $entityManager->flush();
-        
-        return $carritoUsuario;
+
+        // Cambiar estado del carrito anónimo a fusionado
+        $carritoAnonimo->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::FUSIONADO));
+        $carritoAnonimo->setActualizadoEn(new \DateTimeImmutable());
+        $carritoUsuario->setActualizadoEn(new \DateTimeImmutable());
+        $entityManager->flush();
     }
 
 //    /**

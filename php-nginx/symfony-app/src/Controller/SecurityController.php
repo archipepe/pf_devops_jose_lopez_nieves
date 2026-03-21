@@ -11,8 +11,6 @@ class SecurityController extends AbstractController
 {
     /**
      * Formulario de login.
-     * 
-     * TODO: fusionarCarritoAlLogin
      *
      * @param AuthenticationUtils $authenticationUtils
      * @return Response
