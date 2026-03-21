@@ -63,6 +63,13 @@ class ProductoCarrito
         return $this;
     }
 
+    public function sumarCantidad(?int $cantidad): static
+    {
+        $this->cantidad = $this->cantidad + $cantidad;
+
+        return $this;
+    }
+
     public function getSubtotal(): ?float
     {
         if ($this->producto === null || $this->cantidad === null) {

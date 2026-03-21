@@ -2,10 +2,13 @@
 
 namespace App\Repository;
 
+use App\Entity\Carrito;
+use App\Entity\LineaPedido;
 use App\Entity\Pedido;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @extends ServiceEntityRepository<Pedido>
@@ -56,5 +59,57 @@ class PedidoRepository extends ServiceEntityRepository
             ->setParameter('usuario', $usuario)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * @param Request $request
+     * @param Carrito $carrito
+     * @param User $user
+     * @return Pedido
+     */
+    public function crearPedidoDesdeCarrito(Carrito $carrito, array $datosDireccion, User $user): Pedido
+    {
+        $entityManager = $this->getEntityManager();
+        
+        $direccion      = $datosDireccion['direccion'];
+        $ciudad         = $datosDireccion['ciudad'];
+        $codigoPostal   = $datosDireccion['codigoPostal'];
+        $pais           = $datosDireccion['pais'];
+
+        $pedido = new Pedido();
+        $pedido->setUsuario($user);
+        $pedido->setTotal($carrito->getTotal());
+        $pedido->setDireccionEnvio($direccion);
+        $pedido->setCiudad($ciudad);
+        $pedido->setCodigoPostal($codigoPostal);
+        $pedido->setPais($pais);
+
+        foreach ($carrito->getProductos() as $item) {
+            $linea = new LineaPedido();
+            $linea->setProducto($item->getProducto());
+            $linea->setCantidad($item->getCantidad());
+            $linea->setNombreProducto($item->getProducto()->getNombre());
+            $linea->setPrecioUnitario($item->getProducto()->getPrecio());
+            
+            $pedido->addLinea($linea);
+            $entityManager->persist($linea);
+        }
+
+        $entityManager->persist($pedido);
+        
+        return $pedido;
+    }
+
+    /**
+     * @param Pedido $pedido
+     * @return void
+     */
+    public function establecerPedidoPagado(Pedido $pedido) : void
+    {
+        $pedido->setEstado('pagado');
+        $pedido->setPagadoEn(new \DateTimeImmutable());
+        $pedido->setReferenciaPago('SIM-' . uniqid());
+
+        $this->getEntityManager()->flush();
     }
 }

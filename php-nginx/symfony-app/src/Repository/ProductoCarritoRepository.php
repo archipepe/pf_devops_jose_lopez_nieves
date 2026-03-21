@@ -2,6 +2,8 @@
 
 namespace App\Repository;
 
+use App\Entity\Carrito;
+use App\Entity\Producto;
 use App\Entity\ProductoCarrito;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,43 +18,112 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ProductoCarritoRepository extends ServiceEntityRepository
 {
+    private ProductoRepository $productoRepository;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ProductoCarrito::class);
+        $this->productoRepository = $registry->getRepository(Producto::class);
     }
 
-    public function findByCarritoId(int $carritoId): array
+    /**
+     * @param Carrito $carrito
+     * @param integer $productoId
+     * @param integer $cantidad
+     * @return void
+     */
+    public function addProductoCarrito(Carrito $carrito, int $productoId, int $cantidad = 1) : void
     {
-        return $this->createQueryBuilder('pc')
-            ->where('pc.carrito = :carritoId')
-            ->setParameter('carritoId', $carritoId)
-            ->orderBy('pc.agregadoEn', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $entityManager = $this->getEntityManager();
+
+        $producto = $this->productoRepository->find($productoId);
+        if (!$producto) {
+            throw new \Exception('Producto no encontrado');
+        }
+
+        // Buscar si el producto ya está en el carrito
+        $productoCarrito = null;
+        foreach ($carrito->getProductos() as $item) {
+            if ($item->getProducto()->getId() === $productoId) {
+                $productoCarrito = $item;
+                break;
+            }
+        }
+        
+        if ($productoCarrito) {
+            // Actualizar cantidad
+            $productoCarrito->sumarCantidad($cantidad);
+        } else {
+            // Crear nuevo item
+            $productoCarrito = new ProductoCarrito();            
+            $productoCarrito->setProducto($producto);
+            $productoCarrito->setCantidad($cantidad);
+            
+            $carrito->addProducto($productoCarrito); // Implica $productoCarrito->setCarrito($carrito);
+
+            $entityManager->persist($productoCarrito);
+        }
+        
+        $carrito->setActualizadoEn(new \DateTimeImmutable());
+        $entityManager->flush();
     }
 
-//    /**
-//     * @return ProductoCarrito[] Returns an array of ProductoCarrito objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('p.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * @param integer $productoCarritoId
+     * @param integer $cantidad
+     * @return void
+     */
+    public function updateCantidad(int $productoCarritoId, int $cantidad): void
+    {
+        $productoCarrito = $this->find($productoCarritoId);
+            
+        if (!$productoCarrito) {
+            throw new \Exception('Producto no encontrado en el carrito');
+        }
+        
+        if ($cantidad <= 0) {
+            $this->removeProducto($productoCarritoId);
+            return;
+        }
+        
+        $productoCarrito->setCantidad($cantidad);
+        $productoCarrito->getCarrito()->setActualizadoEn(new \DateTimeImmutable());
+        $this->getEntityManager()->flush();
+    }
 
-//    public function findOneBySomeField($value): ?ProductoCarrito
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /**
+     * @param integer $productoCarritoId
+     * @return void
+     */
+    public function removeProducto(int $productoCarritoId): void
+    {
+        $entityManager = $this->getEntityManager();
+
+        $productoCarrito = $this->find($productoCarritoId);
+            
+        if ($productoCarrito) {
+            $carrito = $productoCarrito->getCarrito();
+            $carrito->removeProducto($productoCarrito);
+            $carrito->setActualizadoEn(new \DateTimeImmutable());
+            $entityManager->remove($productoCarrito);
+            $entityManager->flush();
+        }
+    }
+
+    /**
+     * @param Carrito $carrito
+     * @return void
+     */
+    public function removeAll(Carrito $carrito): void
+    {
+        $entityManager = $this->getEntityManager();
+
+        foreach ($carrito->getProductos() as $productoCarrito) {
+            $carrito->removeProducto($productoCarrito);
+            $entityManager->remove($productoCarrito);
+        }
+        
+        $carrito->setActualizadoEn(new \DateTimeImmutable());
+        $entityManager->flush();
+    }
 }

@@ -2,14 +2,12 @@
 
 namespace App\Controller;
 
-use App\Entity\LineaPedido;
 use App\Entity\Pedido;
 use App\Service\CarritoService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\PedidoService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -19,16 +17,16 @@ use Symfony\Component\HttpFoundation\Request;
 class CheckoutController extends AbstractController
 {
     private CarritoService $carritoService;
-    private EntityManagerInterface $entityManager;
+    private PedidoService $pedidoService;
     private LoggerInterface $logger;
 
     public function __construct(
         CarritoService $carritoService,
-        EntityManagerInterface $entityManager,
+        PedidoService $pedidoService,
         LoggerInterface $logger
     ) {
         $this->carritoService = $carritoService;
-        $this->entityManager = $entityManager;
+        $this->pedidoService = $pedidoService;
         $this->logger = $logger;
     }    
 
@@ -40,7 +38,7 @@ class CheckoutController extends AbstractController
      */
     public function checkout(Request $request): Response
     {
-        $carrito = $request->attributes->get('carrito');
+        $carrito = $this->carritoService->getCarrito($request);
         
         // Verificar que el carrito no está vacío
         if ($carrito->getProductos()->count() === 0) {
@@ -67,13 +65,12 @@ class CheckoutController extends AbstractController
     public function procesar(Request $request): Response
     {
         try {
-            $carrito = $request->attributes->get('carrito');
+            $carrito = $this->carritoService->getCarrito($request);
             
             if ($carrito->getProductos()->count() === 0) {
                 throw new \Exception('El carrito está vacío');
             }
 
-            // Validar datos de envío
             $direccion = $request->request->get('direccion');
             $ciudad = $request->request->get('ciudad');
             $codigoPostal = $request->request->get('codigo_postal');
@@ -83,13 +80,15 @@ class CheckoutController extends AbstractController
                 throw new \Exception('Todos los campos de envío son obligatorios');
             }
 
-            // Crear el pedido
-            $pedido = $this->crearPedidoDesdeCarrito($carrito, [
-                'direccion' => $direccion,
-                'ciudad' => $ciudad,
-                'codigoPostal' => $codigoPostal,
-                'pais' => $pais
-            ]);
+            $pedido = $this->carritoService->finalizarCarrito(
+                $carrito,
+                [
+                    'direccion' => $direccion,
+                    'ciudad' => $ciudad,
+                    'codigoPostal' => $codigoPostal,
+                    'pais' => $pais
+                ],
+                $request);            
 
             // Simular pago (siempre exitoso para pruebas)
             $pagoExitoso = $this->simularPago($pedido);
@@ -99,14 +98,7 @@ class CheckoutController extends AbstractController
             }
 
             // Marcar pedido como pagado
-            $pedido->setEstado('pagado');
-            $pedido->setPagadoEn(new \DateTimeImmutable());
-            $pedido->setReferenciaPago('SIM-' . uniqid());
-
-            $this->entityManager->flush();
-
-            // Vaciar el carrito (el servicio ya crea uno nuevo automáticamente)
-            $this->carritoService->vaciarCarrito($carrito);
+            $this->pedidoService->establecerPedidoPagado($pedido);
 
             // Log para métricas
             $this->logger->info('Pedido completado', [
@@ -132,36 +124,22 @@ class CheckoutController extends AbstractController
     }
 
     /**
-     * Crear un pedido a partir del carrito y los datos de envío.
+     * Página de confirmación del pedido.
      *
-     * @param [type] $carrito
-     * @param array $datosEnvio
-     * @return Pedido
+     * @param integer $id
+     * @return Response
      */
-    private function crearPedidoDesdeCarrito($carrito, array $datosEnvio): Pedido
+    public function confirmation(int $id): Response
     {
-        $pedido = new Pedido();
-        $pedido->setUsuario($this->getUser());
-        $pedido->setTotal($carrito->getTotal());
-        $pedido->setDireccionEnvio($datosEnvio['direccion']);
-        $pedido->setCiudad($datosEnvio['ciudad']);
-        $pedido->setCodigoPostal($datosEnvio['codigoPostal']);
-        $pedido->setPais($datosEnvio['pais']);
+        $pedido = $this->pedidoService->getPedidoConLineas($id);
 
-        foreach ($carrito->getProductos() as $item) {
-            $linea = new LineaPedido();
-            $linea->setProducto($item->getProducto());
-            $linea->setCantidad($item->getCantidad());
-            $linea->setNombreProducto($item->getProducto()->getNombre());
-            $linea->setPrecioUnitario($item->getProducto()->getPrecio());
-            
-            $pedido->addLinea($linea);
-            $this->entityManager->persist($linea);
+        if (!$pedido) {
+            throw $this->createNotFoundException('Pedido no encontrado');
         }
 
-        $this->entityManager->persist($pedido);
-        
-        return $pedido;
+        return $this->render('checkout/confirmacion.html.twig', [
+            'pedido' => $pedido
+        ]);
     }
 
     /**
@@ -177,26 +155,5 @@ class CheckoutController extends AbstractController
         usleep(rand(100000, 500000)); // 0.1 a 0.5 segundos
         
         return true;
-    }
-
-    /**
-     * Página de confirmación del pedido.
-     *
-     * @param integer $id
-     * @return Response
-     */
-    public function confirmation(int $id): Response
-    {
-        $pedido = $this->entityManager
-            ->getRepository(Pedido::class)
-            ->findPedidoConLineas($id, $this->getUser());
-
-        if (!$pedido) {
-            throw $this->createNotFoundException('Pedido no encontrado');
-        }
-
-        return $this->render('checkout/confirmacion.html.twig', [
-            'pedido' => $pedido
-        ]);
     }
 }

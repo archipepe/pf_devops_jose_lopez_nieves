@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\CarritoRepository;
-use App\Repository\EstadoCarritoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -38,17 +37,13 @@ class Carrito
     #[ORM\OneToMany(mappedBy: 'carrito', targetEntity: ProductoCarrito::class)]
     private Collection $productos;
 
-    // #[ORM\OneToOne(mappedBy: 'carrito', targetEntity: Pedido::class)]
-    // private ?Pedido $pedido = null;
+    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    private ?Pedido $pedido = null;
     
     public function __construct()
     {
-        // TODO
-        // $this->usuario = null;
-        // $this->hash = null;
         $this->creadoEn = new \DateTimeImmutable();
         $this->actualizadoEn = new \DateTimeImmutable();
-        // $this->estado = $estadoCarritoRepository->findOneByControl(EstadoCarrito::ACTIVO);
         $this->productos = new ArrayCollection();
     }
 
@@ -197,40 +192,15 @@ class Carrito
         return $this->estado->getControl() === 'finalizado';
     }
 
-    // public function getPedido(): ?Pedido
-    // {
-    //     return $this->pedido;
-    // }
+    public function getPedido(): ?Pedido
+    {
+        return $this->pedido;
+    }
 
-    // public function setPedido(?Pedido $pedido): self
-    // {
-    //     $this->pedido = $pedido;
-    //     return $this;
-    // }
+    public function setPedido(?Pedido $pedido): static
+    {
+        $this->pedido = $pedido;
 
-    // public function finalizar(): self
-    // {
-    //     if (!$this->estaActivo()) {
-    //         throw new \LogicException('Solo se pueden finalizar carritos activos');
-    //     }
-        
-    //     $this->estado = EstadoCarrito::FINALIZADO;
-    //     $this->finalizadoEn = new \DateTimeImmutable();
-    //     $this->actualizadoEn = new \DateTimeImmutable();
-        
-    //     return $this;
-    // }
-
-    // public function activar(): self
-    // {
-    //     if ($this->usuario) {
-    //         // Aquí podrías lanzar un evento para que el repositorio
-    //         // desactive otros carritos del mismo usuario
-    //     }
-        
-    //     $this->estado = EstadoCarrito::ACTIVO;
-    //     $this->actualizadoEn = new \DateTimeImmutable();
-        
-    //     return $this;
-    // }
+        return $this;
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Service\CarritoService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,7 +37,7 @@ class CarritoController extends AbstractController
      */
     public function index(Request $request): Response
     {
-        $carrito = $request->attributes->get('carrito');
+        $carrito = $this->carritoService->getCarrito($request);
         
         return $this->render('carrito/index.html.twig', [
             'carrito' => $carrito,
@@ -55,16 +56,9 @@ class CarritoController extends AbstractController
     public function add(int $id, Request $request): Response
     {
         try {
-            // Verificar CSRF
-            $csrfToken = $request->headers->get('X-CSRF-TOKEN');
-            if (!$csrfToken || !$this->csrfTokenManager->isTokenValid(new CsrfToken('carrito', $csrfToken))) {
-                return $this->json(['error' => 'Token CSRF inválido'], Response::HTTP_FORBIDDEN);
-            }
+            $this->verificarCsrf($request);
 
-            // Verificar que es AJAX
-            if (!$request->isXmlHttpRequest()) {
-                return $this->json(['error' => 'Solo se permiten peticiones AJAX'], Response::HTTP_BAD_REQUEST);
-            }
+            $this->verificarAjax($request);
 
             $cantidad = $request->request->getInt('cantidad', 1);
             
@@ -75,7 +69,7 @@ class CarritoController extends AbstractController
                 ], Response::HTTP_BAD_REQUEST);
             }
 
-            $carrito = $request->attributes->get('carrito');
+            $carrito = $this->carritoService->getCarrito($request);
 
             // Añadir al carrito
             $this->carritoService->addProducto($carrito, $id, $cantidad);            
@@ -122,9 +116,7 @@ class CarritoController extends AbstractController
         try {
             $this->verificarCsrf($request);
             
-            if (!$request->isXmlHttpRequest()) {
-                return $this->json(['error' => 'Solo AJAX'], Response::HTTP_BAD_REQUEST);
-            }
+            $this->verificarAjax($request);
             
             $cantidad = $request->request->getInt('cantidad', 1);
             
@@ -133,7 +125,7 @@ class CarritoController extends AbstractController
             }
             
             $this->carritoService->updateCantidad($id, $cantidad);
-            $carrito = $request->attributes->get('carrito');
+            $carrito = $this->carritoService->getCarrito($request);
             
             // Buscar el item actualizado para devolver su nuevo subtotal
             $itemActualizado = null;
@@ -162,20 +154,6 @@ class CarritoController extends AbstractController
     }
 
     /**
-     * Verificar CSRF token.
-     *
-     * @param Request $request
-     * @return void
-     */
-    private function verificarCsrf(Request $request): void
-    {
-        $token = $request->headers->get('X-CSRF-TOKEN');
-        if (!$token || !$this->csrfTokenManager->isTokenValid(new CsrfToken('carrito', $token))) {
-            throw new \Exception('Token CSRF inválido');
-        }
-    }
-
-    /**
      * Eliminar un producto del carrito. Equivale a poner cantidad a 0.
      *
      * @param Request $request
@@ -188,7 +166,7 @@ class CarritoController extends AbstractController
             $this->verificarCsrf($request);
             
             $this->carritoService->removeProducto($id);
-            $carrito = $request->attributes->get('carrito');
+            $carrito = $this->carritoService->getCarrito($request);
             
             return $this->json([
                 'success' => true,
@@ -212,7 +190,7 @@ class CarritoController extends AbstractController
         try {
             $this->verificarCsrf($request);
             
-            $carrito = $request->attributes->get('carrito');
+            $carrito = $this->carritoService->getCarrito($request);
             $this->carritoService->vaciarCarrito($carrito);
             
             return $this->json([
@@ -223,6 +201,33 @@ class CarritoController extends AbstractController
             
         } catch (\Exception $e) {
             return $this->json(['error' => 'Error al vaciar'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Verificar CSRF token.
+     *
+     * @param Request $request
+     * @return void
+     */
+    private function verificarCsrf(Request $request): void
+    {
+        $token = $request->headers->get('X-CSRF-TOKEN');
+        if (!$token || !$this->csrfTokenManager->isTokenValid(new CsrfToken('carrito', $token))) {
+            throw new \Exception('Token CSRF inválido');
+        }
+    }
+
+    /**
+     * Verificar que es una petición AJAX.
+     *
+     * @param Request $request
+     * @return void
+     */
+    private function verificarAjax(Request $request) : void
+    {
+        if (!$request->isXmlHttpRequest()) {
+            throw new BadRequestException('Solo se permiten peticiones AJAX');
         }
     }
 }

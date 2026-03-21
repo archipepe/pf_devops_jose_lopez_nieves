@@ -60,7 +60,7 @@ class CarritoSubscriber implements EventSubscriberInterface
         $carritoHash = $this->carritoHashGenerator->getCarritoHash();
 
         // Establecemos el atributo carrito_hash en la request
-        $this->setCarritoHash($request, $carritoHash);
+        $this->carritoService->setCarritoHash($request, $carritoHash);
 
         // Log para debugging (luego lo quitas)
         $this->logger->info('Inicializado carrito_hash para ruta: ' . $request->getPathInfo());
@@ -80,10 +80,10 @@ class CarritoSubscriber implements EventSubscriberInterface
         }
 
         // Guardar en request attributes para acceso fácil
-        $carritoHash = $this->getCarritoHash($request);
+        $carritoHash = $this->carritoService->getCarritoHash($request);
 
         // Inicializar el carrito (esto crea el carrito en BD si no existe)
-        $this->setCarritoActual($request, $carritoHash);
+        $this->carritoService->setCarritoActual($request, $carritoHash);
 
         // Log para debugging (luego lo quitas)
         $this->logger->info('Inicializado carrito para ruta: ' . $request->getPathInfo());
@@ -104,7 +104,7 @@ class CarritoSubscriber implements EventSubscriberInterface
         $response = $event->getResponse();
         
         // Actualizamos siempre de vuelta la cookie por si hubiera cambiado el hash a un nuevo carrito o, si es de usuario, que se elimine la cookie al ser el valor null
-        $carritoHash = $this->getCarritoHash($request);
+        $carritoHash = $this->carritoService->getCarritoHash($request);
 
         $response->headers->setCookie(
             Cookie::create(
@@ -115,53 +115,6 @@ class CarritoSubscriber implements EventSubscriberInterface
         );
 
         $this->logger->info('Asegurar hash de carrito: ' . $carritoHash);
-    }
-
-    /**
-     * Guardar en request attributes para acceso fácil.
-     *
-     * @param Request $request
-     * @param string|null $carritoHash
-     * @return void
-     */
-    private function setCarritoHash(Request $request, ?string $carritoHash): void
-    {
-        $request->attributes->set('carrito_hash', $carritoHash);
-    }
-
-    /**
-     * @param Request $request
-     * @return string|null
-     */
-    private function getCarritoHash(Request $request): ?string
-    {
-        return $request->attributes->get('carrito_hash');
-    }
-
-    /**
-     * @param Request $request
-     * @param string $carritoHash
-     * @return void
-     */
-    private function setCarritoActual(Request $request, string $carritoHash): void
-    {
-        $carrito = $this->carritoService->getCarritoActual($carritoHash);
-        
-        // Guardar carrito en request attributes
-        $this->setCarrito($request, $carrito);
-
-        // Actualizar el hash con el del carrito actual
-        $this->setCarritoHash($request, $carrito->getHash());
-    }
-
-    /**
-     * @param Request $request
-     * @param Carrito $carrito
-     * @return void
-     */
-    private function setCarrito(Request $request, Carrito $carrito) : void
-    {
-        $request->attributes->set('carrito', $carrito);
     }
 
     private function esHealthCheck(Request $request): bool

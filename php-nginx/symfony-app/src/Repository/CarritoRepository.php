@@ -4,10 +4,12 @@ namespace App\Repository;
 
 use App\Entity\Carrito;
 use App\Entity\EstadoCarrito;
+use App\Entity\Pedido;
 use App\Entity\ProductoCarrito;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @extends ServiceEntityRepository<Carrito>
@@ -20,11 +22,13 @@ use Doctrine\Persistence\ManagerRegistry;
 class CarritoRepository extends ServiceEntityRepository
 {
     private EstadoCarritoRepository $estadoCarritoRepository;
+    private PedidoRepository $pedidoRepository;
 
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Carrito::class);
-        $this->estadoCarritoRepository = $registry->getRepository("App\Entity\EstadoCarrito");
+        $this->estadoCarritoRepository = $registry->getRepository(EstadoCarrito::class);
+        $this->pedidoRepository = $registry->getRepository(Pedido::class);
     }
 
     public function findOneByHash(string $hash): ?Carrito
@@ -130,28 +134,29 @@ class CarritoRepository extends ServiceEntityRepository
         $entityManager->flush();
     }
 
-//    /**
-//     * @return Carrito[] Returns an array of Carrito objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('c')
-//            ->andWhere('c.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('c.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?Carrito
-//    {
-//        return $this->createQueryBuilder('c')
-//            ->andWhere('c.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /**
+     * @param Request $request
+     * @param Carrito $carrito
+     * @param User $user
+     * @return Pedido
+     */
+    public function finalizarCarrito(Carrito $carrito, array $datosDireccion, User $user): Pedido
+    {
+        // Verificar que no esté vacío
+        if ($carrito->getProductos()->count() === 0) {
+            throw new \Exception('No se puede finalizar un carrito vacío');
+        }
+        
+        // Crear el pedido
+        $pedido = $this->pedidoRepository->crearPedidoDesdeCarrito($carrito, $datosDireccion, $user);
+        
+        // Marcar carrito como finalizado
+        $carrito->setEstado($this->estadoCarritoRepository->findOneByControl(EstadoCarrito::FINALIZADO));
+        $carrito->setPedido($pedido);
+        $carrito->setActualizadoEn(new \DateTimeImmutable());
+        $carrito->setFinalizadoEn(new \DateTimeImmutable());
+        $this->getEntityManager()->flush();
+        
+        return $pedido;
+    }
 }
