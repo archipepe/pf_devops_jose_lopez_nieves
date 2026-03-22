@@ -2,7 +2,7 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
         <title>{% block title %}Mi Tienda Online{% endblock %}</title>
         {% block styles %}
             <link rel="stylesheet" href="{{ asset('css/style.css') }}">
@@ -11,52 +11,37 @@
     </head>
     <body>
         <header>
-            <h1>Mi Tienda Online</h1>
-            <nav>
-                <a class="nav-link text-black-50" href="{{ path('index') }}">Home</a>
-                <a class="nav-link text-black-50" href="{{ path('producto_index') }}">Productos</a>
-                {% if app.user %}
-                    <a href="{{ path('pedidos_index') }}" class="btn-pedidos">Mis pedidos</a>
-                {% endif %}
-                <a href="{{ path('carrito_index') }}" class="carrito-link" aria-label="Carrito de compras">
-                    🛒 Carrito
-                    {% if app.request.attributes.get('carrito') is defined %}
-                        <span class="carrito-contador" data-total-productos="{{ app.request.attributes.get('carrito').totalProductos ?? 0 }}">
-                            {{ app.request.attributes.get('carrito').totalProductos ?? 0 }}
-                        </span>
-                    {% endif %}
-                </a>
-                {% if app.user %}
-                    {% set nombreUsuario = '' %}
-                    {% if app.user.firstName %}
-                        {% set nombreUsuario = '(' ~ app.user.firstName ~ ')' %}
-                    {% endif %}
-                    <a class="nav-link text-black-50" href="{{ path('app_logout') }}">Cerrar sesión {{ nombreUsuario }}</a>
-                {% else %}
-                    <a class="nav-link text-black-50" href="{{ path('app_login') }}">Iniciar sesión</a>
-                {% endif %}
-                {#
-                {% if is_granted('ROLE_USER') %}
-                    <a class="nav-link text-black-50" href="{{ path('pedidos') }}">Pedidos</a>
-                {% endif %}
-                {% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
-                {% endif %}
-                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
-                {% endif %}
-                #}
-            </nav>
-        </header>        
+            <div class="header-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h1><a class="main-nav-link" href="{{ path('index') }}">Mi Tienda Online</a></h1>
+                    <button class="menu-toggle" id="menuToggle" aria-label="Menú" aria-expanded="false">
+                        ☰
+                    </button>
+                    <nav id="mainNavDesktop" aria-label="Navegación principal">
+                        {% include "base.nav.html.twig" %}
+                    </nav>
+                </div>
+                <nav id="mainNavMobile" aria-label="Navegación principal">
+                    {% include "base.nav.html.twig" %}
+                </nav>
+            </div>
+        </header>
+        
         <main>
             {% block body %}{% endblock %}
+            
             {# Contenedor para notificaciones #}
             <div class="notification-container" id="notificationContainer"></div>
-        </main>        
+        </main>
+        
         <footer>
             <p>Proyecto Final DevOps | José López Nieves</p>
             <p>Sirviendo desde pod: {{ pod_name }} en nodo: {{ node_name }}</p>
         </footer>
+        
         {% block javascripts %}
             <script type="text/javascript" src="{{ asset('js/carrito-listener.js') }}"></script>
+            <script type="text/javascript" src="{{ asset('js/home.js') }}"></script>
         {% endblock %}
     </body>
 </html>

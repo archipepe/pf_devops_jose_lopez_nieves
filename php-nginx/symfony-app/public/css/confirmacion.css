@@ -1,9 +1,11 @@
+.confirmation-section {
+    padding: 2rem 0;
+}
+
 .confirmation-container {
-    max-width: 800px;
-    margin: 3rem auto;
     text-align: center;
     background: white;
-    padding: 3rem;
+    padding: 0 3rem;
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
 }

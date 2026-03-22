@@ -2,14 +2,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Escuchar evento personalizado de carrito actualizado
     window.addEventListener('carrito-actualizado', function(event) {
-        const badge = document.querySelector('.carrito-contador');
-        if (badge && event.detail.totalProductos !== undefined) {
-            badge.textContent = event.detail.totalProductos;
-            badge.setAttribute('data-total-productos', event.detail.totalProductos);
-            
-            // Animación opcional
-            badge.classList.add('actualizado');
-            setTimeout(() => badge.classList.remove('actualizado'), 300);
+        const badges = document.getElementsByClassName('carrito-contador');
+        if (badges.length && event.detail.totalProductos !== undefined) {
+            for (let index = 0; index < badges.length; index++) {
+                const element = badges[index];
+                element.textContent = event.detail.totalProductos;
+                element.setAttribute('data-total-productos', event.detail.totalProductos);
+                
+                // Animación opcional
+                element.classList.add('actualizado');
+                setTimeout(() => element.classList.remove('actualizado'), 300);
+            }
         }
     });
 });

@@ -8,37 +8,36 @@
 {% endblock %}
 
 {% block body %}
-<section class="productos-section">
-    <div class="container">
-        <h1 class="section-title">Nuestros Productos</h1>
-        
-        <div class="productos-grid">
-            {% for producto in productos %}
-                <div class="producto-card" data-id="{{ producto.id }}">
-                    <div class="producto-imagen">
-                        <img src="{{ asset('images/' ~ producto.imagen) }}" 
-                             alt="{{ producto.nombre }}"
-                             onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
+    <section class="productos-section">
+        <div>
+            <h1 class="section-title">Nuestros Productos</h1>
+            <div class="productos-grid">
+                {% for producto in productos %}
+                    <div class="producto-card" data-id="{{ producto.id }}">
+                        <div class="producto-imagen">
+                            <img src="{{ asset('images/' ~ producto.imagen) }}" 
+                                alt="{{ producto.nombre }}"
+                                onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
+                        </div>
+                        <div class="producto-info-index">
+                            <h3>{{ producto.nombre }}</h3>
+                            <p class="producto-descripcion">{{ producto.descripcion|slice(0, 100) ~ '...' }}</p>
+                            <p class="precio">€{{ producto.precio|number_format(2, ',', '.') }}</p>
+                            <a href="javascript:void(0)" class="btn btn-primary btn-add-carrito" data-producto-id="{{ producto.id }}" data-producto-nombre="{{ producto.nombre }}">
+                                <span class="btn-text">🛒</span>
+                                <span class="spinner" aria-hidden="true"></span>
+                            </a>
+                            <a href="{{ path('productos_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
+                        </div>
                     </div>
-                    <div class="producto-info-index">
-                        <h3>{{ producto.nombre }}</h3>
-                        <p class="producto-descripcion">{{ producto.descripcion|slice(0, 100) ~ '...' }}</p>
-                        <p class="precio">€{{ producto.precio|number_format(2, ',', '.') }}</p>
-                        <a href="javascript:void(0)" class="btn btn-primary btn-add-carrito" data-producto-id="{{ producto.id }}" data-producto-nombre="{{ producto.nombre }}">
-                            <span class="btn-text">🛒</span>
-                            <span class="spinner" aria-hidden="true"></span>
-                        </a>
-                        <a href="{{ path('producto_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
+                {% else %}
+                    <div class="no-productos">
+                        <p>No hay productos disponibles</p>
                     </div>
-                </div>
-            {% else %}
-                <div class="no-productos">
-                    <p>No hay productos disponibles</p>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-    </div>
-</section>
+    </section>
 {% endblock %}
 
 {% block javascripts %}

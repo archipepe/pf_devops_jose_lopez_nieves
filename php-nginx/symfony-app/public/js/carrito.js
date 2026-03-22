@@ -280,15 +280,18 @@
         }
         
         updateCartBadge(total) {
-            const badge = document.querySelector('.carrito-contador');
-            if (badge) {
-                badge.textContent = total;
-                badge.classList.add('actualizado');
-                
-                // Animar badge
-                setTimeout(() => {
-                    badge.classList.remove('actualizado');
-                }, 300);
+            const badges = document.getElementsByClassName('carrito-contador');
+            if (badges.length) {
+                for (let index = 0; index < badges.length; index++) {
+                    const element = badges[index];
+                    element.textContent = total;
+                    element.classList.add('actualizado');
+                    
+                    // Animar badge
+                    setTimeout(() => {
+                        element.classList.remove('actualizado');
+                    }, 300);
+                }
             }
         }
         
@@ -307,14 +310,14 @@
             
             this.notificationContainer.appendChild(notification);
             
-            // Auto-eliminar después de 5 segundos
+            // Auto-eliminar después de 1 segundo
             setTimeout(() => {
                 const notif = document.getElementById(notificationId);
                 if (notif) {
                     notif.style.animation = 'slideIn 0.3s reverse';
                     setTimeout(() => notif.remove(), 300);
                 }
-            }, 5000);
+            }, 1000);
         }
 
         async actualizarCantidad(itemId, cantidad, inputElement) {
@@ -558,11 +561,14 @@
             }
             
             // Actualizar contador del header
-            const badge = document.querySelector('.carrito-contador');
-            if (badge && data.totalProductos !== undefined) {
-                badge.textContent = data.totalProductos;
-                badge.classList.add('actualizado');
-                setTimeout(() => badge.classList.remove('actualizado'), 300);
+            const badges = document.getElementsByClassName('carrito-contador');
+            if (badges.length && data.totalProductos !== undefined) {
+                for (let index = 0; index < badges.length; index++) {
+                    const element = badges[index];
+                    element.textContent = data.totalProductos;
+                    element.classList.add('actualizado');
+                    setTimeout(() => element.classList.remove('actualizado'), 300);
+                }
             }
         }
         

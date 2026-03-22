@@ -12,6 +12,12 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 768px) {
+    .producto-container {
+        grid-template-columns: 1fr;
+    }
+}
+
 .producto-detalles h1 {
     color: #2c3e50;
     margin-bottom: 1rem;

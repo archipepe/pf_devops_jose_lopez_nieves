@@ -64,7 +64,7 @@ class PedidoController extends AbstractController
         // Formatear datos para la vista
         $pedidoFormateado = $this->pedidoService->formatearPedidoParaVista($pedido);
         
-        return $this->render('pedido/show.html.twig', [
+        return $this->render('pedido/pedido.html.twig', [
             'pedido' => $pedido,
             'pedidoFormateado' => $pedidoFormateado,
             'lineas' => $pedido->getLineas()

@@ -1,5 +1,5 @@
 .carrito-section {
-    padding: 4rem 0;
+    padding: 2rem 0;
     background-color: #f8f9fa;
     min-height: 60vh;
 }
@@ -11,12 +11,19 @@
     margin-top: 2rem;
 }
 
-.carrito-tabla {
+/* Contenedor de la tabla con scroll horizontal */
+.carrito-productos {
     width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
     background: white;
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.carrito-tabla {
+    width: 100%;
+    border-collapse: collapse;
 }
 
 .carrito-tabla thead {
@@ -25,14 +32,17 @@
 }
 
 .carrito-tabla th {
+    background: #2c3e50;
+    color: white;
     padding: 1rem;
     text-align: left;
     font-weight: 600;
 }
 
 .carrito-tabla td {
-    padding: 1.5rem 1rem;
+    padding: 1rem;
     border-bottom: 1px solid #ecf0f1;
+    vertical-align: middle;
 }
 
 .carrito-tabla .width-40 {
@@ -109,7 +119,6 @@
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 16px;
-    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -143,7 +152,7 @@
 
 .btn-seguir-comprando,
 .btn-vaciar {
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 0.5rem;
     border-radius: 6px;
     text-decoration: none;
     font-size: 0.95rem;
@@ -153,6 +162,7 @@
 .btn-seguir-comprando {
     background-color: #ecf0f1;
     color: #2c3e50;
+    margin-right: 5px;
 }
 
 .btn-seguir-comprando:hover {
@@ -348,12 +358,23 @@
 }
 
 @media (max-width: 768px) {
-    .carrito-tabla {
-        font-size: 0.9rem;
+    .carrito-productos {
+        border-radius: 5px;
+        box-shadow: none;
     }
     
+    .carrito-tabla {
+        min-width: 600px;
+        font-size: 0.85rem;
+    }
+    
+    .carrito-tabla th,
     .carrito-tabla td {
-        padding: 1rem 0.5rem;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .producto-info {
+        min-width: 180px;
     }
     
     .producto-imagen-mini {
@@ -361,13 +382,47 @@
         height: 40px;
     }
     
-    .carrito-acciones {
-        flex-direction: column;
-        gap: 1rem;
+    .producto-info h3 {
+        font-size: 0.9rem;
+    }
+    
+    .producto-descripcion-mini {
+        font-size: 0.75rem;
+    }
+    
+    .input-cantidad {
+        width: 50px;
+        padding: 0.3rem;
+    }
+    
+    .btn-eliminar {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
     }
     
     .btn-seguir-comprando,
     .btn-vaciar {
         text-align: center;
+    }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 480px) {
+    .carrito-tabla {
+        min-width: 550px;
+    }
+    
+    .carrito-tabla th,
+    .carrito-tabla td {
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .producto-info {
+        min-width: 160px;
+    }
+    
+    .producto-imagen-mini {
+        width: 35px;
+        height: 35px;
     }
 }

@@ -12,31 +12,118 @@ body {
     background-color: #f9f9f9;
 }
 
-/* Header */
+/* Scroll suave para la página */
+html {
+    scroll-behavior: smooth;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    overflow-x: hidden; /* Evitar scroll horizontal en el contenedor */
+}
+
+/* Para móvil, asegurar que el contenido no se desborde */
+@media (max-width: 768px) {
+    .container {
+        overflow-x: hidden;
+    }
+    
+    /* Evitar que elementos grandes causen scroll */
+    img, video, iframe {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* ========== HEADER STICKY Y RESPONSIVE ========== */
+
 header {
     background-color: #2c3e50;
     color: white;
-    padding: 1rem;
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor interno del header */
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
+/* Logo / Título */
 header h1 {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
+    margin: 0;
+    flex-shrink: 0;
 }
 
-nav a {
+/* Botón hamburguesa (solo móvil) */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
     color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: opacity 0.3s ease;
+}
+
+.menu-toggle:hover {
+    opacity: 0.8;
+}
+
+/* Navegación */
+nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+    #mainNavMobile {
+        display: none;
+    }
+}
+
+/* Enlaces de navegación */
+nav a {
+    color: #ecf0f1;
     text-decoration: none;
-    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
 }
 
 nav a:hover {
-    text-decoration: underline;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
-/* Main content */
+/* Enlaces específicos */
+.main-nav-link {
+    color: #ecf0f1;
+    text-decoration: none;
+}
+
+.nav-link {
+    color: #ecf0f1;
+}
+
+/* Para que el contenido no quede oculto detrás del header sticky */
 main {
     max-width: 1000px;
     margin: 0 auto 5rem;
@@ -63,7 +150,7 @@ main {
 
 /* Product grid */
 .productos-section {
-    padding: 4rem 0;
+    padding: 2rem 0;
     background-color: #f8f9fa;
 }
 
@@ -101,7 +188,6 @@ main {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 2rem;
-    padding: 1rem;
 }
 
 .producto-card {
@@ -240,7 +326,7 @@ main {
 /* Footer */
 footer {
     text-align: center;
-    padding: 2rem;
+    padding: 0.7rem;
     background: #2c3e50;
     color: white;
     margin-top: 2rem;
@@ -251,12 +337,82 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .producto-container {
+    .grid-productos,
+    .productos-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ========== MEDIA QUERIES ========== */
+
+/* Tablets (768px - 1024px) */
+@media (max-width: 1024px) {
+    .usuario-info {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.6rem;
+    }
+}
+
+/* Móviles (hasta 768px) */
+@media (max-width: 768px) {
+    .header-container {
+        width: 100%;
+        flex-wrap: wrap;
+    }
     
-    .grid-productos {
-        grid-template-columns: 1fr;
+    /* Mostrar botón hamburguesa */
+    .menu-toggle {
+        display: block;
+    }
+
+    #mainNavDesktop {
+        display: none;
+    }
+    
+    /* Ocultar navegación por defecto en móvil */
+    nav {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Mostrar navegación cuando está activa */
+    nav.active {
+        display: flex;
+    }
+    
+    /* Enlaces en móvil ocupan todo el ancho */
+    nav a {
+        display: block;
+        text-align: center;
+        padding: 0.75rem;
+        white-space: normal;
+    }
+    
+    /* El carrito link en móvil */
+    .carrito-link {
+        justify-content: center;
+    }
+    
+    /* Usuario info en móvil */
+    .usuario-info {
+        text-align: center;
+        margin: 0;
+    }
+
+    nav a,
+    .menu-toggle,
+    .carrito-link {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    nav a:active {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scale(0.98);
     }
 }
 
@@ -271,7 +427,7 @@ footer {
 }
 
 .login-container {
-    max-width: 450px;
+    max-width: 500px;
     width: 100%;
     margin: 0 auto;
 }
@@ -374,17 +530,50 @@ footer {
 }
 
 .btn-pedidos {
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
     background-color: #9b59b6;
     color: white;
 }
 
 .btn-pedidos:hover {
     background-color: #8e44ad;
+    transform: translateY(-2px);
+}
+
+/* Carrito link */
+.carrito-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Badge del carrito */
+.carrito-contador {
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    min-width: 24px;
+    text-align: center;
+}
+
+.carrito-contador.actualizado {
+    transform: scale(1.2);
+    background-color: #27ae60;
+}
+
+/* Usuario info */
+.usuario-info {
+    color: #ecf0f1;
+    font-size: 0.9rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    cursor: pointer;
 }
 
 /* Alertas para mensajes flash y errores */
@@ -429,15 +618,6 @@ footer {
 }
 
 /* Estilos para el header con usuario */
-.usuario-info {
-    color: #ecf0f1;
-    margin-right: 1rem;
-    padding: 0.25rem 0.75rem;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    font-size: 0.9rem;
-}
-
 .btn-login, .btn-logout {
     padding: 0.4rem 1rem;
     border-radius: 20px;

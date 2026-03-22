@@ -9,7 +9,7 @@
 
 {% block body %}
 <section class="pedidos-section">
-    <div class="container">
+    <div>
         <h1 class="section-title">Mis Pedidos</h1>
         
         {# Estadísticas #}
@@ -46,18 +46,19 @@
         
         {# Listado de pedidos #}
         {% if pedidos|length > 0 %}
-            <table class="pedidos-table">
-                <thead>
-                    <tr>
-                        <th>Pedido #</th>
-                        <th>Fecha</th>
-                        <th>Productos</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="pedidos-table-container">
+                <table class="pedidos-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido #</th>
+                            <th>Fecha</th>
+                            <th>Productos</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     {% for pedido in pedidos %}
                         <tr>
                             <td>{{ pedido.id }}</td>
@@ -70,20 +71,21 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ path('pedidos_show', {'id': pedido.id}) }}" class="btn-ver-detalle">
+                                <a href="{{ path('pedidos_detalle', {'id': pedido.id}) }}" class="btn-ver-detalle">
                                     Ver detalle
                                 </a>
                             </td>
                         </tr>
                     {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         {% else %}
             <div class="no-pedidos">
                 <div class="no-pedidos-icon">📦</div>
                 <h3>No tienes pedidos</h3>
                 <p>Realiza tu primera compra y aparecerá aquí</p>
-                <a href="{{ path('producto_index') }}" class="btn-seguir-comprando">
+                <a href="{{ path('productos_index') }}" class="btn-seguir-comprando">
                     Ir a la tienda
                 </a>
             </div>

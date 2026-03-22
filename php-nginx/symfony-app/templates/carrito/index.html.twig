@@ -67,9 +67,8 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    
                     <div class="carrito-acciones">
-                        <a href="{{ path('producto_index') }}" class="btn-seguir-comprando">
+                        <a href="{{ path('productos_index') }}" class="btn-seguir-comprando">
                             ← Seguir comprando
                         </a>
                         <button id="vaciar-carrito" class="btn-vaciar" data-action="vaciar">
@@ -112,7 +111,7 @@
                 <div class="carrito-vacio-icono">🛒</div>
                 <h2>Tu carrito está vacío</h2>
                 <p>¡Explora nuestros productos y encuentra lo que buscas!</p>
-                <a href="{{ path('producto_index') }}" class="btn-ver-productos">
+                <a href="{{ path('productos_index') }}" class="btn-ver-productos">
                     Ver productos
                 </a>
             </div>
@@ -127,7 +126,7 @@
         {# Por simplicidad y por evitar errores con el botón atrás, no se regenera después de cada uso #}
         var productoCsrfToken = '{{ csrf_token('carrito')|escape('js') }}';
         var checkoutURL = '{{ path('checkout') }}';
-        var productosIndex = '{{ path('producto_index') }}';
+        var productosIndex = '{{ path('productos_index') }}';
     </script>
     <script type="text/javascript" src="{{ asset('js/carrito.js') }}"></script>
 {% endblock %}
