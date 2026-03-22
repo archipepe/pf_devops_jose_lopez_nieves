@@ -43,8 +43,10 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
 
     public function authenticate(Request $request): Passport
     {
-        $email = $request->request->get('email');
-        $password = $request->request->get('password');
+        $email = $request->request->get('email', '');
+        $password = $request->request->get('password', '');
+        $csrfToken = $request->request->get('_csrf_token', '');
+
         return new Passport(
             new UserBadge($email, function($userIdentifier) {
                 // optionally pass a callback to load the User manually
@@ -56,7 +58,7 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
             }),
             new PasswordCredentials($password),
             [
-                new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),
+                new CsrfTokenBadge('authenticate', $csrfToken),
                 new RememberMeBadge(),
             ]
         );
@@ -90,6 +92,7 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
         $request->getSession()->set(Security::AUTHENTICATION_ERROR, $exception);
+        $request->getSession()->set(Security::LAST_USERNAME, $request->request->get('email', ''));
 
         return new RedirectResponse(
             $this->router->generate('app_login')
