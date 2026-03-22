@@ -1,17 +1,23 @@
 index:
     path: /
+    methods: [GET]
     controller: App\Controller\DefaultController::index
 
-producto_index:
+productos_index:
     path: /productos
+    methods: [GET]
     controller: App\Controller\ProductosController::index
 
-producto_detalle:
+productos_detalle:
     path: /producto/{idProducto}
+    methods: [GET]
     controller: App\Controller\ProductosController::detalle
+    requirements:
+        idProducto: '\d+'
 
 error_test:
     path: /error-test
+    methods: [GET]
     controller: App\Controller\ErrorController::error
 
 app_login:
@@ -25,3 +31,68 @@ app_logout:
 app_register:
     path: /register
     controller: App\Controller\RegistrationController::register
+
+health_check:
+    path: /health
+    methods: [GET]
+    controller: App\Controller\HealthController::check
+
+carrito_index:
+    path: /carrito
+    methods: [GET]
+    controller: App\Controller\CarritoController::index
+
+carrito_add:
+    path: /carrito/add/{id}
+    methods: [POST]
+    controller: App\Controller\CarritoController::add
+    requirements:
+        id: '\d+'
+
+carrito_update:
+    path: /carrito/update/{id}
+    methods: [POST]
+    controller: App\Controller\CarritoController::update
+    requirements:
+        id: '\d+'
+
+carrito_remove:
+    path: /carrito/remove/{id}
+    methods: [POST]
+    controller: App\Controller\CarritoController::remove
+    requirements:
+        id: '\d+'
+
+carrito_clear:
+    path: /carrito/clear
+    methods: [POST]
+    controller: App\Controller\CarritoController::clear
+
+checkout:
+    path: /checkout
+    methods: [GET]
+    controller: App\Controller\CheckoutController::checkout
+
+checkout_procesar:
+    path: /checkout/procesar
+    methods: [POST]
+    controller: App\Controller\CheckoutController::procesar
+
+pedido_confirmation:
+    path: /confirmacion/{id}
+    methods: [GET]
+    controller: App\Controller\CheckoutController::confirmation
+    requirements:
+        id: '\d+'
+
+pedidos_index:
+    path: /pedidos
+    methods: [GET]
+    controller: App\Controller\PedidoController::index
+
+pedidos_detalle:
+    path: /pedidos/{id}
+    methods: [GET]
+    controller: App\Controller\PedidoController::show
+    requirements:
+        id: '\d+'

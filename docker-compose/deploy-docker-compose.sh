@@ -33,7 +33,7 @@ install_vendor_dependencies() {
 
 change_permissions() {
     log_info "Changing permissions of the app directory..."
-    sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app && chmod -R 777 ../php-nginx/symfony-app
+    sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app && sudo chmod -R 777 "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app
 }
 
 build_images

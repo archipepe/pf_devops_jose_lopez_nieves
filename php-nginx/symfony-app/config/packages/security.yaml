@@ -18,13 +18,16 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            form_login:
-                login_path: app_login
-                check_path: app_login
-                username_parameter: email
-                password_parameter: password
-                enable_csrf: true
-            entry_point: form_login # No es necesario si sólo usamos un autenticador
+            # Al tener que fusionar las cestas en el login, necesitamos un autenticador personalizado. Comentamos el form_login y lo reemplazamos por nuestro autenticador.
+            # form_login:
+            #     login_path: app_login
+            #     check_path: app_login
+            #     username_parameter: email
+            #     password_parameter: password
+            #     enable_csrf: true
+            # entry_point: form_login # No es necesario si sólo usamos un autenticador
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            entry_point: App\Security\LoginFormAuthenticator # No es necesario si sólo usamos un autenticador
             logout: true
             remember_me:
                 secret: '%kernel.secret%'
@@ -42,8 +45,9 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
-        # - { path: ^/error-test, roles: ROLE_USER }
-        # - { path: ^/pedidos, roles: ROLE_USER }
+        - { path: ^/checkout, roles: ROLE_USER }
+        - { path: ^/pedidos, roles: ROLE_USER }
+        - { path: ^/confirmacion, roles: ROLE_USER }
 
 when@test:
     security:

@@ -2,7 +2,12 @@
 
 {% block title %}Inicio - Mi Tienda Online{% endblock %}
 
-{% block content %}
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/notificaciones.css') }}">
+{% endblock %}
+
+{% block body %}
     <section class="hero">
         <h2>Bienvenido a nuestra tienda</h2>
         <p>Descubre nuestros productos destacados</p>
@@ -19,11 +24,24 @@
                     </div>
                     <div class="producto-info-index">
                         <h3>{{ producto.nombre }}</h3>
-                        <p class="precio">€{{ producto.precio }}</p>
-                        <a href="{{ path('producto_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
+                        <p class="precio">€{{ producto.precio|number_format(2, ',', '.') }}</p>
+                        <a href="javascript:void(0)" class="btn btn-primary btn-add-carrito" data-producto-id="{{ producto.id }}" data-producto-nombre="{{ producto.nombre }}">
+                            <span class="btn-text">🛒</span>
+                            <span class="spinner" aria-hidden="true"></span>
+                        </a>
+                        <a href="{{ path('productos_detalle', {idProducto: producto.id}) }}" class="btn">Ver detalles</a>
                     </div>
                 </div>
             {% endfor %}
         </div>
     </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        {# Por simplicidad y por evitar errores con el botón atrás, no se regenera después de cada uso #}
+        var productoCsrfToken = '{{ csrf_token('carrito')|escape('js') }}';
+    </script>
+    <script type="text/javascript" src="{{ asset('js/carrito.js') }}"></script>
 {% endblock %}

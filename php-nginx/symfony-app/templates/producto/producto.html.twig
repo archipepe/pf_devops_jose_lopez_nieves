@@ -2,20 +2,38 @@
 
 {% block title %}{{ producto.nombre }} - Mi Tienda Online{% endblock %}
 
-{% block content %}
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/producto.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notificaciones.css') }}">
+{% endblock %}
+
+{% block body %}
     <section class="detalle-producto">
         <div class="producto-container">
             <div class="producto-imagen">
                 <img src="{{ asset('images/' ~ producto.imagen) }}" 
-                    alt="{{ producto.nombre }}" onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
+                    alt="{{ producto.nombre }}" loading="lazy" onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
             </div>
-            <div class="producto-detalles">
+            <div class="producto-detalles" data-producto-id="{{ producto.id }}">
                 <h1>{{ producto.nombre }}</h1>
-                <p class="precio">€{{ producto.precio }}</p>
+                <p class="precio" data-producto-precio="{{ producto.precio }}">€{{ producto.precio|number_format(2, ',', '.') }}</p>
                 <p class="descripcion">{{ producto.descripcion }}</p>
-                <a href="javascript:void(0)" class="btn btn-primary">Añadir al carrito</button>
-                <a href="{{ path('producto_index') }}" class="btn">Ver productos</a>
+                <a href="javascript:void(0)" class="btn btn-primary btn-add-carrito" data-producto-id="{{ producto.id }}" data-producto-nombre="{{ producto.nombre }}">
+                    <span class="btn-text">Añadir al carrito</span>
+                    <span class="spinner" aria-hidden="true"></span>
+                </a>
+                <a href="{{ path('productos_index') }}" class="btn">Ver productos</a>
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        {# Por simplicidad y por evitar errores con el botón atrás, no se regenera después de cada uso #}
+        var productoCsrfToken = '{{ csrf_token('carrito')|escape('js') }}';
+    </script>
+    <script type="text/javascript" src="{{ asset('js/carrito.js') }}"></script>
 {% endblock %}

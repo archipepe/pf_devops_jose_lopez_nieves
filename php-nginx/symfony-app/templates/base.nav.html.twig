@@ -1,0 +1,26 @@
+<a class="nav-link" href="{{ path('index') }}">Home</a>
+<a class="nav-link" href="{{ path('productos_index') }}">Productos</a>
+
+{% if app.user %}
+    <a href="{{ path('pedidos_index') }}" class="btn-pedidos">Mis pedidos</a>
+{% endif %}
+
+<a href="{{ path('carrito_index') }}" class="carrito-link" aria-label="Carrito de compras">
+    🛒 Carrito
+    {% set carrito = app.request.attributes.get('carrito') %}
+    {% if carrito is defined and carrito is not null %}
+        <span class="carrito-contador" data-total-productos="{{ carrito.totalProductos ?? 0 }}">
+            {{ carrito.totalProductos ?? 0 }}
+        </span>
+    {% else %}
+        <span class="carrito-contador" data-total-productos="0">0</span>
+    {% endif %}
+</a>
+
+{% if app.user %}
+    {% set nombreUsuario = app.user.firstName ? ' ' ~ app.user.firstName : '' %}
+    <span class="usuario-info" title="{{ app.user.email }}">👤{{ nombreUsuario }}</span>
+    <a class="nav-link" href="{{ path('app_logout') }}">Cerrar sesión</a>
+{% else %}
+    <a class="nav-link" href="{{ path('app_login') }}">Iniciar sesión</a>
+{% endif %}

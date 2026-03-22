@@ -1,0 +1,24 @@
+{
+  "name": "Symfony Dev Container",
+  "dockerComposeFile": [
+    "../docker-compose/docker-compose.yml"
+  ],
+  "service": "symfony-php-nginx-service",
+  "workspaceFolder": "/var/www/html",
+  "shutdownAction": "none",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "MehediDracula.php-namespace-resolver",
+        "symfony.symfony-vscode",
+        "xdebug.php-debug",
+        "mblode.twig-language-2",
+        "neilbrayfield.php-docblocker"
+      ]
+    }
+  },
+
+  "remoteUser": "ubuntu"
+}

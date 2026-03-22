@@ -1,0 +1,132 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mi Carrito - Mi Tienda Online{% endblock %}
+
+{% block styles %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/carrito.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notificaciones.css') }}">
+{% endblock %}
+
+{% block body %}
+<section class="carrito-section">
+    <div class="container">
+        <h1 class="section-title">Mi Carrito</h1>
+        
+        {% if carrito.productos|length > 0 %}
+            <div class="carrito-container" id="carrito-container">
+                <div class="carrito-productos">
+                    <table class="carrito-tabla">
+                        <thead>
+                            <tr>
+                                <th class="width-40">Producto</th>
+                                <th class="width-15">Precio</th>
+                                <th class="width-15">Cantidad</th>
+                                <th class="width-15">Subtotal</th>
+                                <th class="width-15">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carrito-items">
+                            {% for item in carrito.productos %}
+                            <tr class="carrito-item" data-item-id="{{ item.id }}" id="carrito-item-{{ item.id }}">
+                                <td class="producto-info">
+                                    <img src="{{ asset('images/' ~ item.producto.imagen) }}" 
+                                        alt="{{ item.producto.nombre }}"
+                                        class="producto-imagen-mini"
+                                        loading="lazy">
+                                    <div>
+                                        <h3>{{ item.producto.nombre }}</h3>
+                                        <p class="producto-descripcion-mini">{{ item.producto.descripcion|slice(0, 50) }}...</p>
+                                    </div>
+                                </td>
+                                <td class="producto-precio-carrito" data-precio="{{ item.producto.precio }}">
+                                    {{ item.producto.precio|number_format(2, ',', '.') }} €
+                                </td>
+                                <td class="producto-cantidad">
+                                    <input type="number" 
+                                        name="cantidad" 
+                                        value="{{ item.cantidad }}" 
+                                        min="1" 
+                                        max="10"
+                                        class="input-cantidad"
+                                        data-item-id="{{ item.id }}"
+                                        aria-label="Cantidad de {{ item.producto.nombre }}">
+                                </td>
+                                <td class="producto-subtotal" id="subtotal-{{ item.id }}">
+                                    {{ item.subtotal|number_format(2, ',', '.') }} €
+                                </td>
+                                <td class="producto-acciones">
+                                    <button class="btn-eliminar" 
+                                            data-action="eliminar"
+                                            data-item-id="{{ item.id }}"
+                                            aria-label="Eliminar {{ item.producto.nombre }}">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="carrito-acciones">
+                        <a href="{{ path('productos_index') }}" class="btn-seguir-comprando">
+                            ← Seguir comprando
+                        </a>
+                        <button id="vaciar-carrito" class="btn-vaciar" data-action="vaciar">
+                            Vaciar carrito
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="carrito-resumen" id="carrito-resumen">
+                    <h2>Resumen del pedido</h2>
+                    
+                    <div class="resumen-detalles">
+                        <div class="resumen-fila">
+                            <span>Productos (<span id="total-productos-count">{{ carrito.totalProductos }}</span>)</span>
+                            <span id="total-productos-precio">{{ carrito.total|number_format(2, ',', '.') }} €</span>
+                        </div>
+                        <div class="resumen-fila">
+                            <span>Envío</span>
+                            <span>Gratis</span>
+                        </div>
+                        <div class="resumen-fila total">
+                            <span>Total</span>
+                            <span id="total-carrito">{{ carrito.total|number_format(2, ',', '.') }} €</span>
+                        </div>
+                    </div>
+                    
+                    <button id="proceder-pago" class="btn-checkout" data-action="checkout">
+                        Proceder al pago
+                    </button>
+                    
+                    {% if carrito.esAnonimo %}
+                        <div class="info-login">
+                            <p>¿Ya tienes cuenta? <a href="{{ path('app_login') }}">Inicia sesión</a> para guardar tu carrito</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="carrito-vacio">
+                <div class="carrito-vacio-icono">🛒</div>
+                <h2>Tu carrito está vacío</h2>
+                <p>¡Explora nuestros productos y encuentra lo que buscas!</p>
+                <a href="{{ path('productos_index') }}" class="btn-ver-productos">
+                    Ver productos
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        {# Por simplicidad y por evitar errores con el botón atrás, no se regenera después de cada uso #}
+        var productoCsrfToken = '{{ csrf_token('carrito')|escape('js') }}';
+        var checkoutURL = '{{ path('checkout') }}';
+        var productosIndex = '{{ path('productos_index') }}';
+    </script>
+    <script type="text/javascript" src="{{ asset('js/carrito.js') }}"></script>
+{% endblock %}
