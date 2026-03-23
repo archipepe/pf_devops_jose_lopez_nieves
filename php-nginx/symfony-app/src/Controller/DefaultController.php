@@ -21,7 +21,10 @@ class DefaultController extends AbstractController
     )
     {
         $this->productoService = $productoService;
-        $this->tracer = Globals::tracerProvider()->getTracer('symfony-app'); // TODO: meter más parámetros
+        $this->tracer = Globals::tracerProvider()->getTracer(
+            'symfony-app',
+            '1.0.0'
+        ); // TODO: meter más parámetros
         $this->logger = $loggerInterface;
     }
     /**
