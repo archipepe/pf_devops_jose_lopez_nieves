@@ -82,3 +82,31 @@ php bin/console make:controller
 ### Cambiar propiedad sessionId por hash en Carrito
 Editar la clase Carrito.
 Crear y ejecutar la migración.
+
+### OpenTelemetry
+
+### Instalar OpenTelemetry extension
+Se incluyen los pasos a modo de referencia. La instalación se hace en Dockerfile.app
+```bash
+apt-get install gcc make autoconf php-dev
+pecl install opentelemetry
+nano /etc/php/8.3/fpm/php.ini
+
+# Añadir al final y guardar
+[opentelemetry]
+extension=opentelemetry.so
+
+# Comprobar
+php-fpm8.3 -m | grep opentelemetry
+```
+
+
+### Instalar OpenTelemetry Symfony
+```bash
+composer require ext-opentelemetry
+composer require open-telemetry/sdk
+composer require open-telemetry/exporter-otlp
+composer require open-telemetry/opentelemetry-auto-symfony
+```
+
+Implementar TracerInterface declarado en services.yaml para primera prueba

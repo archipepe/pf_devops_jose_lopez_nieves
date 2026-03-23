@@ -17,6 +17,11 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+  otel-collector:
+    image: otel/opentelemetry-collector:0.135.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ../monitoring/opentelemetry/otel-collector-config.yaml:/etc/otel-collector-config.yaml
 
 volumes:
   mysql_data:

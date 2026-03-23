@@ -1,5 +1,5 @@
 # Dockerfile.base
-# mysymfony/ubuntu:24.04-3.0-debug
+# mysymfony/ubuntu:24.04-4.0-debug
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -19,11 +19,21 @@ RUN apt update && apt install -y \
     php-cli \
     php-xdebug \
     curl \
+    nano \
+    gcc \
+    make \
+    autoconf \
+    php-dev \
     && apt-get clean
 
 # Instalar composer
 RUN curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
 RUN php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+# Instalar OpenTelemetry
+RUN pecl install opentelemetry
+RUN printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/fpm/php.ini
+RUN printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/cli/php.ini
 
 # Configuración de PHP
 # Configuración de opcache en dev, comentar para prod

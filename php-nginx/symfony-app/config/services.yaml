@@ -25,3 +25,13 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    OpenTelemetry\SDK\Trace\TracerProvider:
+        factory: ['App\OpenTelemetry\TracerProviderFactory', 'create']
+
+    OpenTelemetry\API\Trace\TracerInterface:
+        factory: ['@OpenTelemetry\SDK\Trace\TracerProvider', 'getTracer']
+        arguments:
+            - 'symfony-app'
+            - '1.0.0'
+    
+    App\OpenTelemetry\TracerProviderFactory: ~
