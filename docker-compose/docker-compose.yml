@@ -2,12 +2,21 @@ services:
   symfony-php-nginx-service:
     image: ${REGISTRY}/${SYMFONY_APP_IMAGE}
     # image: mysymfony/php-nginx:4.1
+    environment:
+      OTEL_PHP_AUTOLOAD_ENABLED: true
+      OTEL_SERVICE_NAME: mi-tienda-symfony
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_PROPAGATORS: baggage,tracecontext
     ports:
       - "80:80"
     volumes:
       - ../php-nginx/symfony-app:/var/www/html
     depends_on:
       - mysql-service
+      - otel-collector
+
   mysql-service:
     image: mysql:8.0
     environment:
@@ -17,6 +26,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+
   otel-collector:
     image: otel/opentelemetry-collector:0.135.0
     command: ["--config=/etc/otel-collector-config.yaml"]

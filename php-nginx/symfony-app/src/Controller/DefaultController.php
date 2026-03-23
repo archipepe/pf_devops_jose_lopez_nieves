@@ -7,6 +7,7 @@ use OpenTelemetry\API\Trace\TracerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use OpenTelemetry\API\Globals;
 
 class DefaultController extends AbstractController
 {
@@ -16,12 +17,11 @@ class DefaultController extends AbstractController
 
     public function __construct(
         ProductoService $productoService,
-        TracerInterface $tracerInterface,
         LoggerInterface $loggerInterface
     )
     {
         $this->productoService = $productoService;
-        $this->tracer = $tracerInterface;
+        $this->tracer = Globals::tracerProvider()->getTracer('symfony-app'); // TODO: meter más parámetros
         $this->logger = $loggerInterface;
     }
     /**
