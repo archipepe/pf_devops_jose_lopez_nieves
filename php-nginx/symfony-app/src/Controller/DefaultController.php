@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\OpenTelemetry\Metrics\MyMetrics;
 use App\Service\ProductoService;
 use OpenTelemetry\API\Trace\TracerInterface;
 use Psr\Log\LoggerInterface;
@@ -14,10 +15,12 @@ class DefaultController extends AbstractController
     private ProductoService $productoService;
     private TracerInterface $tracer;
     private LoggerInterface $logger;
+    private MyMetrics $metrics;
 
     public function __construct(
         ProductoService $productoService,
-        LoggerInterface $loggerInterface
+        LoggerInterface $loggerInterface,
+        MyMetrics $metrics
     )
     {
         $this->productoService = $productoService;
@@ -26,6 +29,7 @@ class DefaultController extends AbstractController
             '1.0.0'
         ); // TODO: meter más parámetros
         $this->logger = $loggerInterface;
+        $this->metrics = $metrics;
     }
     /**
      * Home del proyecto.
@@ -48,6 +52,8 @@ class DefaultController extends AbstractController
         $this->logger->info('Processing completed', [
             'item_count' => count($result),
         ]);
+
+        $this->metrics->increment();
 
         $productosDestacados = $this->productoService->obtenerProductosDestacados(4);
     

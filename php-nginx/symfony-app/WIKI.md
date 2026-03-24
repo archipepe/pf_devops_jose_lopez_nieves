@@ -134,7 +134,7 @@ Instrumentación de logs
 composer require open-telemetry/opentelemetry-logger-monolog
 ```
 
-Crear src/OpenTelemetry/Logging/OtelHandler que recupere el logger global:
+Crear src/OpenTelemetry/Logging/OtelHandler.php que recupere el logger global:
 ```php
 public function __construct()
 {
@@ -157,4 +157,14 @@ monolog:
             type: service
             id: App\OpenTelemetry\Logging\OtelHandler
             level: warning
+```
+
+Instrumentación de métricas
+
+Crear src/OpenTelemetry/Metrics/MyMetrics.php que recupere metrics globales:
+
+```php
+$meter = Globals::meterProvider()->getMeter(
+    'symfony-app', '1.0.0'
+);
 ```
