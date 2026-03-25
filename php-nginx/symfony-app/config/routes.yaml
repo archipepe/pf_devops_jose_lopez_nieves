@@ -9,7 +9,7 @@ productos_index:
     controller: App\Controller\ProductosController::index
 
 productos_detalle:
-    path: /producto/{idProducto}
+    path: /productos/{idProducto}
     methods: [GET]
     controller: App\Controller\ProductosController::detalle
     requirements:

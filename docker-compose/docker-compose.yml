@@ -5,6 +5,7 @@ services:
     environment:
       OTEL_PHP_AUTOLOAD_ENABLED: true
       OTEL_SERVICE_NAME: mi-tienda-symfony
+      OTEL_RESOURCE_ATTRIBUTES: service.version=1.0.0,deployment.environment=dev
       OTEL_TRACES_EXPORTER: otlp
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318

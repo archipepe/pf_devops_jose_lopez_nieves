@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\CarritoService;
+use App\Service\MonitoringService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
@@ -21,12 +22,12 @@ class CarritoController extends AbstractController
     public function __construct(
         CarritoService $carritoService,
         CsrfTokenManagerInterface $csrfTokenManager,
-        LoggerInterface $logger
+        MonitoringService $monitoringService
     )
     {
         $this->carritoService = $carritoService;
         $this->csrfTokenManager = $csrfTokenManager;
-        $this->logger = $logger;
+        $this->logger = $monitoringService->getLogger();
     }
 
     /**

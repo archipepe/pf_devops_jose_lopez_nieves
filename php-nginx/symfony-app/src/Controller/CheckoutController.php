@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
-use App\Entity\Pedido;
 use App\Service\CarritoService;
+use App\Service\MonitoringService;
 use App\Service\PedidoService;
+use OpenTelemetry\API\Trace\Span;
+use OpenTelemetry\API\Trace\TracerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,16 +20,21 @@ class CheckoutController extends AbstractController
 {
     private CarritoService $carritoService;
     private PedidoService $pedidoService;
+    private TracerInterface $tracer;
     private LoggerInterface $logger;
 
     public function __construct(
         CarritoService $carritoService,
         PedidoService $pedidoService,
-        LoggerInterface $logger
+        MonitoringService $monitoringService
     ) {
         $this->carritoService = $carritoService;
         $this->pedidoService = $pedidoService;
-        $this->logger = $logger;
+        $this->tracer = $monitoringService->getTracerProvider()->getTracer(
+            'CheckoutController',
+            '1.0.0'
+        );
+        $this->logger = $monitoringService->getLogger();
     }    
 
     /**
@@ -64,6 +71,10 @@ class CheckoutController extends AbstractController
      */
     public function procesar(Request $request): Response
     {
+        $span = $this->tracer->spanBuilder('procesar_pago')->startSpan();
+        $span->setAttribute('endpoint', '/checkout/procesar');
+        $span->setAttribute('route', 'checkout_procesar');
+
         try {
             $carrito = $this->carritoService->getCarrito($request);
             
@@ -109,18 +120,26 @@ class CheckoutController extends AbstractController
 
             $this->addFlash('success', '¡Pedido realizado con éxito!');
 
-            return $this->redirectToRoute('pedido_confirmation', [
+            $redirectResponse = $this->redirectToRoute('pedido_confirmation', [
                 'id' => $pedido->getId()
             ]);
 
+            $span->setAttribute('http.response.status_code', $redirectResponse->getStatusCode());
         } catch (\Exception $e) {
             $this->logger->error('Error en checkout', [
                 'error' => $e->getMessage()
             ]);
             
             $this->addFlash('error', $e->getMessage());
-            return $this->redirectToRoute('checkout');
+
+            $redirectResponse = $this->redirectToRoute('checkout');
+
+            $span->setAttribute('http.response.status_code', $redirectResponse->getStatusCode());
+        } finally {
+            $span->end();
         }
+
+        return $redirectResponse;
     }
 
     /**
@@ -143,16 +162,29 @@ class CheckoutController extends AbstractController
     }
 
     /**
-     * Simular el proceso de pago (siempre exitoso para pruebas).
+     * Simular el proceso de pago (siempre satisfactorio para pruebas).
+     * Usuario suzanne78@jast.com siempre tendrá un delay de entre 3 y 5 segundos para finalizar el carrito y generar pedido.
      *
-     * @param Pedido $pedido
      * @return boolean
      */
-    private function simularPago(Pedido $pedido): bool
+    private function simularPago(): bool
     {
-        // Simulación simple - siempre exitoso
-        // Aquí podrías añadir una pequeña pausa para simular procesamiento
-        usleep(rand(100000, 500000)); // 0.1 a 0.5 segundos
+        $parent = Span::getCurrent();
+        $scope = $parent->activate();
+
+        try {
+            $span = $this->tracer->spanBuilder("simularPago")->startSpan();
+
+            if (strcmp($this->getUser()->getUserIdentifier(), 'suzanne78@jast.com') === 0) {
+                sleep(rand(3, 5));
+            } else {
+                usleep(rand(100000, 500000)); // 0.1 a 0.5 segundos
+            }
+
+            $span->end();
+        } finally {
+            $scope->detach();
+        }
         
         return true;
     }

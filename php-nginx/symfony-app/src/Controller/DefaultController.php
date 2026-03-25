@@ -2,35 +2,32 @@
 
 namespace App\Controller;
 
-use App\OpenTelemetry\Metrics\MyMetrics;
+use App\Service\MonitoringService;
 use App\Service\ProductoService;
 use OpenTelemetry\API\Trace\TracerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use OpenTelemetry\API\Globals;
 
 class DefaultController extends AbstractController
 {
     private ProductoService $productoService;
     private TracerInterface $tracer;
     private LoggerInterface $logger;
-    private MyMetrics $metrics;
 
     public function __construct(
         ProductoService $productoService,
-        LoggerInterface $loggerInterface,
-        MyMetrics $metrics
+        MonitoringService $monitoringService
     )
     {
         $this->productoService = $productoService;
-        $this->tracer = Globals::tracerProvider()->getTracer(
-            'symfony-app',
+        $this->tracer = $monitoringService->getTracerProvider()->getTracer(
+            'DefaultController',
             '1.0.0'
-        ); // TODO: meter más parámetros
-        $this->logger = $loggerInterface;
-        $this->metrics = $metrics;
+        );
+        $this->logger = $monitoringService->getLogger();
     }
+
     /**
      * Home del proyecto.
      * 
@@ -38,47 +35,32 @@ class DefaultController extends AbstractController
      */
     public function index(): Response
     {
-        $span = $this->tracer->spanBuilder('demo-operation')->startSpan();
-        $scope = $span->activate();
+        $span = $this->tracer->spanBuilder('obtener_productos_destacados')->startSpan();
+        
+        $this->logAccess();
 
-        $this->logger->info('Demo endpoint called', [
-                'trace_id' => $span->getContext()->getTraceId(),
-                'span_id' => $span->getContext()->getSpanId(),
-            ]);
+        $numeroProductosDestacados = 4;
+        $productosDestacados = $this->productoService->obtenerProductosDestacados($numeroProductosDestacados);
 
-        $result = $this->processData();
-        $span->addEvent('Data processed successfully');
-        $span->setAttribute('result.count', count($result));
-        $this->logger->info('Processing completed', [
-            'item_count' => count($result),
-        ]);
+        $span->setAttribute('productosDestacadosSolicitados.count', $numeroProductosDestacados);
+        $span->setAttribute('productosDestacadosRecibidos.count', count($productosDestacados));
 
-        $this->metrics->increment();
-
-        $productosDestacados = $this->productoService->obtenerProductosDestacados(4);
+        $span->end();
     
         return $this->render('index.html.twig', [
             'productos' => $productosDestacados
         ]);
     }
 
-    private function processData(): array
+    /**
+     * @return void
+     */
+    private function logAccess() : void
     {
-        $span = $this->tracer->spanBuilder('process-data')->startSpan();
-        $scope = $span->activate();
-        try {
-            $this->logger->debug('Starting data processing');
-            sleep(1);
-            $data = [
-                'id' => 1,
-                'name' => 'Sample Item',
-                'timestamp' => time(),
-            ];
-            $this->logger->debug('Data processing complete');
-            return $data;
-        } finally {
-            $span->end();
-            $scope->detach();
+        if ($this->getUser()) {
+            $this->logger->warning($this->getUser()->getUserIdentifier() . ' está accediendo a la tienda.');
+        } else {
+            $this->logger->warning('Usuario anónimo está accediendo a la tienda.');
         }
     }
 }

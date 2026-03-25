@@ -16,7 +16,7 @@ when@dev:
                 channels: ["!event", "!doctrine", "!console"]
             otlp:
                 type: service
-                id: App\OpenTelemetry\Logging\OtelHandler
+                id: App\OpenTelemetry\Logging\LoggingOtelHandler
                 level: warning
 
 when@test:
@@ -59,5 +59,5 @@ when@prod:
                 formatter: monolog.formatter.json
             otlp:
                 type: service
-                id: App\OpenTelemetry\Logging\OtelHandler
+                id: App\OpenTelemetry\Logging\LoggingOtelHandler
                 level: warning
