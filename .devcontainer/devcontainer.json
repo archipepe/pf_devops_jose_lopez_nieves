@@ -12,7 +12,7 @@
       "extensions": [
         "bmewburn.vscode-intelephense-client",
         "MehediDracula.php-namespace-resolver",
-        "symfony.symfony-vscode",
+        "duboiss.sf-pack",
         "xdebug.php-debug",
         "mblode.twig-language-2",
         "neilbrayfield.php-docblocker"

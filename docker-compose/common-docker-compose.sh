@@ -16,6 +16,9 @@ export SYMFONY_APP_IMAGE="php-nginx:5.0-debug"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
 export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
 
+# tempo-data
+export TEMPO_DATA_PATH="../monitoring/tempo/tempo-data"
+
 # Logging functions
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }

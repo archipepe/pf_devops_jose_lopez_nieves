@@ -7,6 +7,8 @@ use App\Entity\Pedido;
 use App\Entity\User;
 use App\Repository\CarritoRepository;
 use App\Repository\ProductoCarritoRepository;
+use OpenTelemetry\API\Metrics\CounterInterface;
+use OpenTelemetry\API\Metrics\MeterInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
@@ -15,15 +17,19 @@ class CarritoService
     private TokenStorageInterface $tokenStorage;
     private CarritoRepository $carritoRepository;
     private ProductoCarritoRepository $productoCarritoRepository;
+    private MeterInterface $metrics;
+    private CounterInterface $counterItemsCarritoUsuarios;
     
     public function __construct(
         TokenStorageInterface $tokenStorage,
         CarritoRepository $carritoRepository,
-        ProductoCarritoRepository $productoCarritoRepository
+        ProductoCarritoRepository $productoCarritoRepository,
+        MonitoringService $monitoringService
     ) {
         $this->tokenStorage = $tokenStorage;
         $this->carritoRepository = $carritoRepository;
         $this->productoCarritoRepository = $productoCarritoRepository;
+        $this->setMetrics($monitoringService);
     }
 
     /**
@@ -83,6 +89,11 @@ class CarritoService
         } else {
             $carrito = $this->getCarritoActualByHash($hash);
         }
+
+        $this->incrementarItemsCarritoUsuarios(
+            $carrito->getTotalProductos(),
+            $carrito->getUsuario() ? $carrito->getUsuario()->getUserIdentifier() : $carrito->getHash()
+        );
 
         // Guardar carrito en request attributes
         $this->setCarritoCarritoHash($request, $carrito);
@@ -173,6 +184,11 @@ class CarritoService
 
         $this->carritoRepository->fusionarCarritos($carritoAnonimo, $carrito);
 
+        $this->incrementarItemsCarritoUsuarios(
+            $carrito->getTotalProductos(),
+            $carrito->getUsuario() ? $carrito->getUsuario()->getUserIdentifier() : $carrito->getHash()
+        );
+
         // Actualizar los valores en el request
         $this->setCarritoCarritoHash($request, $carrito);
     }
@@ -193,6 +209,50 @@ class CarritoService
         $this->setCarritoActual($request, null);
 
         return $pedido;
+    }
+
+    /**
+     * @param MonitoringService $monitoringService
+     * @return void
+     */
+    private function setMetrics(MonitoringService $monitoringService) : void
+    {
+        $this->metrics = $monitoringService->getMeterProvider()->getMeter(
+            'CarritoService',
+            '1.0.0'
+        );
+
+        $this->createCounterItemsCarritoUsuarios();
+    }
+
+    /**
+     * @return void
+     */
+    private function createCounterItemsCarritoUsuarios() : void
+    {
+        // Units de createCounter modifica el nombre de la variable, por eso lo dejamos a null
+        $this->counterItemsCarritoUsuarios = $this->metrics->createCounter(
+            'items_carrito_usuarios',
+            null,
+            'Ítems añadidos al carrito de un usuario.'
+        );
+    }
+
+    /**
+     * TODO: Cambiar a gauge si tienes tiempo.
+     * 
+     * @param integer $items
+     * @param string $usuario
+     * @return void
+     */
+    public function incrementarItemsCarritoUsuarios(int $items, string $usuario)
+    {
+        $this->counterItemsCarritoUsuarios->add(
+            $items,
+            [
+                'usuario' => $usuario
+            ]
+        );
     }
 
     /**

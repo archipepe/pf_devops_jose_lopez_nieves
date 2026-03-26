@@ -75,14 +75,19 @@ class CarritoController extends AbstractController
             // Añadir al carrito
             $this->carritoService->addProducto($carrito, $id, $cantidad);            
             
-            // Log para métricas
             $this->logger->info('Producto añadido al carrito', [
                 'producto_id' => $id,
                 'cantidad' => $cantidad,
                 'total_productos' => $carrito->getTotalProductos(),
-                'usuario' => $this->getUser()?->getUserIdentifier(),
-                'anonimo' => !$this->getUser()
+                'usuario' => $carrito->getUsuario() ? $carrito->getUsuario() : '',
+                'anonimo' => $carrito->getHash() ? $carrito->getHash() : ''
             ]);
+
+            // Prometheus sí guarda relación entre peticiones cuando se trata de AJAX, por tanto, aquí enviamos la cantidad
+            $this->carritoService->incrementarItemsCarritoUsuarios(
+                $cantidad,
+                $carrito->getUsuario() ? $carrito->getUsuario()->getUserIdentifier() : $carrito->getHash()
+            );
 
             return $this->json([
                 'success' => true,
@@ -92,7 +97,6 @@ class CarritoController extends AbstractController
                 'productoId' => $id,
                 'cantidad' => $cantidad
             ]);
-
         } catch (\Exception $e) {
             $this->logger->error('Error al añadir producto al carrito', [
                 'producto_id' => $id,
@@ -136,14 +140,19 @@ class CarritoController extends AbstractController
                     break;
                 }
             }
+
+            // TODO: counter sólo admite add de números positivos, por lo que no podemos restar cantidades. Si tienes tiempo, cambia a gauge
+            $this->carritoService->incrementarItemsCarritoUsuarios(
+                $carrito->getTotalProductos(),
+                $carrito->getUsuario() ? $carrito->getUsuario()->getUserIdentifier() : $carrito->getHash()
+            );
             
             return $this->json([
                 'success' => true,
                 'totalProductos' => $carrito->getTotalProductos(),
                 'total' => $carrito->getTotal(),
                 'nuevoSubtotal' => $itemActualizado ? number_format($itemActualizado->getSubtotal(), 2, ',', '.') : null
-            ]);
-            
+            ]);            
         } catch (\Exception $e) {
             $this->logger->error('Error actualizando cantidad', [
                 'item_id' => $id,
@@ -165,16 +174,23 @@ class CarritoController extends AbstractController
     {
         try {
             $this->verificarCsrf($request);
+
+            $this->verificarAjax($request);
             
             $this->carritoService->removeProducto($id);
             $carrito = $this->carritoService->getCarrito($request);
+
+            // TODO: counter sólo admite add de números positivos, por lo que no podemos restar cantidades. Si tienes tiempo, cambia a gauge
+            $this->carritoService->incrementarItemsCarritoUsuarios(
+                $carrito->getTotalProductos(),
+                $carrito->getUsuario() ? $carrito->getUsuario()->getUserIdentifier() : $carrito->getHash()
+            );
             
             return $this->json([
                 'success' => true,
                 'totalProductos' => $carrito->getTotalProductos(),
                 'total' => $carrito->getTotal()
-            ]);
-            
+            ]);            
         } catch (\Exception $e) {
             return $this->json(['error' => 'Error al eliminar'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -190,16 +206,23 @@ class CarritoController extends AbstractController
     {
         try {
             $this->verificarCsrf($request);
+
+            $this->verificarAjax($request);
             
             $carrito = $this->carritoService->getCarrito($request);
             $this->carritoService->vaciarCarrito($carrito);
+
+            // TODO: counter sólo admite add de números positivos, por lo que no podemos restar cantidades. Si tienes tiempo, cambia a gauge
+            $this->carritoService->incrementarItemsCarritoUsuarios(
+                $carrito->getTotalProductos(),
+                $carrito->getUsuario() ? $carrito->getUsuario()->getUserIdentifier() : $carrito->getHash()
+            );
             
             return $this->json([
                 'success' => true,
-                'totalProductos' => 0,
-                'total' => 0
-            ]);
-            
+                'totalProductos' => $carrito->getTotalProductos(),
+                'total' => $carrito->getTotal()
+            ]);            
         } catch (\Exception $e) {
             return $this->json(['error' => 'Error al vaciar'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

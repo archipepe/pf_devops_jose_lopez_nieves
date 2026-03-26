@@ -61,7 +61,6 @@ class ProductosController extends AbstractController
         $span->setAttribute('endpoint', '/productos/{idProducto}');
         $span->setAttribute('route', 'productos_detalle');
 
-        // TODO: falta ver si la traza aparece consecutiva por el detach que haces en los métodos privados del servicio
         $producto = $this->productoService->obtenerProductoPorId($idProducto);
 
         if (!$producto) {
@@ -105,10 +104,10 @@ class ProductosController extends AbstractController
      */
     private function createCounterProductos() : void
     {
-        // TODO: revisar lo de veces
+        // Units de createCounter modifica el nombre de la variable, por eso lo dejamos a null
         $this->counterProductos = $this->metrics->createCounter(
             'solicitud_productos',
-            'veces',
+            null,
             'Número de veces que se solicita un producto.'
         );
     }
@@ -118,10 +117,10 @@ class ProductosController extends AbstractController
      */
     private function createCounterProductosUsuarios() : void
     {
-        // TODO: revisar lo de veces
+        // Units de createCounter modifica el nombre de la variable, por eso lo dejamos a null
         $this->counterProductosUsuarios = $this->metrics->createCounter(
             'solicitud_productos_usuarios',
-            'veces',
+            null,
             'Número de veces que un usuario solicita un producto.'
         );
     }
