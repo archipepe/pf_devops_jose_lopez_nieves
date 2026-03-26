@@ -4,6 +4,7 @@ namespace App\EventSubscriber;
 
 use App\Service\CarritoService;
 use App\Service\CarritoHashGenerator;
+use App\Service\MonitoringService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -22,11 +23,11 @@ class CarritoSubscriber implements EventSubscriberInterface
     public function __construct(
         CarritoService $carritoService,
         CarritoHashGenerator $carritoHashGenerator,
-        LoggerInterface $logger
+        MonitoringService $monitoringService
     ) {
         $this->carritoService = $carritoService;
         $this->carritoHashGenerator = $carritoHashGenerator;
-        $this->logger = $logger;
+        $this->logger = $monitoringService->getLogger();
     }
 
     public static function getSubscribedEvents(): array

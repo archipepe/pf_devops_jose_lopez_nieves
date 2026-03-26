@@ -14,6 +14,10 @@ when@dev:
                 type: console
                 process_psr_3_messages: false
                 channels: ["!event", "!doctrine", "!console"]
+            otlp:
+                type: service
+                id: App\OpenTelemetry\Logging\LoggingOtelHandler
+                level: warning
 
 when@test:
     monolog:
@@ -53,3 +57,7 @@ when@prod:
                 channels: [deprecation]
                 path: php://stderr
                 formatter: monolog.formatter.json
+            otlp:
+                type: service
+                id: App\OpenTelemetry\Logging\LoggingOtelHandler
+                level: warning

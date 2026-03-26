@@ -4,19 +4,26 @@ namespace App\Service;
 
 use App\Entity\Producto;
 use App\Repository\ProductoRepository;
+use OpenTelemetry\API\Trace\Span;
+use OpenTelemetry\API\Trace\TracerInterface;
 use Psr\Log\LoggerInterface;
 
 class ProductoService
 {
     private ProductoRepository $productoRepository;
+    private TracerInterface $tracer;
     private LoggerInterface $logger;
     
     public function __construct(
         ProductoRepository $productoRepository,
-        LoggerInterface $loggerInterface
+        MonitoringService $monitoringService
     ) {
         $this->productoRepository = $productoRepository;
-        $this->logger = $loggerInterface;
+        $this->tracer = $monitoringService->getTracerProvider()->getTracer(
+            'ProductoService',
+            '1.0.0'
+        );
+        $this->logger = $monitoringService->getLogger();
     }
 
     /**
@@ -56,21 +63,29 @@ class ProductoService
      * Simulación de recuperación de producto para logs, métricas y trazas.
      *
      * @param integer $idProducto
-     * @return array|null
+     * @return void
      */
-    private function recuperarProducto(int $idProducto): ?array
+    private function recuperarProducto(int $idProducto): void
     {
-        if ($idProducto === 4) {
-            $tiempoEspera = rand(3, 5);
-            sleep($tiempoEspera);
-            # Registrarlo en el monolog
-            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
-        } else {
-            $tiempoEspera = rand(0.5, 1);
-            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
-        }
+        $parent = Span::getCurrent();
+        $scope = $parent->activate();
 
-        return self::$productos[$idProducto] ?? null;
+        try {
+            $span = $this->tracer->spanBuilder("recuperarProducto")->startSpan();
+
+            if ($idProducto === 4) {
+                $tiempoEspera = rand(3, 5);
+                sleep($tiempoEspera);
+                $this->logger->info('Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.');
+            } else {
+                $tiempoEspera = rand(0.5, 1);
+                $this->logger->info('Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.');
+            }
+
+            $span->end();
+        } finally {
+            $scope->detach();
+        }
     }
 
     /**
@@ -81,14 +96,24 @@ class ProductoService
      */
     private function actualizarMetadata(int $idProducto): void
     {
-        if ($idProducto === 5) {
-            $tiempoEspera = rand(3, 5);
-            sleep($tiempoEspera);
-            # Registrarlo en el monolog
-            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
-        } else {
-            $tiempoEspera = rand(0.5, 1);
-            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+        $parent = Span::getCurrent();
+        $scope = $parent->activate();
+        
+        try {
+            $span = $this->tracer->spanBuilder("actualizarMetadata")->startSpan();
+
+            if ($idProducto === 5) {
+                $tiempoEspera = rand(3, 5);
+                sleep($tiempoEspera);
+                $this->logger->info('Metadata actualizada para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
+            } else {
+                $tiempoEspera = rand(0.5, 1);
+                $this->logger->info('Metadata actualizada para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
+            }
+
+            $span->end();
+        } finally {
+            $scope->detach();
         }
     }
 
@@ -100,14 +125,24 @@ class ProductoService
      */
     private function enviarFacebookPixel(int $idProducto): void
     {
-        if ($idProducto === 6) {
-            $tiempoEspera = rand(3, 5);
-            sleep($tiempoEspera);
-            # Registrarlo en el monolog
-            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
-        } else {
-            $tiempoEspera = rand(0.5, 1);
-            $this->logger->info("Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.");
+        $parent = Span::getCurrent();
+        $scope = $parent->activate();
+        
+        try {
+            $span = $this->tracer->spanBuilder("enviarFacebookPixel")->startSpan();
+
+            if ($idProducto === 6) {
+                $tiempoEspera = rand(3, 5);
+                sleep($tiempoEspera);
+                $this->logger->info('Facebook Pixel enviado para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
+            } else {
+                $tiempoEspera = rand(0.5, 1);
+                $this->logger->info('Facebook Pixel enviado para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
+            }
+
+            $span->end();
+        } finally {
+            $scope->detach();
         }
     }
 }
