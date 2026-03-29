@@ -1,0 +1,16 @@
+# k8s/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-ns # Funciona aunque aún no exista el namespace
+
+configMapGenerator:
+  - name: opentelemetry-config
+    files:
+      - otel-collector-config.yaml=opentelemetry/otel-collector-config.yaml
+
+resources:
+  - namespaces/namespace-monitoring.yaml
+  - deployments/deployment-otel.yaml
+  - services/service-otel.yaml
+  

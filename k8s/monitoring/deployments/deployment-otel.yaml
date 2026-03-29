@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-deployment
+  namespace: monitoring-ns
+  labels:
+    app: opentelemetry-app
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: opentelemetry-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-app
+        version: v1
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: opentelemetry-config
+
+      containers:
+        - name: opentelemetry
+          image: otel/opentelemetry-collector:0.135.0
+          args:
+            - '--config=/etc/otel/otel-collector-config.yaml'
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+          ports:
+            - containerPort: 4317
+              name: grpc
+            - containerPort: 4318
+              name: http
+            - containerPort: 9464
+              name: prometheus

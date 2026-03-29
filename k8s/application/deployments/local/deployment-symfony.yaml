@@ -3,15 +3,20 @@ kind: Deployment
 metadata:
   name: symfony-deployment
   namespace: symfony-ns
+  labels:
+    app: symfony-app
+    version: v1
 spec:
   replicas: 2 # Revisar sticky sessions en el ingres y en AWS ALB
   selector:
     matchLabels:
       app: symfony-app
+      version: v1
   template:
     metadata:
       labels:
         app: symfony-app
+        version: v1
     spec:
       volumes:
         - name: app-logs
@@ -21,6 +26,7 @@ spec:
       containers:
         - name: php-nginx-container
           image: mysymfony/php-nginx:6.0-debug
+          imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -41,9 +47,48 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: APP_ENV
-              value: "dev"
+              value: dev
+            - name: OTEL_PHP_AUTOLOAD_ENABLED
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: mi-tienda-symfony
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.version=1.0.0,deployment.environment=dev
+            - name: OTEL_TRACES_EXPORTER
+              value: otlp
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://opentelemetry-service.monitoring-ns:4318
+            - name: OTEL_PROPAGATORS
+              value: baggage,tracecontext
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
           volumeMounts:
             - name: app-logs
               mountPath: /var/www/html/var/log
           ports:
             - containerPort: 80
+              name: http
+              protocol: TCP

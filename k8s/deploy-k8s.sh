@@ -83,6 +83,16 @@ apply_k8s_resources() {
     create_ingress
 }
 
+apply_kustomization() {
+    log_info "Desplegando en Kubernetes con kustomization..."
+    kubectl apply -k application/
+}
+
+apply_kustomization_monitoring() {
+    log_info "Desplegando en Kubernetes con kustomization monitoring..."
+    kubectl apply -k monitoring/
+}
+
 # Build images if they don't exist in Minikube's registry and send them to Minikube
 build_images() {
     log_info "Building Docker images for Minikube..."
@@ -132,7 +142,9 @@ add_ingress_to_hosts() {
 
 enable_addons
 build_images
-apply_k8s_resources
+# apply_k8s_resources
+apply_kustomization
+apply_kustomization_monitoring
 verify_services
 add_ingress_to_hosts
 review_images

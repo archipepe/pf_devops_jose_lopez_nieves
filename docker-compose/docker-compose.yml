@@ -14,6 +14,7 @@ services:
       - "80:80"
     volumes:
       - ../php-nginx/symfony-app:/var/www/html
+      - ../php-nginx/symfony-app/.vscode-server:/home/ubuntu/.vscode-server
     depends_on:
       - mysql-service
       - otel-collector

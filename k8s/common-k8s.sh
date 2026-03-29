@@ -4,7 +4,8 @@
 APPLICATION="application"
 
 SYMFONY_NAMESPACE_NAME="symfony-ns"
-export NAMESPACES_NAMES=($SYMFONY_NAMESPACE_NAME)
+MONITORING_NAMESPACE_NAME="monitoring-ns"
+export NAMESPACES_NAMES=($SYMFONY_NAMESPACE_NAME $MONITORING_NAMESPACE_NAME)
 
 SYMFONY_NAMESPACE="$APPLICATION/namespaces/namespace-symfony.yaml"
 export NAMESPACES=($SYMFONY_NAMESPACE)
@@ -64,6 +65,8 @@ enable_addons() {
     minikube addons enable ingress
     minikube addons enable default-storageclass
     minikube addons enable storage-provisioner
+    log_info "Verificando servicios... (esperando 45 segundos)..."
+    sleep 45
 }
 
 verify_commands() {
