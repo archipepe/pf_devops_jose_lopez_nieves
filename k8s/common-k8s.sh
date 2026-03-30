@@ -21,6 +21,7 @@ export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $S
 
 export INGRESS_SYMFONY="$APPLICATION/ingresses/local/ingress-symfony.yaml"
 export INGRESS_HOST="symfony.local"
+export INGRESS_GRAFANA_HOST="grafana.local"
 
 VOLUMECLAIMS_MYSQL="$APPLICATION/volumes/local/pvc-mysql.yaml"
 VOLUMECLAIMS_SYMFONY="$APPLICATION/volumes/local/pvc-symfony.yaml"
@@ -65,8 +66,9 @@ enable_addons() {
     minikube addons enable ingress
     minikube addons enable default-storageclass
     minikube addons enable storage-provisioner
-    log_info "Verificando servicios... (esperando 45 segundos)..."
-    sleep 45
+    # TODO: mejorar. Hay que esperar en la primera ejecución con kustomization, pero no en las sucesivas
+    # log_info "Verificando servicios... (esperando 45 segundos)..."
+    # sleep 45
 }
 
 verify_commands() {

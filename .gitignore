@@ -11,7 +11,7 @@ docker-compose.override.yml
 
 # IDE
 .vscode/
-.vscode-server/
+!symfony-app/.vscode-server/
 .idea/
 
 # Local .terraform directories

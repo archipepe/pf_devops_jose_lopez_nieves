@@ -49,6 +49,8 @@ services:
       - ../monitoring/tempo/tempo-config.yaml:/etc/tempo.yaml
       - ../monitoring/tempo/tempo-data:/tmp/tempo
     ports:
+      - "32773:4317" # host:container
+      - "32774:4318"
       - "3200:3200"   # API
 
   loki:

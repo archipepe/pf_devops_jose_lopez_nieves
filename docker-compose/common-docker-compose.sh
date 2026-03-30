@@ -16,6 +16,8 @@ export SYMFONY_APP_IMAGE="php-nginx:5.0-debug"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
 export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
 
+export SYMFONY_APP_SOURCE_CODE_PATH="$SYMFONY_APP_IMAGE_PATH""symfony-app/"
+
 # tempo-data
 export TEMPO_DATA_PATH="../monitoring/tempo/tempo-data"
 
