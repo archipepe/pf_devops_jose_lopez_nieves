@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring-ns
+  labels:
+    app: grafana-app
+    version: v1
+spec:
+  selector:
+    app: grafana-app
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
+  type: ClusterIP # Crear ingress

@@ -72,7 +72,12 @@ delete_k8s_resources() {
     review_hosts
 }
 
+delete_k8s_monitoring_resources() {
+    kubectl delete -k monitoring/
+}
+
 delete_k8s_resources
+delete_k8s_monitoring_resources
 review_images
 
 log_info "Limpieza completada!"

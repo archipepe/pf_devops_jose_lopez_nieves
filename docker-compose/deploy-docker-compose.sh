@@ -31,6 +31,11 @@ install_vendor_dependencies() {
     docker compose exec symfony-php-nginx-service composer install --optimize-autoloader --working-dir=/var/www/html
 }
 
+create_vscodeserver_directory() {
+    log_info "Creando directorio .vscode-server del Dev Container..."
+    mkdir -p "$SYMFONY_APP_SOURCE_CODE_PATH"".vscode-server"
+}
+
 change_permissions() {
     log_info "Changing permissions of the app directory..."
     sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app && sudo chmod -R 777 "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app
@@ -40,6 +45,8 @@ change_permissions() {
 }
 
 build_images
+
+create_vscodeserver_directory
 
 change_permissions
 

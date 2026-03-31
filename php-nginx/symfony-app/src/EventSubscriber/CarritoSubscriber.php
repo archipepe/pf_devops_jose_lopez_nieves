@@ -135,15 +135,14 @@ class CarritoSubscriber implements EventSubscriberInterface
         }
         
         // Método 3: Detectar por IP (si es el balanceador/health checker)
-        # TODO: La última IP es desde donde pruebas, la quitas para poder depurar
-        # $trustedProxies = ['127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];
-        $trustedProxies = ['127.0.0.1', '10.0.0.0/8', '172.16.0.0/12'];
-        $clientIp = $request->getClientIp();
-        foreach ($trustedProxies as $proxy) {
-            if ($this->ipInRange($clientIp, $proxy)) {
-                return true;
-            }
-        }
+        # TODO: La primera y la última IP es desde donde pruebas, la quitas para poder depurar
+        // $trustedProxies = ['127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];
+        // $clientIp = $request->getClientIp();
+        // foreach ($trustedProxies as $proxy) {
+        //     if ($this->ipInRange($clientIp, $proxy)) {
+        //         return true;
+        //     }
+        // }
         
         return false;
     }

@@ -1,0 +1,53 @@
+# k8s/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-ns # Funciona aunque aún no exista el namespace
+
+configMapGenerator:
+  - name: opentelemetry-config
+    files:
+      - otel-collector-config.yaml=monitoring/opentelemetry/otel-collector-config.yaml
+  - name: tempo-config
+    files:
+      - tempo-config.yaml=monitoring/tempo/tempo-config.yaml
+  - name: loki-config
+    files:
+      - local-config.yaml=monitoring/loki/loki-config.yaml
+  - name: prometheus-config
+    files:
+      - prometheus.yml=monitoring/prometheus/prometheus-config.yml
+  - name: datasources-config
+    files:
+      - datasources.yaml=monitoring/grafana/provisioning/datasources/grafana-datasources.yaml
+  - name: dashboards-config
+    files:
+      - dashboards.yml=monitoring/grafana/provisioning/dashboards/dashboards.yml
+  - name: alerting-config
+    files:
+      - alerts.yml=monitoring/grafana/provisioning/alerting/alerts.yml
+  - name: dashboards
+    files:
+      - dashboard-docker-monitoring.json=monitoring/grafana/dashboards/dashboard-docker-monitoring.json
+      - dashboard-loki.json=monitoring/grafana/dashboards/dashboard-loki.json
+      - dashboard-prometheus-app.json=monitoring/grafana/dashboards/dashboard-prometheus-app.json
+      - dashboard-prometheus-node.json=monitoring/grafana/dashboards/dashboard-prometheus-node.json
+
+resources:
+  - namespaces/namespace-monitoring.yaml
+  - deployments/deployment-otel.yaml
+  - services/service-otel.yaml
+  - deployments/deployment-tempo.yaml
+  - services/service-tempo.yaml
+  - deployments/deployment-loki.yaml
+  - services/service-loki.yaml
+  - daemonsets/daemonset-nodeexporter.yaml
+  - services/service-nodeexporter.yaml
+  - daemonsets/daemonset-cadvisor.yaml
+  - services/service-cadvisor.yaml
+  - deployments/deployment-prometheus.yaml
+  - services/service-prometheus.yaml
+  - deployments/deployment-grafana.yaml
+  - services/service-grafana.yaml
+  - ingresses/ingress-grafana.yaml
+  

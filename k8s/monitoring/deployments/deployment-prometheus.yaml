@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+  namespace: monitoring-ns
+  labels:
+    app: prometheus-app
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: prometheus-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: prometheus-app
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        # - name: storage
+        #   emptyDir: {}
+      
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v3.5.0
+          args:
+            - '--web.enable-remote-write-receiver'
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--storage.tsdb.retention.time=15d'
+            - '--web.console.libraries=/etc/prometheus/console_libraries'
+            - '--web.console.templates=/etc/prometheus/consoles'
+            - '--web.enable-lifecycle'
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            # - name: storage
+            #   mountPath: /prometheus
+          ports:
+            - containerPort: 9090
+              name: http

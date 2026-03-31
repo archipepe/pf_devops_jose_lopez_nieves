@@ -3,8 +3,12 @@ kind: Service
 metadata:
   name: mysql-service
   namespace: symfony-ns
+  labels:
+    app: mysql-app
+    version: v1
 spec:
-  ports:
-    - port: 3306
   selector:
     app: mysql-app
+  ports:
+    - name: mysql
+      port: 3306

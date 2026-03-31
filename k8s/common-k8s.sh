@@ -1,39 +1,44 @@
 #!/bin/bash
 
 # Configuration
-SYMFONY_NAMESPACE_NAME="symfony-ns"
-export NAMESPACES_NAMES=($SYMFONY_NAMESPACE_NAME)
+APPLICATION="application"
 
-SYMFONY_NAMESPACE="namespaces/namespace-symfony.yaml"
+SYMFONY_NAMESPACE_NAME="symfony-ns"
+MONITORING_NAMESPACE_NAME="monitoring-ns"
+export NAMESPACES_NAMES=($SYMFONY_NAMESPACE_NAME $MONITORING_NAMESPACE_NAME)
+
+SYMFONY_NAMESPACE="$APPLICATION/namespaces/namespace-symfony.yaml"
 export NAMESPACES=($SYMFONY_NAMESPACE)
 
-CONFIGMAP_MYSQL="configmaps/configmap-mysql.yaml"
+CONFIGMAP_MYSQL="$APPLICATION/configmaps/configmap-mysql.yaml"
 export CONFIGMAPS=($CONFIGMAP_MYSQL)
 
-DEPLOYMENT_MYSQL="deployments/local/deployment-mysql.yaml"
-DEPLOYMENT_SYMFONY="deployments/local/deployment-symfony.yaml"
-SERVICE_MYSQL="services/local/service-mysql.yaml"
-SERVICE_NGINX="services/local/service-nginx.yaml"
+DEPLOYMENT_MYSQL="$APPLICATION/deployments/local/deployment-mysql.yaml"
+DEPLOYMENT_SYMFONY="$APPLICATION/deployments/local/deployment-symfony.yaml"
+SERVICE_MYSQL="$APPLICATION/services/local/service-mysql.yaml"
+SERVICE_NGINX="$APPLICATION/services/local/service-nginx.yaml"
 export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $SERVICE_NGINX)
 
-export INGRESS_SYMFONY="ingresses/local/ingress-symfony.yaml"
+export INGRESS_SYMFONY="$APPLICATION/ingresses/local/ingress-symfony.yaml"
 export INGRESS_HOST="symfony.local"
+export INGRESS_GRAFANA_HOST="grafana.local"
 
-VOLUMECLAIMS_MYSQL="volumes/local/pvc-mysql.yaml"
-VOLUMECLAIMS_SYMFONY="volumes/local/pvc-symfony.yaml"
+VOLUMECLAIMS_MYSQL="$APPLICATION/volumes/local/pvc-mysql.yaml"
+VOLUMECLAIMS_SYMFONY="$APPLICATION/volumes/local/pvc-symfony.yaml"
 export VOLUMECLAIMS=($VOLUMECLAIMS_MYSQL $VOLUMECLAIMS_SYMFONY)
 
-MYSQL_SECRET="secrets/secret-mysql.yaml"
-SYMFONY_ENV="secrets/secret-symfony.yaml"
-export SECRETS=($MYSQL_SECRET $SYMFONY_ENV)
+MYSQL_SECRET="$APPLICATION/secrets/secret-mysql.yaml"
+SYMFONY_DATABASE="$APPLICATION/secrets/secret-database-symfony.yaml"
+SYMFONY_APP_SECRET="$APPLICATION/secrets/secret-app-symfony.yaml"
+export SECRETS=($MYSQL_SECRET $SYMFONY_DATABASE $SYMFONY_APP_SECRET)
 
 # export must be in all variables
 export REGISTRY="mysymfony"
 export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
-export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-2.0"
+export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-4.0-debug"
 export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
 export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
-export SYMFONY_APP_IMAGE="php-nginx:4.1"
+export SYMFONY_APP_IMAGE="php-nginx:6.0-debug"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
 export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
 
@@ -61,6 +66,9 @@ enable_addons() {
     minikube addons enable ingress
     minikube addons enable default-storageclass
     minikube addons enable storage-provisioner
+    # TODO: mejorar. Hay que esperar en la primera ejecución con kustomization, pero no en las sucesivas
+    # log_info "Verificando servicios... (esperando 45 segundos)..."
+    # sleep 45
 }
 
 verify_commands() {
