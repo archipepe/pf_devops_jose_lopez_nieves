@@ -41,7 +41,8 @@ resources:
   - services/service-tempo.yaml
   - deployments/deployment-loki.yaml
   - services/service-loki.yaml
-  - serviceaccounts/serviceaccount-prometheus.yaml
+  - daemonsets/daemonset-nodeexporter.yaml
+  - services/service-nodeexporter.yaml
   - deployments/deployment-prometheus.yaml
   - services/service-prometheus.yaml
   - deployments/deployment-grafana.yaml

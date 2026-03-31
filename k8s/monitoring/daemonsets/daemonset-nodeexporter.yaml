@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter-daemonset
+  namespace: monitoring-ns
+  labels:
+    app: node-exporter-app
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: node-exporter-app
+        version: v1
+    spec:
+      volumes:
+        - name: rootfs
+          hostPath:
+            path: /
+            type: Directory
+        - name: sysfs
+          hostPath:
+            path: /sys
+            type: Directory
+        - name: procfs
+          hostPath:
+            path: /proc
+            type: Directory
+
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:v1.9.1
+        args:
+          - "--path.rootfs=/host/root"
+          - "--path.sysfs=/host/sys"
+          - "--path.procfs=/host/proc"
+        volumeMounts:
+          - name: rootfs
+            mountPath: /host/root
+            readOnly: true
+          - name: sysfs
+            mountPath: /host/sys
+            readOnly: true
+          - name: procfs
+            mountPath: /host/proc
+            readOnly: true
+        ports:
+          - containerPort: 9100
+            name: http
