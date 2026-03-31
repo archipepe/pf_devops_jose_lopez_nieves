@@ -5,6 +5,12 @@ variable "aws_region" {
   default     = "eu-west-1"
 }
 
+variable "aws_ebs_az" {
+  description = "Zona de disponibilidad para EBS"
+  type        = string
+  default     = "eu-west-1a"
+}
+
 variable "project_name" {
   default = "pf-devops"
 }

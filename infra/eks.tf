@@ -23,16 +23,16 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_group_defaults = {
-    # ami_type = "AL2023_x86_64_STANDARD"
-    ami_type = "AL2023_ARM_64_STANDARD" # ARM es más barato, parece que Ubuntu funciona con estos procesadores
+    ami_type = "AL2023_x86_64_STANDARD"
+    # ami_type = "AL2023_ARM_64_STANDARD" # ARM es más barato, pero como tu imagen de Ubuntu está personalizada, los paquetes instalados se descargan en la arquitectura del equipo dondse se construyó la imagen (exec /entrypoint.sh: exec format error)
   }
 
   eks_managed_node_groups = {
     one = {
       name = "node-group-1"
 
-      instance_types = ["t4g.medium"] # ARM_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
-      # instance_types = ["t3.medium"] # x86_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
+      # instance_types = ["t4g.medium"] # ARM_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
+      instance_types = ["t3.medium"] # x86_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
       min_size     = 2
       max_size     = 2
       desired_size = 2
@@ -60,18 +60,35 @@ resource "aws_eks_access_policy_association" "aws_root_user" {
 
 # TODO: funciona pero no se ve la asociación dentro del EFS CSI Addon, sólo desde Access entries dentro del clúster
 # Mirar https://registry.terraform.io/modules/terraform-aws-modules/eks-pod-identity/aws/latest#aws-efs-csi-driverhttpsgithubcomkubernetes-sigsaws-efs-csi-driver
-resource "aws_eks_addon" "efs_csi_driver" {
+# resource "aws_eks_addon" "efs_csi_driver" {
+#   cluster_name = module.eks.cluster_name
+#   addon_name   = "aws-efs-csi-driver"
+
+#   resolve_conflicts_on_create = "OVERWRITE"
+#   resolve_conflicts_on_update = "OVERWRITE"
+
+#   # Asegurarse de que este addon se crea después del rol IAM y la pod identity association
+#   depends_on = [
+#     aws_efs_file_system.efs_volume,
+#     aws_eks_addon.pod_identity_agent,
+#     aws_iam_role_policy_attachment.efs_csi_attach,
+#     aws_eks_pod_identity_association.efs_csi_driver
+#   ]
+# }
+
+resource "aws_eks_addon" "ebs_csi_driver" {
   cluster_name = module.eks.cluster_name
-  addon_name   = "aws-efs-csi-driver"
+  addon_name   = "aws-ebs-csi-driver"
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
 
   # Asegurarse de que este addon se crea después del rol IAM y la pod identity association
   depends_on = [
+    aws_ebs_volume.ebs_volume,
     aws_eks_addon.pod_identity_agent,
-    aws_iam_role_policy_attachment.efs_csi_attach,
-    aws_eks_pod_identity_association.efs_csi_driver
+    aws_iam_role_policy_attachment.ebs_csi_attach,
+    aws_eks_pod_identity_association.ebs_csi_driver
   ]
 }
 

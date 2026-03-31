@@ -7,7 +7,7 @@ metadata:
     app: symfony-app
     version: v1
 spec:
-  replicas: 1 # Revisar sticky sessions en el ingres y en AWS ALB
+  replicas: 2 # Revisar sticky sessions en el ingress y en AWS ALB
   selector:
     matchLabels:
       app: symfony-app
@@ -18,14 +18,22 @@ spec:
         app: symfony-app
         version: v1
     spec:
-      volumes:
-        - name: app-logs
-          persistentVolumeClaim:
-            claimName: symfony-pvc
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: DoNotSchedule # Or 'ScheduleAnyway' if you prefer availability over strict separation
+          labelSelector:
+            matchLabels:
+              app: symfony-app
+
+      # volumes:
+      #   - name: app-logs
+      #     persistentVolumeClaim:
+      #       claimName: symfony-pvc
 
       containers:
         - name: php-nginx-container
-          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:4.1 # TODO: último intento dio error: exec format error
+          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug # TODO: último intento dio error: exec format error
           imagePullPolicy: IfNotPresent
           env:
             # - name: DATABASE_URL
@@ -38,6 +46,8 @@ spec:
             #     secretKeyRef:
             #       name: symfony-app-secret
             #       key: APP_SECRET
+            - name: DATABASE_URL
+              value: mysql://root:XjesGl0qzB7CZNuW@mysql-service:3306/app?serverVersion=8.0&charset=utf8mb4
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -46,6 +56,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: POD_ZONE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['topology.kubernetes.io/zone']
             - name: APP_ENV
               value: dev
           resources:
@@ -71,9 +85,9 @@ spec:
           #   periodSeconds: 5
           #   timeoutSeconds: 3
           #   failureThreshold: 2
-          volumeMounts:
-            - name: app-logs
-              mountPath: /var/www/html/var/log
+          # volumeMounts:
+          #   - name: app-logs
+          #     mountPath: /var/www/html/var/log
           ports:
             - containerPort: 80
               name: http

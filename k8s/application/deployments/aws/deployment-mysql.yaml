@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: symfony-ns
+  labels:
+    app: mysql-app
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: mysql-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: mysql-app
+        version: v1
+    spec:
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+        - name: init-sql
+          configMap:
+            name: mysql-configmap
+
+      containers:
+        - name: mysql-container
+          image: mysql:8.0
+          imagePullPolicy: IfNotPresent
+          env:
+            # - name: MYSQL_ROOT_PASSWORD
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: mysql-secret
+            #       key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              value: XjesGl0qzB7CZNuW
+            - name: MYSQL_DATABASE
+              value: app
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #     - bash
+          #     - -c
+          #     - mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
+          #   timeoutSeconds: 5
+          #   failureThreshold: 3
+          # readinessProbe:
+          #   exec:
+          #     command:
+          #     - bash
+          #     - -c
+          #     - mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "SELECT 1"
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 5
+          #   timeoutSeconds: 3
+          #   failureThreshold: 2
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+          ports:
+            - containerPort: 3306
+              name: mysql
+              protocol: TCP
