@@ -28,7 +28,7 @@ configMapGenerator:
       - alerts.yml=monitoring/grafana/provisioning/alerting/alerts.yml
   - name: dashboards
     files:
-      # - dashboard-docker-monitoring.json=monitoring/grafana/dashboards/dashboard-docker-monitoring.json
+      - dashboard-docker-monitoring.json=monitoring/grafana/dashboards/dashboard-docker-monitoring.json
       - dashboard-loki.json=monitoring/grafana/dashboards/dashboard-loki.json
       - dashboard-prometheus-app.json=monitoring/grafana/dashboards/dashboard-prometheus-app.json
       - dashboard-prometheus-node.json=monitoring/grafana/dashboards/dashboard-prometheus-node.json
@@ -43,6 +43,8 @@ resources:
   - services/service-loki.yaml
   - daemonsets/daemonset-nodeexporter.yaml
   - services/service-nodeexporter.yaml
+  - daemonsets/daemonset-cadvisor.yaml
+  - services/service-cadvisor.yaml
   - deployments/deployment-prometheus.yaml
   - services/service-prometheus.yaml
   - deployments/deployment-grafana.yaml
