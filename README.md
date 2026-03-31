@@ -55,7 +55,7 @@
 ### 1. Desplegar la infraestructura
 
 ```bash
-cd infra
+cd ./infra
 
 # Revisar cambios
 terraform plan
@@ -64,32 +64,41 @@ terraform plan
 terraform apply
 ```
 
-### 2. Pushear imágenes al ECR
+#############################################
+TODO: Revisa el valor de iam-ebs-csi-driver.tf::data.aws_region.current
+#############################################
+
+### 2. Subir imágenes al ECR
 
 ```bash
 # Obtener credenciales ECR
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
 
 # Tagear imagen
-docker tag mysymfony/symfony-php:2.0 public.ecr.aws/l7n5d2e2/mysymfony/symfony-php:2.0
+docker tag mysymfony/php-nginx:6.0-debug public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug
 
 # Pushear
-docker push public.ecr.aws/l7n5d2e2/mysymfony/symfony-php:2.0
-
-# Tagear imagen
-docker tag mysymfony/symfony-nginx:1.0 public.ecr.aws/l7n5d2e2/mysymfony/symfony-nginx:1.0
-
-# Pushear
-docker push public.ecr.aws/l7n5d2e2/mysymfony/symfony-nginx:1.0
+docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug
 ```
 
 ### 3. Desplegar en EKS
 
 ```bash
+cd ./infra
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
-cd ../k8s
-kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/aws/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
+cd ./k8s
+# kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/aws/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
+
+# TODO: hacer el equivalente para el delete más abajo
+kubectl apply -f application/namespaces/namespace-symfony.yaml && \
+kubectl apply -f application/configmaps/configmap-mysql.yaml && \
+kubectl apply -f application/volumes/aws/pvc-mysql.yaml && \
+kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
+kubectl apply -f application/services/aws/service-nginx.yaml && \
+kubectl apply -f application/deployments/aws/deployment-mysql.yaml && \
+kubectl apply -f application/services/aws/service-mysql.yaml && \
+kubectl apply -f application/ingresses/aws/ingress-symfony.yaml
 ```
 
 ### 4. Verificar funcionamiento desde el pod
@@ -133,19 +142,44 @@ kubectl logs -n symfony-ns deployment/symfony-app -f
 ### 7. Eliminar despliegue
 
 ```bash
-kubectl delete -f ingress/aws/ingress-symfony.yaml && kubectl delete -f services/aws/service-nginx.yaml && kubectl delete -f deployments/aws/deployment-symfony.yaml && kubectl delete -f volumes/aws/pvc-symfony.yaml \
-&& kubectl delete -f namespaces/namespace-symfony.yaml
+# kubectl delete -f ingress/aws/ingress-symfony.yaml && kubectl delete -f services/aws/service-nginx.yaml && kubectl delete -f deployments/aws/deployment-symfony.yaml && kubectl delete -f volumes/aws/pvc-symfony.yaml \
+# && kubectl delete -f namespaces/namespace-symfony.yaml
+
+kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
+kubectl delete -f application/services/aws/service-nginx.yaml && \
+kubectl delete -f application/services/aws/service-mysql.yaml && \
+kubectl delete -f application/deployments/aws/deployment-mysql.yaml && \
+kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
+kubectl delete -f application/configmaps/configmap-mysql.yaml && \
+kubectl delete -f application/volumes/aws/pvc-mysql.yaml && \
+kubectl delete -f application/namespaces/namespace-symfony.yaml
 ```
 
-### 8. Limpiar contextos de kubectl
+### 8. Destruir infraestructura
 
 ```bash
-kubectl config get-contexts
+cd ./infra
+terraform destroy
+```
+Para que vaya más rápido, ve mientras eliminando manualmente:
+- EKS Node group
+- EC2 instances
+- EC2 Auto Scaling groups
+- EC2 Load balancers (elb)
+- EC2 volumes
+- EFS
+- ECR eliminar imagen (si no, no se podrá borrar el registro con el destroy)
+- VPC
+
+### 9. Limpiar contextos de kubectl
+
+```bash
+kubectl config get-contexts && \
 kubectl config use-context minikube
 
-kubectl config delete-context arn:aws:eks:us-east-1:123456:cluster/symfony-test
-kubectl config delete-cluster arn:aws:eks:us-east-1:123456:cluster/symfony-test
-kubectl config delete-user arn:aws:eks:us-east-1:123456:cluster/symfony-test
+kubectl config delete-context arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-kp6yeg6A && \
+kubectl config delete-cluster arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-kp6yeg6A && \
+kubectl config delete-user    arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-kp6yeg6A
 ```
 
 ### Verificaciones importantes
