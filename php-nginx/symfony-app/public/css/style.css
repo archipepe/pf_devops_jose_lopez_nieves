@@ -10,6 +10,7 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #f9f9f9;
+    padding-bottom: 50px;
 }
 
 /* Scroll suave para la página */
@@ -325,14 +326,81 @@ main {
 
 /* Footer */
 footer {
-    text-align: center;
-    padding: 0.7rem;
     background: #2c3e50;
     color: white;
+    padding: 1rem;
     margin-top: 2rem;
     position: fixed;
-    width: 100%;
     bottom: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 0.85rem;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.footer-info p {
+    margin: 0.25rem 0;
+}
+
+.deployment-info {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.deployment-info span {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Badges de deployment */
+.deployment-badge {
+    font-weight: bold;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.badge-blue {
+    background: #3498db;
+    color: white;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+.badge-green {
+    background: #27ae60;
+    color: white;
+    box-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+}
+
+.badge-default {
+    background: #7f8c8d;
+    color: white;
+}
+
+/* Colores de fondo del footer para diferentes deployments */
+.footer-blue {
+    background: linear-gradient(135deg, #1e3c72 0%, #2c3e50 100%);
+    border-top: 3px solid #3498db;
+}
+
+.footer-green {
+    background: linear-gradient(135deg, #0f5b2e 0%, #2c3e50 100%);
+    border-top: 3px solid #27ae60;
+}
+
+.footer-default {
+    background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
 }
 
 /* Responsive */
@@ -340,6 +408,28 @@ footer {
     .grid-productos,
     .productos-grid {
         grid-template-columns: 1fr;
+    }
+
+    footer {
+        font-size: 0.7rem;
+        padding: 0.5rem;
+    }
+    
+    .deployment-info {
+        gap: 0.5rem;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .deployment-info span {
+        width: fit-content;
+    }
+
+    .pod-info,
+    .zone-info,
+    .node-info,
+    .version-info {
+        display: none;
     }
 }
 

@@ -5,7 +5,7 @@ metadata:
   namespace: symfony-ns
 spec:
   accessModes:
-    - ReadWriteOnce # TODO: comprobar que funciona para varias réplicas y/o varios nodos # Probar con ReadWriteMany, aunque no todos los drivers lo soportan
+    - ReadWriteOnce
   resources:
     requests:
       storage: 250Mi # Uso inicial de 90M, ir ajustando conforme vayas terminando

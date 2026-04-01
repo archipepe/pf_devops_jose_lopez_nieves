@@ -1,0 +1,89 @@
+# Dockerfile.base.prod
+# mysymfony/ubuntu:24.04-5.0-prod
+###############################################
+# STAGE 1 — BUILDER (compilar OpenTelemetry)
+###############################################
+FROM ubuntu:24.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y \
+    php-dev \
+    gcc \
+    make \
+    autoconf
+
+# Compilar la extensión opentelemetry
+RUN pecl install opentelemetry
+
+# Guardar el .so compilado
+RUN mkdir -p /build \
+    && cp /usr/lib/php/20230831/opentelemetry.so /build/
+
+###############################################
+# STAGE 2 — IMAGEN FINAL DE PRODUCCIÓN
+###############################################
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Se instala git por facilitar el proceso de composer en los workers, pero no incluir en prod
+RUN apt update && apt install -y \
+    nginx \
+    php8.3-fpm \
+    php8.3-mysql \
+    php8.3-pdo \
+    php8.3-opcache \
+    php8.3-xml \
+    php8.3-dom \
+    php-cli \
+    curl \
+    unzip \
+    zip \
+    git \
+    && apt-get clean
+
+# Instalar composer
+RUN curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php \
+    && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+# Copiar OTEL desde el builder
+COPY --from=builder /build/opentelemetry.so /usr/lib/php/20230831/
+
+# Activar OTEL
+RUN printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/fpm/php.ini \
+    && printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/cli/php.ini
+
+# Opcache para producción
+RUN echo "opcache.enable=1" > /etc/php/8.3/mods-available/opcache.ini \
+    && echo "opcache.enable_cli=0" >> /etc/php/8.3/mods-available/opcache.ini \
+    && echo "opcache.validate_timestamps=0" >> /etc/php/8.3/mods-available/opcache.ini
+
+# PHP-FPM rootless
+RUN sed -i 's/^listen = .*/listen = 9000/' /etc/php/8.3/fpm/pool.d/www.conf \
+    && sed -i 's/^;listen.allowed_clients/listen.allowed_clients/' /etc/php/8.3/fpm/pool.d/www.conf \
+    && sed -i 's/^;clear_env = no/clear_env = no/' /etc/php/8.3/fpm/pool.d/www.conf
+
+# Configuración de Nginx
+COPY nginx/default.conf /etc/nginx/sites-available/default
+
+# Configuración rootless
+RUN mkdir -p /run/php \
+    && chown -R ubuntu:ubuntu /run/php
+RUN sed -i 's/^error_log = .*/error_log = \/dev\/stderr/' /etc/php/8.3/fpm/php-fpm.conf
+
+RUN mkdir -p /run/nginx \
+    && chown -R ubuntu:ubuntu /run/nginx \
+    && chown -R ubuntu:ubuntu /var/lib/nginx
+RUN sed -i 's/^user www-data;/# user www-data;/' /etc/nginx/nginx.conf \
+    && sed -i 's/^pid \/run\/nginx.pid;/pid \/run\/nginx\/nginx.pid;/' /etc/nginx/nginx.conf \
+    && sed -i 's|/var/log/nginx/error.log|/dev/stderr|' /etc/nginx/nginx.conf \
+    && sed -i 's|/var/log/nginx/access.log|/dev/stdout|' /etc/nginx/nginx.conf
+
+# Script de entrada
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT ["/entrypoint.sh"]

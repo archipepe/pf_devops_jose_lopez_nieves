@@ -1,8 +1,13 @@
 services:
   symfony-php-nginx-service:
     image: ${REGISTRY}/${SYMFONY_APP_IMAGE}
-    # image: mysymfony/php-nginx:4.1
+    # image: php-nginx:7.0-prod
     environment:
+      APP_ENV: prod
+      FORCE_HEALTH_CHECK_ERROR: false
+      DEPLOYMENT_COLOUR: blue
+      DEPLOYMENT_NAME: "Blue Deployment v1.0"
+      APP_VERSION: "1.0.0"
       OTEL_PHP_AUTOLOAD_ENABLED: true
       OTEL_SERVICE_NAME: mi-tienda-symfony
       OTEL_RESOURCE_ATTRIBUTES: service.version=1.0.0,deployment.environment=dev

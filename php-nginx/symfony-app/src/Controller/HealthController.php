@@ -3,10 +3,16 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 class HealthController extends AbstractController
 {
+    private bool $forceHealthCheckError;
+
+    public function __construct(ParameterBagInterface $parameterBag) {
+        $this->forceHealthCheckError = $parameterBag->get('forceHealthCheckError');
+    }
     /**
      * Comprobación de la salud del proyecto.
      *
@@ -14,9 +20,7 @@ class HealthController extends AbstractController
      */
     public function check(): Response
     {
-        $forceHealthCheckError = false;
-
-        if ($forceHealthCheckError) {
+        if ($this->forceHealthCheckError) {
             throw new \Exception("Health check failed intentionally for testing.");
         }
 

@@ -38,10 +38,12 @@ create_vscodeserver_directory() {
 
 change_permissions() {
     log_info "Changing permissions of the app directory..."
-    sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app && sudo chmod -R 777 "$SYMFONY_UBUNTU_BASE_IMAGE_PATH"symfony-app
+    sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_PROD_IMAGE_PATH"symfony-app && sudo chmod -R 777 "$SYMFONY_UBUNTU_BASE_PROD_IMAGE_PATH"symfony-app
 
     log_info "Changing permissions of tempo-data directory..."
     sudo chown -R $USER:$USER "$TEMPO_DATA_PATH" && sudo chmod -R 777 "$TEMPO_DATA_PATH"
+
+    chmod +x ./cleanup-docker-compose.sh
 }
 
 build_images
