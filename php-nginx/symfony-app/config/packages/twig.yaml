@@ -2,8 +2,11 @@ twig:
     default_path: '%kernel.project_dir%/templates'
     globals:
         pod_name: '%env(POD_NAME)%'
+        pod_zone: '%env(POD_ZONE)%'
         node_name: '%env(NODE_NAME)%'
-
+        deployment_colour: '%env(DEPLOYMENT_COLOUR)%'
+        deployment_name: '%env(DEPLOYMENT_NAME)%'
+        app_version: '%env(APP_VERSION)%'
 
 when@test:
     twig:

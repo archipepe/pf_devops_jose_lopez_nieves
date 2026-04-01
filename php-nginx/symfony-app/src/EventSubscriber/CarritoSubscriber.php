@@ -134,16 +134,6 @@ class CarritoSubscriber implements EventSubscriberInterface
             return true;
         }
         
-        // Método 3: Detectar por IP (si es el balanceador/health checker)
-        # TODO: La primera y la última IP es desde donde pruebas, la quitas para poder depurar
-        // $trustedProxies = ['127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];
-        // $clientIp = $request->getClientIp();
-        // foreach ($trustedProxies as $proxy) {
-        //     if ($this->ipInRange($clientIp, $proxy)) {
-        //         return true;
-        //     }
-        // }
-        
         return false;
     }
 
@@ -176,20 +166,6 @@ class CarritoSubscriber implements EventSubscriberInterface
             }
         }
         return false;
-    }
-
-    private function ipInRange($ip, $range): bool
-    {
-        if (strpos($range, '/')) {
-            list($range, $netmask) = explode('/', $range, 2);
-            $range_decimal = ip2long($range);
-            $ip_decimal = ip2long($ip);
-            $wildcard_decimal = pow(2, (32 - $netmask)) - 1;
-            $netmask_decimal = ~ $wildcard_decimal;
-            return (($ip_decimal & $netmask_decimal) == ($range_decimal & $netmask_decimal));
-        } else {
-            return $ip === $range;
-        }
     }
 
     /**

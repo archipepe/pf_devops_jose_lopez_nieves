@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
         <title>{% block title %}Mi Tienda Online{% endblock %}</title>
         {% block styles %}
             <link rel="stylesheet" href="{{ asset('css/style.css') }}">
@@ -34,9 +35,27 @@
             <div class="notification-container" id="notificationContainer"></div>
         </main>
         
-        <footer>
-            <p>Proyecto Final DevOps | José López Nieves</p>
-            <p>Sirviendo desde pod: {{ pod_name }} en nodo: {{ node_name }}</p>
+        <footer class="footer {% if deployment_colour is defined %}footer-{{ deployment_colour }}{% endif %}">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p>Proyecto Final DevOps | José López Nieves</p>
+                    <div class="deployment-info">
+                        <span class="deployment-badge {% if deployment_colour == 'blue' %}badge-blue{% elseif deployment_colour == 'green' %}badge-green{% else %}badge-default{% endif %}">
+                            {% if deployment_colour == 'blue' %}
+                                🔵 Blue Deployment
+                            {% elseif deployment_colour == 'green' %}
+                                🟢 Green Deployment
+                            {% else %}
+                                ⚪ Deployment: {{ deployment_name|default('unknown') }}
+                            {% endif %}
+                        </span>
+                        <span class="pod-info">Pod: {{ pod_name|default('unknown') }}</span>
+                        <span class="zone-info">Zona: {{ pod_zone|default('unknown') }}</span>
+                        <span class="node-info">Nodo: {{ node_name|default('unknown') }}</span>
+                        <span class="version-info">Versión: {{ app_version|default('1.0.0') }}</span>
+                    </div>
+                </div>
+            </div>
         </footer>
         
         {% block javascripts %}

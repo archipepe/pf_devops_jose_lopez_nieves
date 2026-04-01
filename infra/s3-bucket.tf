@@ -4,7 +4,7 @@
 #   byte_length = 8
 # }
 
-# # TODO: Cambiarlo a un nombre precedible
+# # TODO: Cambiarlo a un nombre predecible
 # resource "aws_s3_bucket" "tfstate_bucket" {
 #   bucket = "tfstate-bucket-${random_id.bucket_id.hex}"
 

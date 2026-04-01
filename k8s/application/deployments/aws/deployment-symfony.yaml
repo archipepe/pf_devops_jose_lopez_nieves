@@ -33,7 +33,7 @@ spec:
 
       containers:
         - name: php-nginx-container
-          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug # TODO: último intento dio error: exec format error
+          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug
           imagePullPolicy: IfNotPresent
           env:
             # - name: DATABASE_URL
