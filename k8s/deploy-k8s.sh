@@ -149,6 +149,10 @@ add_ingress_to_hosts() {
     fi
 }
 
+change_permissions() {
+    chmod +x ./cleanup-k8s.sh
+}
+
 enable_addons
 build_images
 # apply_k8s_resources
@@ -157,5 +161,6 @@ apply_kustomization_monitoring
 verify_services
 add_ingress_to_hosts
 review_images
+change_permissions
 
 log_info "Despliegue completado!"
