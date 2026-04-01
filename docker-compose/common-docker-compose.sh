@@ -8,13 +8,16 @@ NC='\033[0m' # No Color
 
 # export must be in all variables
 export REGISTRY="mysymfony"
-export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
-export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-4.0-debug"
-export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
+export SYMFONY_UBUNTU_BASE_PROD_IMAGE_PATH="../php-nginx/"
+export SYMFONY_UBUNTU_BASE_PROD_IMAGE="ubuntu:24.04-5.0-prod"
+export SYMFONY_UBUNTU_BASE_PROD_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base.prod"
+export SYMFONY_UBUNTU_BASE_DEBUG_IMAGE_PATH="../php-nginx/"
+export SYMFONY_UBUNTU_BASE_DEBUG_IMAGE="ubuntu:24.04-5.0-debug"
+export SYMFONY_UBUNTU_BASE_DEBUG_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base.debug"
 export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
-export SYMFONY_APP_IMAGE="php-nginx:6.0-debug"
+export SYMFONY_APP_IMAGE="php-nginx:7.0-prod"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
-export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
+export IMAGES=("SYMFONY_UBUNTU_BASE_PROD" "SYMFONY_UBUNTU_BASE_DEBUG" "SYMFONY_APP")
 
 export SYMFONY_APP_SOURCE_CODE_PATH="$SYMFONY_APP_IMAGE_PATH""symfony-app/"
 

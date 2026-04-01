@@ -1,14 +1,34 @@
-# Dockerfile.base
-# mysymfony/ubuntu:24.04-4.0-debug
+# Dockerfile.base.prod
+# mysymfony/ubuntu:24.04-5.0-prod
+###############################################
+# STAGE 1 — BUILDER (compilar OpenTelemetry)
+###############################################
+FROM ubuntu:24.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y \
+    php-dev \
+    gcc \
+    make \
+    autoconf
+
+# Compilar la extensión opentelemetry
+RUN pecl install opentelemetry
+
+# Guardar el .so compilado
+RUN mkdir -p /build \
+    && cp /usr/lib/php/20230831/opentelemetry.so /build/
+
+###############################################
+# STAGE 2 — IMAGEN FINAL DE PRODUCCIÓN
+###############################################
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar Nginx, PHP y dependencias necesarias
+# Se instala git por facilitar el proceso de composer en los workers, pero no incluir en prod
 RUN apt update && apt install -y \
-    git \
-    zip \
-    unzip \
     nginx \
     php8.3-fpm \
     php8.3-mysql \
@@ -17,54 +37,44 @@ RUN apt update && apt install -y \
     php8.3-xml \
     php8.3-dom \
     php-cli \
-    php-xdebug \
     curl \
-    nano \
-    gcc \
-    make \
-    autoconf \
-    php-dev \
+    unzip \
+    zip \
+    git \
     && apt-get clean
 
 # Instalar composer
-RUN curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
-RUN php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php \
+    && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
-# Instalar OpenTelemetry
-RUN pecl install opentelemetry
-RUN printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/fpm/php.ini
-RUN printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/cli/php.ini
+# Copiar OTEL desde el builder
+COPY --from=builder /build/opentelemetry.so /usr/lib/php/20230831/
 
-# Configuración de PHP
-# Configuración de opcache en dev, comentar para prod
-RUN echo "opcache.enable=0" > /etc/php/8.3/mods-available/opcache.ini \
+# Activar OTEL
+RUN printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/fpm/php.ini \
+    && printf '\n[opentelemetry]\nextension=opentelemetry.so\n' >> /etc/php/8.3/cli/php.ini
+
+# Opcache para producción
+RUN echo "opcache.enable=1" > /etc/php/8.3/mods-available/opcache.ini \
     && echo "opcache.enable_cli=0" >> /etc/php/8.3/mods-available/opcache.ini \
-    && echo "opcache.validate_timestamps=1" >> /etc/php/8.3/mods-available/opcache.ini
+    && echo "opcache.validate_timestamps=0" >> /etc/php/8.3/mods-available/opcache.ini
 
+# PHP-FPM rootless
 RUN sed -i 's/^listen = .*/listen = 9000/' /etc/php/8.3/fpm/pool.d/www.conf \
     && sed -i 's/^;listen.allowed_clients/listen.allowed_clients/' /etc/php/8.3/fpm/pool.d/www.conf \
     && sed -i 's/^;clear_env = no/clear_env = no/' /etc/php/8.3/fpm/pool.d/www.conf
 
-COPY php/xdebug.ini /etc/php/8.3/fpm/conf.d/20-xdebug.ini
-    
-# memory_limit = 128M por defecto, está bien
-# RUN sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini
-RUN sed -i 's/^max_execution_time = .*/max_execution_time = 0/' /etc/php/8.3/fpm/php.ini
-
 # Configuración de Nginx
 COPY nginx/default.conf /etc/nginx/sites-available/default
-    
-# Crear un usuario no root para ejecutar la aplicación
-RUN addgroup --system symfonyapp && adduser --system --ingroup symfonyapp symfonyapp
 
 # Configuración rootless
 RUN mkdir -p /run/php \
-    && chown -R symfonyapp:symfonyapp /run/php
+    && chown -R ubuntu:ubuntu /run/php
 RUN sed -i 's/^error_log = .*/error_log = \/dev\/stderr/' /etc/php/8.3/fpm/php-fpm.conf
 
 RUN mkdir -p /run/nginx \
-    && chown -R symfonyapp:symfonyapp /run/nginx \
-    && chown -R symfonyapp:symfonyapp /var/lib/nginx
+    && chown -R ubuntu:ubuntu /run/nginx \
+    && chown -R ubuntu:ubuntu /var/lib/nginx
 RUN sed -i 's/^user www-data;/# user www-data;/' /etc/nginx/nginx.conf \
     && sed -i 's/^pid \/run\/nginx.pid;/pid \/run\/nginx\/nginx.pid;/' /etc/nginx/nginx.conf \
     && sed -i 's|/var/log/nginx/error.log|/dev/stderr|' /etc/nginx/nginx.conf \

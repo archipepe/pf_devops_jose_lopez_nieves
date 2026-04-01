@@ -406,7 +406,7 @@
             }
           },
           "mappings": [],
-          "max": 128,
+          "max": 70,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -451,9 +451,9 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\"}/1000000000",
+          "expr": "avg(node_filesystem_avail_bytes{ }/1000000000)",
           "instant": false,
-          "legendFormat": "GB",
+          "legendFormat": "Media",
           "range": true,
           "refId": "A"
         }

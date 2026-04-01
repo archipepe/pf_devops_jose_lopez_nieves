@@ -1,0 +1,23 @@
+# Dockerfile.base.debug
+# mysymfony/ubuntu:24.04-5.0-debug
+FROM mysymfony/ubuntu:24.04-5.0-prod
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y \
+    php-xdebug \
+    nano \
+    gcc \
+    make \
+    autoconf \
+    php-dev
+
+# Opcache desactivado en debug
+RUN echo "opcache.enable=0" > /etc/php/8.3/mods-available/opcache.ini \
+    && echo "opcache.validate_timestamps=1" >> /etc/php/8.3/mods-available/opcache.ini
+
+COPY php/xdebug.ini /etc/php/8.3/fpm/conf.d/20-xdebug.ini
+
+# memory_limit = 128M por defecto, está bien
+# RUN sed -i 's/^memory_limit = .*/memory_limit = 512M/' /etc/php/8.3/fpm/php.ini
+RUN sed -i 's/^max_execution_time = .*/max_execution_time = 0/' /etc/php/8.3/fpm/php.ini

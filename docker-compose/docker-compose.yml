@@ -1,8 +1,9 @@
 services:
   symfony-php-nginx-service:
     image: ${REGISTRY}/${SYMFONY_APP_IMAGE}
-    # image: mysymfony/php-nginx:4.1
+    # image: php-nginx:7.0-prod
     environment:
+      APP_ENV: prod
       FORCE_HEALTH_CHECK_ERROR: false
       DEPLOYMENT_COLOUR: blue
       DEPLOYMENT_NAME: "Blue Deployment v1.0"
