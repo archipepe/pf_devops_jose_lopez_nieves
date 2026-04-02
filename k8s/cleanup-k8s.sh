@@ -53,13 +53,14 @@ review_volumes() {
         log_info "Elimina los volumeclaims mediante:"
         log_info "kubectl delete pvc mysql-pvc -n $namespace_name"
         echo ""
-        log_info "PersistentVolume en el namespace $namespace_name:"
-        kubectl get pv -n $namespace_name
-        log_info "Elimina los volúmenes mediante (no hay que poner el namespace):"
-        log_info "kubectl delete pv pvc-96760041-2b17-43c5-9a47-5f83acd2a5bf"
-        echo ""
-        log_info "Para asegurarte bien, entra con "minikube ssh" y revisa el directorio /tmp/hostpath-provisioner/$namespace_name para eliminar los volúmenes que ya no necesites."
+        log_info "Para asegurarte bien, entra con minikube ssh y revisa el directorio /tmp/hostpath-provisioner/$namespace_name para eliminar los volúmenes que ya no necesites."
     done
+
+    echo ""
+    log_info "PersistentVolume (namespace independent):"
+    kubectl get pv
+    log_info "Elimina los volúmenes mediante (no hay que poner el namespace):"
+    log_info "kubectl delete pv pvc-96760041-2b17-43c5-9a47-5f83acd2a5bf"
 }
 
 delete_k8s_resources() {

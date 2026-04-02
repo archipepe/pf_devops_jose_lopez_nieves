@@ -28,9 +28,10 @@ VOLUMECLAIMS_SYMFONY="$APPLICATION/volumes/local/pvc-symfony.yaml"
 export VOLUMECLAIMS=($VOLUMECLAIMS_MYSQL $VOLUMECLAIMS_SYMFONY)
 
 MYSQL_SECRET="$APPLICATION/secrets/secret-mysql.yaml"
+USER_QUERIES_SECRET="$APPLICATION/secrets/secret-user-queries.yaml"
 SYMFONY_DATABASE="$APPLICATION/secrets/secret-database-symfony.yaml"
 SYMFONY_APP_SECRET="$APPLICATION/secrets/secret-app-symfony.yaml"
-export SECRETS=($MYSQL_SECRET $SYMFONY_DATABASE $SYMFONY_APP_SECRET)
+export SECRETS=($MYSQL_SECRET $USER_QUERIES_SECRET $SYMFONY_DATABASE $SYMFONY_APP_SECRET)
 
 # export must be in all variables
 export REGISTRY="mysymfony"

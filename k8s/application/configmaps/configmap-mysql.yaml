@@ -4,7 +4,7 @@ metadata:
   name: mysql-configmap
   namespace: symfony-ns
 data:
-  init.sql: |
+  01-schema.sql: |
     -- --------------------------------------------------------
     -- Host:                         192.168.100.2
     -- Server version:               8.0.45 - MySQL Community Server - GPL
@@ -368,21 +368,6 @@ data:
       PRIMARY KEY (`id`),
       UNIQUE KEY `UNIQ_8D93D649E7927C74` (`email`)
     ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    -- Dumping data for table app.user: ~11 rows (approximately)
-    DELETE FROM `user`;
-    INSERT INTO `user` (`id`, `email`, `roles`, `password`, `first_name`) VALUES
-      (1, 'abraca_admin@example.com', '[]', '$2y$13$lZdA9zsVf2tDABjBQruQZe0pbyxbLI8OorvQUjU25dDByFIvlGnha', 'Keagan'),
-      (2, 'suzanne78@jast.com', '[]', '$2y$13$5OwceQ4CtrAiaxnT93iRXulOI/yYLcwRG9mtaVagGVfFzPz9fjWym', 'Jarrett'),
-      (3, 'ywisozk@yahoo.com', '[]', '$2y$13$LHDWzZdEOK3QhPkqPLKHMOPlOn0.9NL2jxzG0n8DDm8YNCYsp5X3C', 'Shaina'),
-      (4, 'drempel@bogisich.biz', '[]', '$2y$13$acucTBVkMlGFQmDwlWqHY.bjIqBVexMwGHhVWgYgK8IGDou8sIsh2', 'Adolfo'),
-      (5, 'jared84@gmail.com', '[]', '$2y$13$5XVaQFD9Jrzei0qkXFTc.eW4iTO9ggesbqOcW.8gu36qBIrYRnJi.', 'Kylie'),
-      (6, 'pjacobs@mcdermott.com', '[]', '$2y$13$pWAn5iqAvDtaEX7/SzgBx.EFkPfeBJBSBpnF8rOe/398wKzj51MOG', 'Torrance'),
-      (7, 'alexanne.klein@harris.com', '[]', '$2y$13$BZnjBo1k7uL86YAfA.6UdumBwDjrRnssF43HuLJS6zowHlUd5JIIG', 'Sheldon'),
-      (8, 'altenwerth.anabel@gmail.com', '[]', '$2y$13$qm5Bq0CRcGUALcA97DXZd.3kRcqGDSGlTtJnrIU1YHTY5zzQcOZHO', 'Darby'),
-      (9, 'mcdermott.russel@fisher.com', '[]', '$2y$13$DAeLacZ7oZDMH/rEATqAR.tL7p7rFTQKq4lJn2aZIenxrQIgRttc.', 'Charles'),
-      (10, 'casper.santos@hotmail.com', '[]', '$2y$13$duZbXnra2Y0k2lbcSUV28.LRgpvx2lCW4BexSqktW5Tv3fhzz4AX6', 'Winnifred'),
-      (11, 'born@hotmail.com', '[]', '$2y$13$1Vww3BcaLiCdKlsBxLllmuylaxUPaC6f/HpmnqPen/x.Y1thXKNIG', 'Ally');
 
     /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
     /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

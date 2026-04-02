@@ -1,6 +1,5 @@
 # Secrets de Kubernetes
-k8s/secrets/
-secrets/
+!secrets/
 
 # Archivos de entorno
 # .env

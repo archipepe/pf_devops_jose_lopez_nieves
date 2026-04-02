@@ -66,6 +66,8 @@ terraform apply
 
 #############################################
 TODO: Revisa el valor de iam-ebs-csi-driver.tf::data.aws_region.current
+
+QUEDARSE CON TODO EL JSON QUE TIENE TODOS LOS VALORES AL HACER DESTROY
 #############################################
 
 ### 2. Subir imágenes al ECR

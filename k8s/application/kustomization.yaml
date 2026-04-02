@@ -9,6 +9,7 @@ resources:
   - secrets/secret-app-symfony.yaml
   - secrets/secret-database-symfony.yaml
   - secrets/secret-mysql.yaml
+  - secrets/secret-user-queries.yaml
   - configmaps/configmap-mysql.yaml
   - volumes/local/pvc-mysql.yaml
   - volumes/local/pvc-symfony.yaml

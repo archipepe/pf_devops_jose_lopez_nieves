@@ -35,6 +35,11 @@ spec:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_ROOT_PASSWORD
+            - name: USER_QUERIES
+              valueFrom:
+                secretKeyRef:
+                  name: user-queries-secret
+                  key: USER_QUERIES
             - name: MYSQL_DATABASE
               value: app
           livenessProbe:
@@ -61,7 +66,16 @@ spec:
             - name: mysql-data
               mountPath: /var/lib/mysql
             - name: init-sql
-              mountPath: /docker-entrypoint-initdb.d
+              mountPath: /docker-entrypoint-initdb.d/01-schema.sql
+              subPath: 01-schema.sql
+          command: ["sh", "-c"]
+          args:
+            - |
+              # Aunque docker-entrypoint.sh sólo se ejecuta si detecta que /var/lib/mysql está vacío, lo comprobamos para evitar que la tabla user no se regenere cada vez que se inicie el pod y también evitar dejar datos en texto plano innecesariamente, una vez que el pod se reinicie, este script desaparecerá
+              if [ -z "$(ls -A /var/lib/mysql)" ]; then
+                echo "$USER_QUERIES" > /docker-entrypoint-initdb.d/02-users.sql
+              fi
+              exec docker-entrypoint.sh mysqld
           ports:
             - containerPort: 3306
               name: mysql
