@@ -74,7 +74,7 @@ delete_k8s_resources() {
 }
 
 delete_k8s_monitoring_resources() {
-    kubectl delete -k monitoring/
+    kubectl delete -k observability/
 }
 
 delete_k8s_resources

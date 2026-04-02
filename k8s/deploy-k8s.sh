@@ -89,8 +89,8 @@ apply_kustomization() {
 }
 
 apply_kustomization_monitoring() {
-    log_info "Desplegando en Kubernetes con kustomization monitoring..."
-    kubectl apply -k monitoring/
+    log_info "Desplegando en Kubernetes con kustomization observability..."
+    kubectl apply -k observability/
 }
 
 # Build images if they don't exist in Minikube's registry and send them to Minikube
