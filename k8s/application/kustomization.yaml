@@ -1,4 +1,4 @@
-# k8s/kustomization.yaml
+# k8s/application/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -6,16 +6,16 @@ namespace: symfony-ns # Funciona aunque aún no exista el namespace
 
 resources:
   - namespaces/namespace-symfony.yaml
-  - secrets/secret-app-symfony.yaml
-  - secrets/secret-database-symfony.yaml
-  - secrets/secret-mysql.yaml
-  - secrets/secret-user-queries.yaml
+  - secrets/local/secret-app-symfony.yaml
+  - secrets/local/secret-database-symfony.yaml
+  - secrets/local/secret-mysql.yaml
+  - secrets/local/secret-user-queries.yaml
   - configmaps/configmap-mysql.yaml
   - volumes/local/pvc-mysql.yaml
   - volumes/local/pvc-symfony.yaml
   - deployments/local/deployment-mysql.yaml
-  - services/local/service-mysql.yaml
+  - services/service-mysql.yaml
   - deployments/local/deployment-symfony.yaml
-  - services/local/service-nginx.yaml
+  - services/service-nginx.yaml
   - ingresses/local/ingress-symfony.yaml
   

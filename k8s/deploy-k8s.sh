@@ -138,15 +138,6 @@ add_ingress_to_hosts() {
         echo "$MINIKUBE_IP    $INGRESS_HOST" | sudo tee -a /etc/hosts > /dev/null
         log_info "Host añadido correctamente"
     fi
-
-    if grep -q "$INGRESS_GRAFANA_HOST" /etc/hosts; then
-        log_info "El host '$INGRESS_GRAFANA_HOST' ya está configurado en /etc/hosts"
-    else
-        MINIKUBE_IP=$(minikube ip)
-        log_info "Añadiendo $INGRESS_GRAFANA_HOST -> $MINIKUBE_IP a /etc/hosts"
-        echo "$MINIKUBE_IP    $INGRESS_GRAFANA_HOST" | sudo tee -a /etc/hosts > /dev/null
-        log_info "Host añadido correctamente"
-    fi
 }
 
 change_permissions() {

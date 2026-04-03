@@ -1,4 +1,4 @@
-# k8s/kustomization.yaml
+# k8s/observability/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -49,5 +49,7 @@ resources:
   - services/service-prometheus.yaml
   - deployments/deployment-grafana.yaml
   - services/service-grafana.yaml
-  - ingresses/ingress-grafana.yaml
+
+  #########################################!!!!!!!!!!!!!!!!!!!!!
+  - ingresses/local/ingress-grafana.yaml
   

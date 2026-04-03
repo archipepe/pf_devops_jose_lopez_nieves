@@ -35,7 +35,6 @@ spec:
       - name: docker
         hostPath:
           path: /var/lib/docker
-          type: Directory
       - name: dev-disk
         hostPath:
           path: /dev/disk

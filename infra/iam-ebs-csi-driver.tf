@@ -1,6 +1,4 @@
 # iam-ebs-csi-driver.tf
-data "aws_region" "current" {}
-
 resource "aws_iam_policy" "ebs_csi_driver_policy" {
   name        = "${module.eks.cluster_name}-ebs-csi-driver-policy"
   description = "Policy for EBS CSI driver"
@@ -60,7 +58,7 @@ resource "aws_iam_policy" "ebs_csi_driver_policy" {
         Resource = "*"
         Condition = {
           StringLike = {
-            "aws:RequestedRegion" = data.aws_region.current.name
+            "aws:RequestedRegion" = var.aws_region
           }
         }
       },

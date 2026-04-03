@@ -30,9 +30,6 @@ spec:
         - name: dashboards
           configMap:
             name: dashboards
-        # - name: storage
-        #   persistentVolumeClaim:
-        #     claimName: grafana-storage
       
       containers:
         - name: grafana
@@ -46,6 +43,10 @@ spec:
               value: "true"
             - name: GF_FEATURE_TOGGLES_ENABLE
               value: "traceqlEditor"
+            - name: GF_SERVER_ROOT_URL
+              value: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "true"
           resources:
             requests:
               memory: "128Mi"
@@ -62,8 +63,6 @@ spec:
               mountPath: /etc/grafana/provisioning/alerting
             - name: dashboards
               mountPath: /var/lib/grafana/dashboards
-            # - name: storage
-            #   mountPath: /var/lib/grafana
           ports:
             - containerPort: 3000
               name: http

@@ -10,7 +10,11 @@ metadata:
     # Duración de la cookie (2 días en segundos)
     nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+
+    nginx.ingress.kubernetes.io/group.name: "main"
+    nginx.ingress.kubernetes.io/group.order: "2"
 spec:
+  ingressClassName: nginx
   rules:
     - host: symfony.local
       http:

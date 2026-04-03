@@ -22,9 +22,6 @@ spec:
         - name: config
           configMap:
             name: tempo-config
-        # - name: storage
-        #   persistentVolumeClaim:
-        #     claimName: tempo-storage
 
       containers:
         - name: tempo
@@ -41,8 +38,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/tempo
-            # - name: storage
-            #   mountPath: /var/tempo
           ports:
             - containerPort: 4317
               name: grpc

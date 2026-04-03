@@ -15,22 +15,21 @@ export CONFIGMAPS=($CONFIGMAP_MYSQL)
 
 DEPLOYMENT_MYSQL="$APPLICATION/deployments/local/deployment-mysql.yaml"
 DEPLOYMENT_SYMFONY="$APPLICATION/deployments/local/deployment-symfony.yaml"
-SERVICE_MYSQL="$APPLICATION/services/local/service-mysql.yaml"
-SERVICE_NGINX="$APPLICATION/services/local/service-nginx.yaml"
+SERVICE_MYSQL="$APPLICATION/services/service-mysql.yaml"
+SERVICE_NGINX="$APPLICATION/services/service-nginx.yaml"
 export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $SERVICE_NGINX)
 
 export INGRESS_SYMFONY="$APPLICATION/ingresses/local/ingress-symfony.yaml"
 export INGRESS_HOST="symfony.local"
-export INGRESS_GRAFANA_HOST="grafana.local"
 
 VOLUMECLAIMS_MYSQL="$APPLICATION/volumes/local/pvc-mysql.yaml"
 VOLUMECLAIMS_SYMFONY="$APPLICATION/volumes/local/pvc-symfony.yaml"
 export VOLUMECLAIMS=($VOLUMECLAIMS_MYSQL $VOLUMECLAIMS_SYMFONY)
 
-MYSQL_SECRET="$APPLICATION/secrets/secret-mysql.yaml"
-USER_QUERIES_SECRET="$APPLICATION/secrets/secret-user-queries.yaml"
-SYMFONY_DATABASE="$APPLICATION/secrets/secret-database-symfony.yaml"
-SYMFONY_APP_SECRET="$APPLICATION/secrets/secret-app-symfony.yaml"
+MYSQL_SECRET="$APPLICATION/secrets/local/secret-mysql.yaml"
+USER_QUERIES_SECRET="$APPLICATION/secrets/local/secret-user-queries.yaml"
+SYMFONY_DATABASE="$APPLICATION/secrets/local/secret-database-symfony.yaml"
+SYMFONY_APP_SECRET="$APPLICATION/secrets/local/secret-app-symfony.yaml"
 export SECRETS=($MYSQL_SECRET $USER_QUERIES_SECRET $SYMFONY_DATABASE $SYMFONY_APP_SECRET)
 
 # export must be in all variables

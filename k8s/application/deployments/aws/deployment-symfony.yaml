@@ -26,42 +26,62 @@ spec:
             matchLabels:
               app: symfony-app
 
-      # volumes:
-      #   - name: app-logs
-      #     persistentVolumeClaim:
-      #       claimName: symfony-pvc
+      volumes:
+        - name: app-logs
+          persistentVolumeClaim:
+            claimName: symfony-pvc
 
       containers:
         - name: php-nginx-container
-          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug
+          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
           imagePullPolicy: IfNotPresent
           env:
-            # - name: DATABASE_URL
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: symfony-secret
-            #       key: DATABASE_URL
-            # - name: APP_SECRET
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: symfony-app-secret
-            #       key: APP_SECRET
             - name: DATABASE_URL
-              value: mysql://root:XjesGl0qzB7CZNuW@mysql-service:3306/app?serverVersion=8.0&charset=utf8mb4
+              valueFrom:
+                secretKeyRef:
+                  name: symfony-database-secret
+                  key: DATABASE_URL
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: symfony-app-secret
+                  key: APP_SECRET
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
             - name: POD_ZONE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['topology.kubernetes.io/zone']
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: APP_ENV
-              value: dev
+              value: prod
+            - name: FORCE_HEALTH_CHECK_ERROR
+              value: "false"
+            - name: DEPLOYMENT_COLOUR
+              value: blue
+            - name: DEPLOYMENT_NAME
+              value: "Blue Deployment v1.0"
+            - name: APP_VERSION
+              value: "1.0.0"
+            - name: OTEL_PHP_AUTOLOAD_ENABLED
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: mi-tienda-symfony
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.version=1.0.0,deployment.environment=dev
+            - name: OTEL_TRACES_EXPORTER
+              value: otlp
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.monitoring-ns:4318
+            - name: OTEL_PROPAGATORS
+              value: baggage,tracecontext
           resources:
             requests:
               memory: "128Mi"
@@ -85,9 +105,9 @@ spec:
           #   periodSeconds: 5
           #   timeoutSeconds: 3
           #   failureThreshold: 2
-          # volumeMounts:
-          #   - name: app-logs
-          #     mountPath: /var/www/html/var/log
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/www/html/var/log
           ports:
             - containerPort: 80
               name: http
