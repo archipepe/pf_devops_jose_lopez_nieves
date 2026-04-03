@@ -13,7 +13,7 @@ resources:
   - configmaps/configmap-mysql.yaml
   - volumes/local/pvc-mysql.yaml
   - volumes/local/pvc-symfony.yaml
-  - deployments/local/deployment-mysql.yaml
+  - deployments/deployment-mysql.yaml
   - services/service-mysql.yaml
   - deployments/local/deployment-symfony.yaml
   - services/service-nginx.yaml

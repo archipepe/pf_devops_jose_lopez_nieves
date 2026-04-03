@@ -94,7 +94,7 @@ kubectl apply -f application/externalsecrets/aws/externalsecret-app-symfony.yaml
 kubectl apply -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
 kubectl apply -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
 kubectl apply -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
-kubectl apply -f application/deployments/aws/deployment-mysql.yaml && \
+kubectl apply -f application/deployments/deployment-mysql.yaml && \
 kubectl apply -f application/services/service-mysql.yaml && \
 kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
 kubectl apply -f application/services/service-nginx.yaml && \
@@ -156,7 +156,7 @@ kubectl delete -k observability/
 kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
 kubectl delete -f application/services/service-mysql.yaml && \
 kubectl delete -f application/services/service-nginx.yaml && \
-kubectl delete -f application/deployments/aws/deployment-mysql.yaml && \
+kubectl delete -f application/deployments/deployment-mysql.yaml && \
 kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
 kubectl delete -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
 kubectl delete -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \

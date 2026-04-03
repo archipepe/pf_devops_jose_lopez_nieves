@@ -13,7 +13,7 @@ export NAMESPACES=($SYMFONY_NAMESPACE)
 CONFIGMAP_MYSQL="$APPLICATION/configmaps/configmap-mysql.yaml"
 export CONFIGMAPS=($CONFIGMAP_MYSQL)
 
-DEPLOYMENT_MYSQL="$APPLICATION/deployments/local/deployment-mysql.yaml"
+DEPLOYMENT_MYSQL="$APPLICATION/deployments/deployment-mysql.yaml"
 DEPLOYMENT_SYMFONY="$APPLICATION/deployments/local/deployment-symfony.yaml"
 SERVICE_MYSQL="$APPLICATION/services/service-mysql.yaml"
 SERVICE_NGINX="$APPLICATION/services/service-nginx.yaml"
