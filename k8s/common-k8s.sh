@@ -1,46 +1,28 @@
 #!/bin/bash
 
 # Configuration
-APPLICATION="application"
+OVERLAYS_PATH="overlays/"
+export KUSTOMIZATION_LOCAL_PATH="$OVERLAYS_PATH""local/"
+export KUSTOMIZATION_AWS_PATH="$OVERLAYS_PATH""aws/"
 
 SYMFONY_NAMESPACE_NAME="symfony-ns"
 MONITORING_NAMESPACE_NAME="monitoring-ns"
 export NAMESPACES_NAMES=($SYMFONY_NAMESPACE_NAME $MONITORING_NAMESPACE_NAME)
 
-SYMFONY_NAMESPACE="$APPLICATION/namespaces/namespace-symfony.yaml"
-export NAMESPACES=($SYMFONY_NAMESPACE)
-
-CONFIGMAP_MYSQL="$APPLICATION/configmaps/configmap-mysql.yaml"
-export CONFIGMAPS=($CONFIGMAP_MYSQL)
-
-DEPLOYMENT_MYSQL="$APPLICATION/deployments/local/deployment-mysql.yaml"
-DEPLOYMENT_SYMFONY="$APPLICATION/deployments/local/deployment-symfony.yaml"
-SERVICE_MYSQL="$APPLICATION/services/local/service-mysql.yaml"
-SERVICE_NGINX="$APPLICATION/services/local/service-nginx.yaml"
-export DEPLOYMENT_ORDER=($DEPLOYMENT_MYSQL $SERVICE_MYSQL $DEPLOYMENT_SYMFONY $SERVICE_NGINX)
-
-export INGRESS_SYMFONY="$APPLICATION/ingresses/local/ingress-symfony.yaml"
 export INGRESS_HOST="symfony.local"
-export INGRESS_GRAFANA_HOST="grafana.local"
-
-VOLUMECLAIMS_MYSQL="$APPLICATION/volumes/local/pvc-mysql.yaml"
-VOLUMECLAIMS_SYMFONY="$APPLICATION/volumes/local/pvc-symfony.yaml"
-export VOLUMECLAIMS=($VOLUMECLAIMS_MYSQL $VOLUMECLAIMS_SYMFONY)
-
-MYSQL_SECRET="$APPLICATION/secrets/secret-mysql.yaml"
-SYMFONY_DATABASE="$APPLICATION/secrets/secret-database-symfony.yaml"
-SYMFONY_APP_SECRET="$APPLICATION/secrets/secret-app-symfony.yaml"
-export SECRETS=($MYSQL_SECRET $SYMFONY_DATABASE $SYMFONY_APP_SECRET)
 
 # export must be in all variables
 export REGISTRY="mysymfony"
-export SYMFONY_UBUNTU_BASE_IMAGE_PATH="../php-nginx/"
-export SYMFONY_UBUNTU_BASE_IMAGE="ubuntu:24.04-4.0-debug"
-export SYMFONY_UBUNTU_BASE_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base"
+export SYMFONY_UBUNTU_BASE_PROD_IMAGE_PATH="../php-nginx/"
+export SYMFONY_UBUNTU_BASE_PROD_IMAGE="ubuntu:24.04-5.0-prod"
+export SYMFONY_UBUNTU_BASE_PROD_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base.prod"
+export SYMFONY_UBUNTU_BASE_DEBUG_IMAGE_PATH="../php-nginx/"
+export SYMFONY_UBUNTU_BASE_DEBUG_IMAGE="ubuntu:24.04-5.0-debug"
+export SYMFONY_UBUNTU_BASE_DEBUG_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.base.debug"
 export SYMFONY_APP_IMAGE_PATH="../php-nginx/"
-export SYMFONY_APP_IMAGE="php-nginx:6.0-debug"
+export SYMFONY_APP_IMAGE="php-nginx:7.0-prod"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
-export IMAGES=("SYMFONY_UBUNTU_BASE" "SYMFONY_APP")
+export IMAGES=("SYMFONY_UBUNTU_BASE_PROD" "SYMFONY_UBUNTU_BASE_DEBUG" "SYMFONY_APP")
 
 # Colours for output
 RED='\033[0;31m'

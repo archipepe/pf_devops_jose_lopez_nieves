@@ -64,10 +64,6 @@ terraform plan
 terraform apply
 ```
 
-#############################################
-TODO: Revisa el valor de iam-ebs-csi-driver.tf::data.aws_region.current
-#############################################
-
 ### 2. Subir imágenes al ECR
 
 ```bash
@@ -75,10 +71,10 @@ TODO: Revisa el valor de iam-ebs-csi-driver.tf::data.aws_region.current
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
 
 # Tagear imagen
-docker tag mysymfony/php-nginx:6.0-debug public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug
+docker tag mysymfony/php-nginx:7.0-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
 
 # Pushear
-docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:6.0-debug
+docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
 ```
 
 ### 3. Desplegar en EKS
@@ -88,17 +84,27 @@ cd ./infra
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
 cd ./k8s
-# kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/aws/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
+# kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
 
 # TODO: hacer el equivalente para el delete más abajo
-kubectl apply -f application/namespaces/namespace-symfony.yaml && \
-kubectl apply -f application/configmaps/configmap-mysql.yaml && \
-kubectl apply -f application/volumes/aws/pvc-mysql.yaml && \
-kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
-kubectl apply -f application/services/aws/service-nginx.yaml && \
-kubectl apply -f application/deployments/aws/deployment-mysql.yaml && \
-kubectl apply -f application/services/aws/service-mysql.yaml && \
-kubectl apply -f application/ingresses/aws/ingress-symfony.yaml
+# Lo dejo comentado hasta comprobar que con kustomization.yaml funciona bien
+# kubectl apply -f application/namespaces/namespace-symfony.yaml && \
+# kubectl apply -f application/configmaps/configmap-mysql.yaml && \
+# kubectl apply -f application/secretstores/aws/secretstore-symfony.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
+# kubectl apply -f application/deployments/deployment-mysql.yaml && \
+# kubectl apply -f application/services/service-mysql.yaml && \
+# kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
+# kubectl apply -f application/services/service-nginx.yaml && \
+# kubectl apply -f application/ingresses/aws/ingress-symfony.yaml
+
+#######################
+
+# Esto despliega application y observability
+kubectl apply -k overlays/aws
 ```
 
 ### 4. Verificar funcionamiento desde el pod
@@ -142,20 +148,33 @@ kubectl logs -n symfony-ns deployment/symfony-app -f
 ### 7. Eliminar despliegue
 
 ```bash
-# kubectl delete -f ingress/aws/ingress-symfony.yaml && kubectl delete -f services/aws/service-nginx.yaml && kubectl delete -f deployments/aws/deployment-symfony.yaml && kubectl delete -f volumes/aws/pvc-symfony.yaml \
+# kubectl delete -f ingress/aws/ingress-symfony.yaml && kubectl delete -f services/service-nginx.yaml && kubectl delete -f deployments/aws/deployment-symfony.yaml && kubectl delete -f volumes/aws/pvc-symfony.yaml \
 # && kubectl delete -f namespaces/namespace-symfony.yaml
 
-kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
-kubectl delete -f application/services/aws/service-nginx.yaml && \
-kubectl delete -f application/services/aws/service-mysql.yaml && \
-kubectl delete -f application/deployments/aws/deployment-mysql.yaml && \
-kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
-kubectl delete -f application/configmaps/configmap-mysql.yaml && \
-kubectl delete -f application/volumes/aws/pvc-mysql.yaml && \
-kubectl delete -f application/namespaces/namespace-symfony.yaml
+kubectl delete -k overlays/aws
+
+#######################
+
+# TODO: lo dejo hasta comprobar que funciona con kustomization.yaml
+# kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
+# kubectl delete -f application/services/service-mysql.yaml && \
+# kubectl delete -f application/services/service-nginx.yaml && \
+# kubectl delete -f application/deployments/deployment-mysql.yaml && \
+# kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
+# kubectl delete -f application/secretstores/aws/secretstore-symfony.yaml && \
+# kubectl delete -f application/configmaps/configmap-mysql.yaml && \
+# kubectl delete -f application/namespaces/namespace-symfony.yaml
 ```
 
 ### 8. Destruir infraestructura
+
+#############################################
+QUEDARSE CON TODO EL JSON QUE TIENE TODOS LOS VALORES AL HACER DESTROY
+#############################################
 
 ```bash
 cd ./infra
@@ -170,6 +189,7 @@ Para que vaya más rápido, ve mientras eliminando manualmente:
 - EFS
 - ECR eliminar imagen (si no, no se podrá borrar el registro con el destroy)
 - VPC
+- Secrets Manager
 
 ### 9. Limpiar contextos de kubectl
 
@@ -177,24 +197,36 @@ Para que vaya más rápido, ve mientras eliminando manualmente:
 kubectl config get-contexts && \
 kubectl config use-context minikube
 
-kubectl config delete-context arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-kp6yeg6A && \
-kubectl config delete-cluster arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-kp6yeg6A && \
-kubectl config delete-user    arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-kp6yeg6A
+kubectl config delete-context arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-2ZYjYdbP && \
+kubectl config delete-cluster arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-2ZYjYdbP && \
+kubectl config delete-user    arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-2ZYjYdbP
 ```
 
-### Verificaciones importantes
+### Verificaciones importantes y troubleshooting
 
-### ✓ ALB Ingress Controller activo
+### Comprobar log del namespace
+```bash
+kubectl get events -n symfony-ns --sort-by='.lastTimestamp'
+```
+
+### ALB Ingress Controller activo
 ```bash
 kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller -f
 ```
-
-### Troubleshooting
 
 ### Pod en estado Pending
 ```bash
 kubectl describe pod -n symfony-ns deployment/symfony-app
 # Ver sección "Events" para errores de imagen o recursos
+```
+
+### Logs de un contenedor en concreto
+```bash
+kubectl logs -n symfony-ns symfony-deployment-74fdcdbd99-bs7xf -c init-code
+kubectl logs -n symfony-ns symfony-deployment-f4dd96cf5-fmtcj -c php-nginx-container
+
+kubectl logs -n symfony-ns deployment/symfony-app
+kubectl logs -n symfony-ns deployment/symfony-app -c php-nginx-container
 ```
 
 ### ALB no se crea
@@ -206,10 +238,22 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controll
 aws iam get-role-policy --role-name eks-alb-controller --policy-name AWSLoadBalancerControllerIAMPolicy
 ```
 
-### Health checks fallando
+### Obtener info de un ingress
 ```bash
-# Si falla, revisar logs de la app
-kubectl logs -n symfony-ns deployment/symfony-app
-kubectl logs -n symfony-ns deployment/symfony-app -c php-container
-kubectl logs -n symfony-ns deployment/symfony-app -c nginx-container
+kubectl describe ingress grafana-ingress -n monitoring-ns
+```
+
+### Comprobar si los CRD están instalados
+```bash
+kubectl get crds | grep external
+```
+
+### Comprobar si los pods de external-secrets están funcionando
+```bash
+kubectl get pods -n external-secrets
+```
+
+### Comprobar las versiones soportadas del manifiesto secretstore
+```bash
+kubectl get crd secretstores.external-secrets.io -o jsonpath='{.spec.versions[*].name}'
 ```

@@ -14,3 +14,14 @@ resource "aws_ecrpublic_repository" "mysymfony-php-nginx" {
     description       = "Repositorio PF DevOps JLN"
   }
 }
+
+resource "aws_ecrpublic_repository" "mysymfony-ubuntu" {
+  provider = aws.us_east_1
+
+  repository_name = "mysymfony/ubuntu"
+
+  catalog_data {
+    about_text        = "Repositorio PF DevOps JLN"
+    description       = "Repositorio PF DevOps JLN"
+  }
+}

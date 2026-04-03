@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring-ns
+  annotations:
+    # ALB Ingress Controller annotations
+    alb.ingress.kubernetes.io/load-balancer-name: "symfony-alb"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+
+    # Agrupación de ingresses para usar el mismo ALB controller
+    # Si el group.name coincide, usan el mismo. No hay que crear main, es como un tag dinámico
+    alb.ingress.kubernetes.io/group.name: "main"
+    alb.ingress.kubernetes.io/group.order: "1"
+    
+    # Tags para AWS
+    alb.ingress.kubernetes.io/tags: "Environment=test,Project=pf-devops"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000

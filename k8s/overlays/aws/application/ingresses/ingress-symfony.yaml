@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: symfony-ingress
+  namespace: symfony-ns
+  annotations:
+    # ALB Ingress Controller annotations
+    alb.ingress.kubernetes.io/load-balancer-name: "symfony-alb"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip # Obligatorio ip cuando stickiness.enabled=true
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # Sticky sessions - Via target group attributes
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=3600
+    
+    # Health check
+    # TODO
+    # alb.ingress.kubernetes.io/healthcheck-path: /health
+    # alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    # alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    # alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    # alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+
+    # Agrupación de ingresses para usar el mismo ALB controller
+    # Si el group.name coincide, usan el mismo. No hay que crear main, es como un tag dinámico
+    alb.ingress.kubernetes.io/group.name: "main"
+    alb.ingress.kubernetes.io/group.order: "2"
+    
+    # Tags para AWS
+    alb.ingress.kubernetes.io/tags: "Environment=test,Project=pf-devops"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 80

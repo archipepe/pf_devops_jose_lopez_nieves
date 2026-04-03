@@ -1,0 +1,47 @@
+# k8s/deployments/tempo.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo-deployment
+  namespace: monitoring-ns
+  labels:
+    app: tempo-app
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: tempo-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: tempo-app
+        version: v1
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: tempo-config
+
+      containers:
+        - name: tempo
+          image: grafana/tempo:2.8.2
+          args:
+            - '-config.file=/etc/tempo/tempo-config.yaml'
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tempo
+          ports:
+            - containerPort: 4317
+              name: grpc
+            - containerPort: 4318
+              name: http-otlp
+            - containerPort: 3200
+              name: http

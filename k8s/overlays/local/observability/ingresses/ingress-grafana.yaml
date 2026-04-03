@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring-ns
+  annotations:
+    nginx.ingress.kubernetes.io/group.name: "main"
+    nginx.ingress.kubernetes.io/group.order: "1"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: symfony.local
+      http:
+        paths:
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+# Para que funcione, hay que habilitar el addon de ingress en minikube: minikube addons enable ingress
+# Luego, hay que añadir la siguiente línea al archivo /etc/hosts de tu máquina local:
+# 192.168.49.2 symfony.local
+# Se accederá por tanto a través de http://symfony.local/grafana

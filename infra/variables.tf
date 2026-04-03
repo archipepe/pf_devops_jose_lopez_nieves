@@ -43,3 +43,23 @@ variable "subnet_d_cidr" {
   description = "CIDR para la subred d (privada)"
   default = "10.0.4.0/24"
 }
+
+variable "symfony_app_secret" {
+  description = "Symfony APP_SECRET"
+  default = ""
+}
+
+variable "symfony_database_url" {
+  description = "Symfony DATABASE_URL"
+  default = ""
+}
+
+variable "mysql_root_password" {
+  description = "MYSQL_ROOT_PASSWORD"
+  default = ""
+}
+
+variable "user_queries" {
+  description = "USER_QUERIES"
+  default = ""
+}

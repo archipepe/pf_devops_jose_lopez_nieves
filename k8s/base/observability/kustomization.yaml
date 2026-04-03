@@ -1,0 +1,51 @@
+# k8s/base/observability/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-ns # Funciona aunque aún no exista el namespace
+
+configMapGenerator:
+  - name: opentelemetry-config
+    files:
+      - otel-collector-config.yaml=configs/core/opentelemetry/otel-collector-config.yaml
+  - name: tempo-config
+    files:
+      - tempo-config.yaml=configs/core/tempo/tempo-config.yaml
+  - name: loki-config
+    files:
+      - local-config.yaml=configs/logs/loki/loki-config.yaml
+  - name: prometheus-config
+    files:
+      - prometheus.yml=configs/core/prometheus/prometheus-config.yml
+  - name: datasources-config
+    files:
+      - datasources.yaml=configs/visualisation/grafana/provisioning/datasources/grafana-datasources.yaml
+  - name: dashboards-config
+    files:
+      - dashboards.yml=configs/visualisation/grafana/provisioning/dashboards/dashboards.yml
+  - name: alerting-config
+    files:
+      - alerts.yml=configs/visualisation/grafana/provisioning/alerting/alerts.yml
+  - name: dashboards
+    files:
+      - dashboard-docker-monitoring.json=configs/visualisation/grafana/dashboards/dashboard-docker-monitoring.json
+      - dashboard-loki.json=configs/visualisation/grafana/dashboards/dashboard-loki.json
+      - dashboard-prometheus-app.json=configs/visualisation/grafana/dashboards/dashboard-prometheus-app.json
+      - dashboard-prometheus-node.json=configs/visualisation/grafana/dashboards/dashboard-prometheus-node.json
+
+resources:
+  - namespaces/namespace-monitoring.yaml
+  - workloads/deployments/deployment-otel.yaml
+  - workloads/deployments/deployment-tempo.yaml
+  - workloads/deployments/deployment-loki.yaml
+  - workloads/deployments/deployment-prometheus.yaml
+  - workloads/deployments/deployment-grafana.yaml
+  - workloads/daemonsets/daemonset-nodeexporter.yaml
+  - workloads/daemonsets/daemonset-cadvisor.yaml
+  - workloads/services/service-otel.yaml
+  - workloads/services/service-tempo.yaml
+  - workloads/services/service-loki.yaml
+  - workloads/services/service-nodeexporter.yaml
+  - workloads/services/service-cadvisor.yaml
+  - workloads/services/service-prometheus.yaml
+  - workloads/services/service-grafana.yaml
