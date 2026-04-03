@@ -61,7 +61,7 @@ cd ./infra
 terraform plan
 
 # Aplicar
-terraform apply
+terraform apply [-auto-approve]
 ```
 
 ### 2. Subir imágenes al ECR
