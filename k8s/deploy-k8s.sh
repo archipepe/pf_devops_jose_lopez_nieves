@@ -10,87 +10,43 @@
 
 source common-k8s.sh
 
-create_namespaces() {
-    for namespace in ${NAMESPACES[@]}; do
-        log_info "Checking namespace $namespace..."
-        kubectl get -f "$namespace" >/dev/null 2>&1 || {
-            log_info "Creating namespace..."
-            kubectl apply -f "$namespace"
-        }
-    done
-}
-
-create_secrets() {
-    for secret in ${SECRETS[@]}; do
-        log_info "Creating secret $secret..."
-        kubectl apply -f "$secret"
-    done
-}
-
-create_configmaps() {
-    for configmap in ${CONFIGMAPS[@]}; do
-        log_info "Creating ConfigMap $configmap..."
-        kubectl apply -f "$configmap"
-    done
-}
-
-create_volume_claims() {
-    for pvc in ${VOLUMECLAIMS[@]}; do
-        log_info "Creating PersistentVolumeClaim $pvc..."
-        kubectl apply -f "$pvc"
-    done
-}
-
-apply_deployments_and_services() {
-    for file in ${DEPLOYMENT_ORDER[@]}; do
-        if [ -f "$file" ]; then
-            log_info "Applying $file..."
-            kubectl apply -f "$file"
-        else
-            log_warn "Archivo "$file" no encontrado"
+wait_for_ingress_controller() {
+    local max_wait=120
+    local elapsed=0
+    local namespace="ingress-nginx"
+    local selector="app.kubernetes.io/name=ingress-nginx"
+    
+    log_info "Esperando Ingress Controller..."
+    
+    while [ $elapsed -lt $max_wait ]; do
+        # Método 1: EndpointSlices (K8s 1.21+)
+        local ready_endpoints=$(kubectl get endpointslices -n $namespace \
+            -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+            -o jsonpath='{.items[*].endpoints[*].conditions.ready}' 2>/dev/null | grep -c true)
+        
+        # Método 2: Pods ready (fallback)
+        local ready_pods=$(kubectl get pods -n $namespace -l $selector \
+            -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null | grep -c True)
+        
+        if [ "$ready_endpoints" -gt 0 ] || [ "$ready_pods" -gt 0 ]; then
+            echo ""
+            log_info "Ingress Controller listo (endpoints: $ready_endpoints, pods: $ready_pods)"
+            sleep 5
+            return 0
         fi
+        
+        echo -n "."
+        sleep 2
+        elapsed=$((elapsed + 2))
     done
+    
+    log_error "Ingress Controller no disponible después de ${max_wait}s"
+    return 1
 }
 
-create_ingress() {
-    log_info "Intentando aplicar el Ingress $INGRESS_SYMFONY..."
-
-    local MAX_RETRIES=10
-    local RETRY_DELAY=10
-    local COUNT=1
-
-    until kubectl apply -f "$INGRESS_SYMFONY"; do
-        if [ $COUNT -ge $MAX_RETRIES ]; then
-            log_error "No se pudo aplicar el Ingress después de $MAX_RETRIES intentos"
-            exit 1
-        fi
-
-        log_warn "El webhook aún no está listo. Reintentando en $RETRY_DELAY segundos... ($COUNT/$MAX_RETRIES)"
-        sleep $RETRY_DELAY
-        COUNT=$((COUNT+1))
-    done
-
-    log_info "Ingress aplicado correctamente"
-}
-
-apply_k8s_resources() {
-    log_info "Desplegando en Kubernetes..."
-    create_namespaces
-    create_secrets
-    create_configmaps
-    create_volume_claims
-    apply_deployments_and_services
-    create_ingress
-}
-
-apply_kustomization() {
+apply_k8s_local_resources() {
     log_info "Desplegando en Kubernetes con kustomization..."
-    kubectl apply -k application/
-}
-
-apply_kustomization_monitoring() {
-    log_info "Desplegando en Kubernetes con kustomization observability..."
-    kubectl apply -k observability/
+    kubectl apply -k "$KUSTOMIZATION_LOCAL_PATH"
 }
 
 # Build images if they don't exist in Minikube's registry and send them to Minikube
@@ -146,9 +102,8 @@ change_permissions() {
 
 enable_addons
 build_images
-# apply_k8s_resources
-apply_kustomization
-apply_kustomization_monitoring
+wait_for_ingress_controller
+apply_k8s_local_resources
 verify_services
 add_ingress_to_hosts
 review_images

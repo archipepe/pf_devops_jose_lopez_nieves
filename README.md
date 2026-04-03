@@ -87,22 +87,24 @@ cd ./k8s
 # kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
 
 # TODO: hacer el equivalente para el delete más abajo
-kubectl apply -f application/namespaces/namespace-symfony.yaml && \
-kubectl apply -f application/configmaps/configmap-mysql.yaml && \
-kubectl apply -f application/secretstores/aws/secretstore-symfony.yaml && \
-kubectl apply -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
-kubectl apply -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
-kubectl apply -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
-kubectl apply -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
-kubectl apply -f application/deployments/deployment-mysql.yaml && \
-kubectl apply -f application/services/service-mysql.yaml && \
-kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
-kubectl apply -f application/services/service-nginx.yaml && \
-kubectl apply -f application/ingresses/aws/ingress-symfony.yaml
+# Lo dejo comentado hasta comprobar que con kustomization.yaml funciona bien
+# kubectl apply -f application/namespaces/namespace-symfony.yaml && \
+# kubectl apply -f application/configmaps/configmap-mysql.yaml && \
+# kubectl apply -f application/secretstores/aws/secretstore-symfony.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
+# kubectl apply -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
+# kubectl apply -f application/deployments/deployment-mysql.yaml && \
+# kubectl apply -f application/services/service-mysql.yaml && \
+# kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
+# kubectl apply -f application/services/service-nginx.yaml && \
+# kubectl apply -f application/ingresses/aws/ingress-symfony.yaml
 
 #######################
 
-kubectl apply -k observability/
+# Esto despliega application y observability
+kubectl apply -k overlays/aws
 ```
 
 ### 4. Verificar funcionamiento desde el pod
@@ -149,22 +151,23 @@ kubectl logs -n symfony-ns deployment/symfony-app -f
 # kubectl delete -f ingress/aws/ingress-symfony.yaml && kubectl delete -f services/service-nginx.yaml && kubectl delete -f deployments/aws/deployment-symfony.yaml && kubectl delete -f volumes/aws/pvc-symfony.yaml \
 # && kubectl delete -f namespaces/namespace-symfony.yaml
 
-kubectl delete -k observability/
+kubectl delete -k overlays/aws
 
 #######################
 
-kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
-kubectl delete -f application/services/service-mysql.yaml && \
-kubectl delete -f application/services/service-nginx.yaml && \
-kubectl delete -f application/deployments/deployment-mysql.yaml && \
-kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
-kubectl delete -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
-kubectl delete -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
-kubectl delete -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
-kubectl delete -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
-kubectl delete -f application/secretstores/aws/secretstore-symfony.yaml && \
-kubectl delete -f application/configmaps/configmap-mysql.yaml && \
-kubectl delete -f application/namespaces/namespace-symfony.yaml
+# TODO: lo dejo hasta comprobar que funciona con kustomization.yaml
+# kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
+# kubectl delete -f application/services/service-mysql.yaml && \
+# kubectl delete -f application/services/service-nginx.yaml && \
+# kubectl delete -f application/deployments/deployment-mysql.yaml && \
+# kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
+# kubectl delete -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
+# kubectl delete -f application/secretstores/aws/secretstore-symfony.yaml && \
+# kubectl delete -f application/configmaps/configmap-mysql.yaml && \
+# kubectl delete -f application/namespaces/namespace-symfony.yaml
 ```
 
 ### 8. Destruir infraestructura

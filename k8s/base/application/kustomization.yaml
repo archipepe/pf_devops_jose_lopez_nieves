@@ -1,0 +1,12 @@
+# k8s/base/application/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: symfony-ns # Funciona aunque aún no exista el namespace
+
+resources:
+  - namespaces/namespace-symfony.yaml
+  - configmaps/configmap-mysql.yaml
+  - deployments/deployment-mysql.yaml
+  - services/service-mysql.yaml
+  - services/service-nginx.yaml
