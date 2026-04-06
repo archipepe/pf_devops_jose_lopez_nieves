@@ -22,7 +22,7 @@ export IMAGES=("SYMFONY_UBUNTU_BASE_PROD" "SYMFONY_UBUNTU_BASE_DEBUG" "SYMFONY_A
 export SYMFONY_APP_SOURCE_CODE_PATH="$SYMFONY_APP_IMAGE_PATH""symfony-app/"
 
 # tempo-data
-export TEMPO_DATA_PATH="../monitoring/tempo/tempo-data"
+export TEMPO_DATA_PATH="./monitoring/tempo/tempo-data"
 
 # Logging functions
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
