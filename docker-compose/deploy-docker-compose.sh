@@ -5,6 +5,16 @@
 
 source ./common-docker-compose.sh
 
+modificar_dockerfiles() {
+    if [ "$APP_IMAGE_TYPE" == "$PROD_TYPE" ]; then
+        sed -i 's/^FROM .*/FROM '"$REGISTRY"'\/'"$SYMFONY_UBUNTU_BASE_PROD_IMAGE"'/' "$SYMFONY_APP_IMAGE_DOCKERFILE"
+    else
+        sed -i 's/^FROM .*/FROM '"$REGISTRY"'\/'"$SYMFONY_UBUNTU_BASE_DEBUG_IMAGE"'/' "$SYMFONY_APP_IMAGE_DOCKERFILE"
+    fi
+
+    sed -i 's/^FROM .*/FROM '"$REGISTRY"'\/'"$SYMFONY_UBUNTU_BASE_PROD_IMAGE"'/' "$SYMFONY_UBUNTU_BASE_DEBUG_IMAGE_DOCKERFILE"
+}
+
 build_images() {
     log_info "Building Docker images..."
     for image in ${IMAGES[@]}; do
@@ -45,6 +55,8 @@ change_permissions() {
 
     chmod +x ./cleanup-docker-compose.sh
 }
+
+modificar_dockerfiles
 
 build_images
 

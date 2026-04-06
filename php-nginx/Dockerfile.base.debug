@@ -1,5 +1,4 @@
 # Dockerfile.base.debug
-# mysymfony/ubuntu:24.04-5.0-debug
 FROM mysymfony/ubuntu:24.04-5.0-prod
 
 ENV DEBIAN_FRONTEND=noninteractive

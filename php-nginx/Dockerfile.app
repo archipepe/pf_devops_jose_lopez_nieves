@@ -1,5 +1,4 @@
 # Dockerfile.app
-# mysymfony/php-nginx:7.0-prod
 FROM mysymfony/ubuntu:24.04-5.0-prod
 
 # Copiar el código fuente
