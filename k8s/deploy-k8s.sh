@@ -49,6 +49,20 @@ apply_k8s_local_resources() {
     kubectl apply -k "$KUSTOMIZATION_LOCAL_PATH"
 }
 
+modificar_dockerfiles() {
+    if [ "$APP_IMAGE_TYPE" == "$PROD_TYPE" ]; then
+        sed -i 's/^FROM .*/FROM '"$REGISTRY"'\/'"$SYMFONY_UBUNTU_BASE_PROD_IMAGE"'/' "$SYMFONY_APP_IMAGE_DOCKERFILE"
+    else
+        sed -i 's/^FROM .*/FROM '"$REGISTRY"'\/'"$SYMFONY_UBUNTU_BASE_DEBUG_IMAGE"'/' "$SYMFONY_APP_IMAGE_DOCKERFILE"
+    fi
+
+    sed -i 's/^FROM .*/FROM '"$REGISTRY"'\/'"$SYMFONY_UBUNTU_BASE_PROD_IMAGE"'/' "$SYMFONY_UBUNTU_BASE_DEBUG_IMAGE_DOCKERFILE"
+
+    # TODO: mejorar
+    sed -i 's|image: .*|image: '"$REGISTRY/""$SYMFONY_APP_IMAGE"'|' "$DEPLOYMENT_SYMFONY_LOCAL_PATH"
+    sed -i 's|image: .*|image: public.ecr.aws/l7n5d2e2/'"$REGISTRY/""$SYMFONY_APP_IMAGE"'|' "$DEPLOYMENT_SYMFONY_AWS_PATH"
+}
+
 # Build images if they don't exist in Minikube's registry and send them to Minikube
 build_images() {
     log_info "Building Docker images for Minikube..."
@@ -101,6 +115,7 @@ change_permissions() {
 }
 
 enable_addons
+modificar_dockerfiles
 build_images
 wait_for_ingress_controller
 apply_k8s_local_resources

@@ -1,5 +1,4 @@
 # Dockerfile.base.prod
-# mysymfony/ubuntu:24.04-5.0-prod
 ###############################################
 # STAGE 1 — BUILDER (compilar OpenTelemetry)
 ###############################################
