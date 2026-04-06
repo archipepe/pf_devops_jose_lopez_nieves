@@ -71,10 +71,8 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
-              # Aunque docker-entrypoint.sh sólo se ejecuta si detecta que /var/lib/mysql está vacío, lo comprobamos para evitar que la tabla user no se regenere cada vez que se inicie el pod y también evitar dejar datos en texto plano innecesariamente, una vez que el pod se reinicie, este script desaparecerá
-              if [ -z "$(ls -A /var/lib/mysql)" ]; then
-                echo "$USER_QUERIES" > /docker-entrypoint-initdb.d/02-users.sql
-              fi
+              # Esto se hace para mantener un equilibrio entre seguridad y reproducibilidad del proyecto a terceros, pero lo ideal es crear los usuarios a través de migración o jobs externos
+              echo "$USER_QUERIES" > /docker-entrypoint-initdb.d/02-users.sql
               exec docker-entrypoint.sh mysqld
           ports:
             - containerPort: 3306
