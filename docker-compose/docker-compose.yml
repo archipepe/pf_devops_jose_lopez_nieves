@@ -38,7 +38,7 @@ services:
     image: otel/opentelemetry-collector:0.135.0
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ../monitoring/opentelemetry/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ../k8s/base/observability/configs/core/opentelemetry/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
       - "4317:4317"
       - "4318:4318"
@@ -51,8 +51,8 @@ services:
     image: grafana/tempo:2.8.2
     command: [ "--config.file=/etc/tempo.yaml" ]
     volumes:
-      - ../monitoring/tempo/tempo-config.yaml:/etc/tempo.yaml
-      - ../monitoring/tempo/tempo-data:/tmp/tempo
+      - ../k8s/base/observability/configs/core/tempo/tempo-config.yaml:/etc/tempo.yaml
+      - ./monitoring/tempo/tempo-data:/tmp/tempo
     ports:
       - "32773:4317" # host:container
       - "32774:4318"
@@ -61,7 +61,7 @@ services:
   loki:
     image: grafana/loki:3.5.5
     volumes:
-      - ../monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - ../k8s/base/observability/configs/logs/loki/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
     ports:
       - "3100:3100"
@@ -69,7 +69,7 @@ services:
   prometheus:
     image: prom/prometheus:v3.5.0
     volumes:
-      - ../monitoring/prometheus/prometheus-config.yml:/etc/prometheus/prometheus.yml
+      - ../k8s/base/observability/configs/core/prometheus/prometheus-config.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - "--web.enable-remote-write-receiver"
@@ -118,10 +118,10 @@ services:
   grafana:
     image: grafana/grafana:12.1.1
     volumes:
-      - ../monitoring/grafana/provisioning/datasources/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ../monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-      - ../monitoring/grafana/provisioning/alerting:/etc/grafana/provisioning/alerting
-      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../k8s/base/observability/configs/visualisation/grafana/provisioning/datasources/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ../k8s/base/observability/configs/visualisation/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ../k8s/base/observability/configs/visualisation/grafana/provisioning/alerting:/etc/grafana/provisioning/alerting
+      - ../k8s/base/observability/configs/visualisation/grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
