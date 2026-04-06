@@ -67,12 +67,13 @@ terraform {
   required_version = "~> 1.3"
 }
 
-# terraform {
-#   backend "s3" {
-#     bucket = "tfstate-bucket-0667121a1aa6b245"
-#     key = "state/terraform.tfstate"
-#     region = "eu-west-1"
-#     dynamodb_table = "terraform-lock"
-#     encrypt = true
-#   }
-# }
+# La inicialización se sobreescribirá por parámetros en el script, pero para eliminar el warning establecemos el backend aquí también
+terraform {
+  backend "s3" {
+    bucket = "bucket-terraform-state-jln-35y728xstkvuwr2l457zw4uqz"
+    key = "main/terraform.tfstate"
+    region = "eu-west-1"
+    dynamodb_table = "terraform-lock"
+    encrypt = true
+  }
+}

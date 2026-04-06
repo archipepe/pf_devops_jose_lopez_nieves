@@ -55,7 +55,25 @@
 ### 1. Desplegar la infraestructura
 
 ```bash
-cd ./infra
+cd ./infra/bootstrap
+
+# Inicializar
+# Se asume que estos cambios se guardan en local pero no contienen información sensible
+terraform init
+
+# Aplicar
+terraform apply [-auto-approve]
+
+# Una vez creados el bucket y la tabla
+cd ./infra/main
+
+# Inicializar Terraform con estado remoto y cifrado
+terraform init \
+  -backend-config="bucket=bucket-terraform-state-jln-35y728xstkvuwr2l457zw4uqz" \
+  -backend-config="key=main/terraform.tfstate" \
+  -backend-config="region=eu-west-1" \
+  -backend-config="dynamodb_table=terraform-lock" \
+  -backend-config="encrypt=true"
 
 # Revisar cambios
 terraform plan
@@ -80,7 +98,7 @@ docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
 ### 3. Desplegar en EKS
 
 ```bash
-cd ./infra
+cd ./infra/main
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
 cd ./k8s
@@ -176,8 +194,19 @@ kubectl delete -k overlays/aws
 QUEDARSE CON TODO EL JSON QUE TIENE TODOS LOS VALORES AL HACER DESTROY
 #############################################
 
+############################
+Eliminar las imágenes del ECR antes
+############################
+
 ```bash
-cd ./infra
+cd ./infra/main
+terraform destroy
+
+############################
+# Eliminar la carpeta main del bucket antes
+############################
+
+cd ./infra/bootstrap
 terraform destroy
 ```
 Para que vaya más rápido, ve mientras eliminando manualmente:
@@ -186,10 +215,13 @@ Para que vaya más rápido, ve mientras eliminando manualmente:
 - EC2 Auto Scaling groups
 - EC2 Load balancers (elb)
 - EC2 volumes
+- EC2 target groups
 - EFS
 - ECR eliminar imagen (si no, no se podrá borrar el registro con el destroy)
 - VPC
 - Secrets Manager
+- Bucket S3
+- Dynamo DB
 
 ### 9. Limpiar contextos de kubectl
 
@@ -197,9 +229,9 @@ Para que vaya más rápido, ve mientras eliminando manualmente:
 kubectl config get-contexts && \
 kubectl config use-context minikube
 
-kubectl config delete-context arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-2ZYjYdbP && \
-kubectl config delete-cluster arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-2ZYjYdbP && \
-kubectl config delete-user    arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-2ZYjYdbP
+kubectl config delete-context arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-OM8HCqEO && \
+kubectl config delete-cluster arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-OM8HCqEO && \
+kubectl config delete-user    arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-OM8HCqEO
 ```
 
 ### Verificaciones importantes y troubleshooting

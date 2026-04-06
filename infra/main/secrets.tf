@@ -3,6 +3,8 @@
 # AWS Secrets Manager - Symfony APP_SECRET
 resource "aws_secretsmanager_secret" "symfony_app_secret" {
   name = "symfony-app-secret"
+
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "symfony_app_secret_value" {
@@ -15,6 +17,8 @@ resource "aws_secretsmanager_secret_version" "symfony_app_secret_value" {
 # AWS Secrets Manager - Symfony DATABASE_URL
 resource "aws_secretsmanager_secret" "symfony_database_url" {
   name = "symfony-database-url"
+
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "symfony_database_url_value" {
@@ -27,6 +31,8 @@ resource "aws_secretsmanager_secret_version" "symfony_database_url_value" {
 # AWS Secrets Manager - MySQL Root Password
 resource "aws_secretsmanager_secret" "mysql_root_password" {
   name = "symfony-mysql-root-password"
+
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "mysql_root_password_value" {
@@ -39,6 +45,8 @@ resource "aws_secretsmanager_secret_version" "mysql_root_password_value" {
 # AWS Secrets Manager - User Queries SQL Script
 resource "aws_secretsmanager_secret" "user_queries" {
   name = "symfony-user-queries"
+
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "user_queries_value" {
