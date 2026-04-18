@@ -17,8 +17,8 @@ export PROD_TYPE="prod"
 export DEBUG_TYPE="debug"
 
 ################ CONFIGURACIÓN DE VERSIONES ################
-BASE_IMAGE_VERSION="5.0"
-APP_IMAGE_VERSION="7.0"
+BASE_IMAGE_VERSION="5.1"
+APP_IMAGE_VERSION="7.1"
 export APP_IMAGE_TYPE="$PROD_TYPE"
 ############################################################
 

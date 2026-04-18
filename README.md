@@ -55,7 +55,7 @@
 ### 1. Desplegar la infraestructura
 
 ```bash
-cd ./infra/bootstrap
+cd <project_root>/infra/bootstrap
 
 # Inicializar
 # Se asume que estos cambios se guardan en local pero no contienen información sensible
@@ -65,7 +65,7 @@ terraform init
 terraform apply [-auto-approve]
 
 # Una vez creados el bucket y la tabla
-cd ./infra/main
+cd <project_root>/infra/main
 
 # Inicializar Terraform con estado remoto y cifrado
 terraform init \
@@ -88,20 +88,20 @@ terraform apply [-auto-approve]
 # Obtener credenciales ECR
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
 
-# Tagear imagen
-docker tag mysymfony/php-nginx:7.0-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
+# Taguear imagen
+docker tag mysymfony/php-nginx:7.1-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
 
 # Pushear
-docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
+docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
 ```
 
 ### 3. Desplegar en EKS
 
 ```bash
-cd ./infra/main
+cd <project_root>/infra/main
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
-cd ./k8s
+cd <project_root>/k8s
 # kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
 
 # TODO: hacer el equivalente para el delete más abajo
@@ -199,14 +199,14 @@ Eliminar las imágenes del ECR antes
 ############################
 
 ```bash
-cd ./infra/main
+cd <project_root>/infra/main
 terraform destroy
 
 ############################
 # Eliminar la carpeta main del bucket antes
 ############################
 
-cd ./infra/bootstrap
+cd <project_root>/infra/bootstrap
 terraform destroy
 ```
 Para que vaya más rápido, ve mientras eliminando manualmente:

@@ -1,0 +1,92 @@
+name: Deploy to AWS EKS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+          
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
+
+      - name: Build Ubuntu Base Docker image
+        run: docker build -t mysymfony/ubuntu:24.04-5.1-prod -f ./php-nginx/Dockerfile.base.prod ./php-nginx
+  
+      - name: Tag Ubuntu Base Docker image
+        run: docker tag mysymfony/ubuntu:24.04-5.1-prod public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:24.04-5.1-prod
+        
+      - name: Push Ubuntu Base Docker image to Amazon ECR
+        run: docker push public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:24.04-5.1-prod
+        
+      - name: Build php-nginx Docker image
+        run: docker build -t mysymfony/php-nginx:7.1-prod -f ./php-nginx/Dockerfile.app ./php-nginx
+
+      - name: Tag php-nginx Docker image
+        run: docker tag mysymfony/php-nginx:7.1-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
+      
+      - name: Push php-nginx Docker image to Amazon ECR
+        run: docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
+
+      - name: Run unit tests
+        run: |
+          echo "test"
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: php-nginx:7.1-prod
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+      
+      - name: Run Trivy secret scanner on repository
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          scanners: 'vuln,secret,misconfig'
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --verbose --redact
+
+      - name: Deploy green php-nginx deployment
+        run: |
+          ""
+
+      - name: Test green php-nginx deployment
+        run: |
+          ""
+
+      - name: Deploy green php-nginx service or cleanup green deployments if error
+        run: |
+          ""
+
+      - name: Run integration tests
+        run: |
+          ""
+
+      - name: Rollback to blue if error or cleanup blue deployments if success
+        run: |
+          ""

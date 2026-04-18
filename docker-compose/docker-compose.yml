@@ -33,6 +33,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ../php-nginx/symfony-app/sql/2026.03.22-26.2.sql:/docker-entrypoint-initdb.d/2026.03.22-26.2.sql
 
   otel-collector:
     image: otel/opentelemetry-collector:0.135.0
