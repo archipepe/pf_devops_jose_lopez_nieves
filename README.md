@@ -1,55 +1,99 @@
 # ALB Ingress Controller + ECR
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     AWS                                 │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │               ECR (Repositorio Público)         │    │
-│  │  mysymfony/symfony-php:X.X                      │    │
-│  │  mysymfony/symfony-nginx:X.X                    │    │
-│  └────────────────────┬────────────────────────────┘    │
-│                       │                                 │
-│                       ▼                                 │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │         EKS Cluster                             │    │
-│  │  ┌────────────────────────────────────────────┐ │    │
-│  │  │  Namespace: symfony-ns                     │ │    │
-│  │  │  ┌────────────────────────────────────┐    │ │    │
-│  │  │  │  Pod: symfony-app (Deployment)     │    │ │    │
-│  │  │  │  Image: ECR público                │    │ │    │
-│  │  │  └──────────────┬─────────────────────┘    │ │    │
-│  │  │                 │                          │ │    │
-│  │  │  ┌──────────────▼──────────────┐           │ │    │
-│  │  │  │ Service: nginx-service      │           │ │    │
-│  │  │  │ Type: ClusterIP             │           │ │    │
-│  │  │  └──────────────┬──────────────┘           │ │    │
-│  │  │                 │                          │ │    │
-│  │  │  ┌──────────────▼──────────────┐           │ │    │
-│  │  │  │ Ingress: symfony-ingress    │           │ │    │
-│  │  │  │ Class: alb                  │           │ │    │
-│  │  │  │ Controller: ALB Ingress     │           │ │    │
-│  │  │  └──────────────┬──────────────┘           │ │    │
-│  │  └─────────────────┼──────────────────────────┘ │    │
-│  │                    │                            │    │
-│  │  ALB Ingress Controller (kube-system)           │    │
-│  └────────────────────┼────────────────────────────┘    │
-│                       │                                 │
-│                       ▼                                 │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │     AWS Application Load Balancer                │   │
-│  │  • Sticky Sessions: 86400 seg (24h)              │   │
-│  │  • Health Check: / (cada 10seg)                  │   │
-│  │  • Target Group: EKS nodes                       │   │
-│  └──────────────────────────────────────────────────┘   │
-│                       │                                 │
-└───────────────────────┼─────────────────────────────────┘
-                        │
-                   HTTP (80)
-                        │
-          ┌─────────────▼─────────────┐
-          │    Internet (cliente)     │
-          │  http://<ALB-DNS>         │
-          └───────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                    AWS                                              │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
+│  │                          ECR (Repositorio Público)                           │   │
+│  │             mysymfony/ubuntu:X.X  │  mysymfony/php-nginx:X.X                 │   │
+│  └───────────────────────────────────┬──────────────────────────────────────────┘   │
+│                                      │                                              │
+│                                      ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
+│  │                            EKS Cluster                                       │   │
+│  │                                                                              │   │
+│  │  ┌────────────────────────────────────────────────────────────────────────┐  │   │
+│  │  │                     Namespace: symfony-ns                              │  │   │
+│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
+│  │  │  │  Deployments                                                     │  │  │   │
+│  │  │  │  ┌─────────────────────┐  ┌─────────────────────┐                │  │  │   │
+│  │  │  │  │  symfony-deployment │  │   mysql-deployment  │                │  │  │   │
+│  │  │  │  │  (php-nginx)        │  │   (mysql:8.0)       │                │  │  │   │
+│  │  │  │  │  Port: 80           │  │   Port: 3306        │                │  │  │   │
+│  │  │  │  └──────────┬──────────┘  └──────────┬──────────┘                │  │  │   │
+│  │  │  │             │                        │                           │  │  │   │
+│  │  │  │  Services   │                        │                           │  │  │   │
+│  │  │  │  ┌──────────▼──────────┐  ┌──────────▼──────────┐                │  │  │   │
+│  │  │  │  │  nginx-service      │  │  mysql-service      │                │  │  │   │
+│  │  │  │  │  Type: ClusterIP    │  │  Type: ClusterIP    │                │  │  │   │
+│  │  │  │  │  Port: 80 → 80      │  │  Port: 3306         │                │  │  │   │
+│  │  │  │  └──────────┬──────────┘  └─────────────────────┘                │  │  │   │
+│  │  │  │             │                                                    │  │  │   │
+│  │  │  │  Ingress    │                                                    │  │  │   │
+│  │  │  │  ┌──────────▼──────────┐                                         │  │  │   │
+│  │  │  │  │  symfony-ingress    │                                         │  │  │   │
+│  │  │  │  │  Class: alb         │                                         │  │  │   │
+│  │  │  │  │  Controller: ALB    │                                         │  │  │   │
+│  │  │  │  └─────────────────────┘                                         │  │  │   │
+│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
+│  │  └────────────────────────────────────────────────────────────────────────┘  │   │
+│  │                                                                              │   │
+│  │  ┌────────────────────────────────────────────────────────────────────────┐  │   │
+│  │  │                     Namespace: monitoring-ns                           │  │   │
+│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
+│  │  │  │  Deployments/Services                                            │  │  │   │
+│  │  │  │  ┌──────────────┐  ┌──────────┐  ┌─────────┐  ┌───────────┐      │  │  │   │
+│  │  │  │  │otel-collector│  │  tempo   │  │  loki   │  │prometheus │      │  │  │   │
+│  │  │  │  │  Port:4317   │  │ Port:4317│  │Port:3100│  │ Port:9090 │      │  │  │   │
+│  │  │  │  │  Port:4318   │  │ Port:3200│  │         │  │           │      │  │  │   │
+│  │  │  │  │  Port:9464   │  │          │  │         │  │           │      │  │  │   │
+│  │  │  │  └──────────────┘  └──────────┘  └─────────┘  └───────────┘      │  │  │   │
+│  │  │  │  ┌────────────┐                                                  │  │  │   │
+│  │  │  │  │  grafana   │                                                  │  │  │   │
+│  │  │  │  │  Port:3000 │                                                  │  │  │   │
+│  │  │  │  └────────────┘                                                  │  │  │   │
+│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
+│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
+│  │  │  │  DaemonSets/Services                                             │  │  │   │
+│  │  │  │  ┌────────────┐           ┌──────────────┐                       │  │  │   │
+│  │  │  │  │ node-      │           │   cAdvisor   │                       │  │  │   │
+│  │  │  │  │ exporter   │           │  Port:8080   │                       │  │  │   │
+│  │  │  │  │ Port:9100  │           │  (DaemonSet) │                       │  │  │   │
+│  │  │  │  └────────────┘           └──────────────┘                       │  │  │   │
+│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
+│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
+│  │  │  │                    Ingress                                       │  │  │   │
+│  │  │  │  ┌─────────────────────┐                                         │  │  │   │
+│  │  │  │  │  grafana-ingress    │                                         │  │  │   │
+│  │  │  │  │  Class: alb         │                                         │  │  │   │
+│  │  │  │  │  Controller: ALB    │                                         │  │  │   │
+│  │  │  │  └─────────────────────┘                                         │  │  │   │
+│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
+│  │  └────────────────────────────────────────────────────────────────────────┘  │   │
+│  │                                                                              │   │
+│  │  ALB Ingress Controller (kube-system)                                        │   │
+│  └─────────────────────────────────┼────────────────────────────────────────────┘   │
+│                                    │                                                │
+│                                    ▼                                                │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
+│  │                    AWS Application Load Balancer                             │   │
+│  │  • Sticky Sessions: 3600 seg                                                 │   │
+│  │  • Health Check: /health (cada 10seg)                                        │   │
+│  │  • Target Group: EKS nodes                                                   │   │
+│  │  • Reglas:                                                                   │   │
+│  │    - /grafana/* → monitoring-ns/grafana:3000                                 │   │
+│  │    - /* → symfony-ns/nginx-service:80                                        │   │
+│  └──────────────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                                │
+└────────────────────────────────────┼────────────────────────────────────────────────┘
+                                     │
+                                HTTP (80)
+                                     │
+                    ┌────────────────▼────────────────┐
+                    │         Internet                │
+                    │  http://<ALB-DNS>               │
+                    │  http://<ALB-DNS>/grafana       │
+                    └─────────────────────────────────┘
 ```
 
 ### 1. Desplegar la infraestructura
@@ -64,7 +108,7 @@ terraform init
 # Aplicar
 terraform apply [-auto-approve]
 
-# Una vez creados el bucket y la tabla
+# Una vez creados el bucket y la tabla, desplegamos el proyecto principal
 cd <project_root>/infra/main
 
 # Inicializar Terraform con estado remoto y cifrado
@@ -74,9 +118,6 @@ terraform init \
   -backend-config="region=eu-west-1" \
   -backend-config="dynamodb_table=terraform-lock" \
   -backend-config="encrypt=true"
-
-# Revisar cambios
-terraform plan
 
 # Aplicar
 terraform apply [-auto-approve]
@@ -88,7 +129,13 @@ terraform apply [-auto-approve]
 # Obtener credenciales ECR
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
 
-# Taguear imagen
+# Taguear imagen ubuntu
+docker tag mysymfony/ubuntu:5.1-prod public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:5.1-prod
+
+# Pushear
+docker push public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:5.1-prod
+
+# Taguear imagen php-nginx
 docker tag mysymfony/php-nginx:7.1-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
 
 # Pushear
@@ -102,24 +149,6 @@ cd <project_root>/infra/main
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
 cd <project_root>/k8s
-# kubectl apply -f namespaces/namespace-symfony.yaml && kubectl apply -f volumes/aws/pvc-symfony.yaml && kubectl apply -f deployments/aws/deployment-symfony.yaml && kubectl apply -f services/service-nginx.yaml && kubectl apply -f ingresses/aws/ingress-symfony.yaml
-
-# TODO: hacer el equivalente para el delete más abajo
-# Lo dejo comentado hasta comprobar que con kustomization.yaml funciona bien
-# kubectl apply -f application/namespaces/namespace-symfony.yaml && \
-# kubectl apply -f application/configmaps/configmap-mysql.yaml && \
-# kubectl apply -f application/secretstores/aws/secretstore-symfony.yaml && \
-# kubectl apply -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
-# kubectl apply -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
-# kubectl apply -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
-# kubectl apply -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
-# kubectl apply -f application/deployments/deployment-mysql.yaml && \
-# kubectl apply -f application/services/service-mysql.yaml && \
-# kubectl apply -f application/deployments/aws/deployment-symfony.yaml && \
-# kubectl apply -f application/services/service-nginx.yaml && \
-# kubectl apply -f application/ingresses/aws/ingress-symfony.yaml
-
-#######################
 
 # Esto despliega application y observability
 kubectl apply -k overlays/aws
@@ -166,49 +195,25 @@ kubectl logs -n symfony-ns deployment/symfony-app -f
 ### 7. Eliminar despliegue
 
 ```bash
-# kubectl delete -f ingress/aws/ingress-symfony.yaml && kubectl delete -f services/service-nginx.yaml && kubectl delete -f deployments/aws/deployment-symfony.yaml && kubectl delete -f volumes/aws/pvc-symfony.yaml \
-# && kubectl delete -f namespaces/namespace-symfony.yaml
-
 kubectl delete -k overlays/aws
-
-#######################
-
-# TODO: lo dejo hasta comprobar que funciona con kustomization.yaml
-# kubectl delete -f application/ingresses/aws/ingress-symfony.yaml && \
-# kubectl delete -f application/services/service-mysql.yaml && \
-# kubectl delete -f application/services/service-nginx.yaml && \
-# kubectl delete -f application/deployments/deployment-mysql.yaml && \
-# kubectl delete -f application/deployments/aws/deployment-symfony.yaml && \
-# kubectl delete -f application/externalsecrets/aws/externalsecret-app-symfony.yaml && \
-# kubectl delete -f application/externalsecrets/aws/externalsecret-database-symfony.yaml && \
-# kubectl delete -f application/externalsecrets/aws/externalsecret-mysql.yaml && \
-# kubectl delete -f application/externalsecrets/aws/externalsecret-user-queries.yaml && \
-# kubectl delete -f application/secretstores/aws/secretstore-symfony.yaml && \
-# kubectl delete -f application/configmaps/configmap-mysql.yaml && \
-# kubectl delete -f application/namespaces/namespace-symfony.yaml
 ```
 
 ### 8. Destruir infraestructura
 
-#############################################
-QUEDARSE CON TODO EL JSON QUE TIENE TODOS LOS VALORES AL HACER DESTROY
-#############################################
-
-############################
-Eliminar las imágenes del ECR antes
-############################
-
 ```bash
+# TODO
+# Eliminar las imágenes del ECR antes
+
 cd <project_root>/infra/main
 terraform destroy
 
-############################
+# TODO
 # Eliminar la carpeta main del bucket antes
-############################
 
 cd <project_root>/infra/bootstrap
 terraform destroy
 ```
+
 Para que vaya más rápido, ve mientras eliminando manualmente:
 - EKS Node group
 - EC2 instances

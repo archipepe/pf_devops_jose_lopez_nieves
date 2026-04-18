@@ -1,7 +1,7 @@
 services:
   symfony-php-nginx-service:
     image: ${REGISTRY}/${SYMFONY_APP_IMAGE}
-    # image: php-nginx:7.0-prod
+    # image: php-nginx:7.1-prod
     environment:
       APP_ENV: prod
       FORCE_HEALTH_CHECK_ERROR: false

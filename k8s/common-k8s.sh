@@ -60,9 +60,6 @@ enable_addons() {
     minikube addons enable ingress
     minikube addons enable default-storageclass
     minikube addons enable storage-provisioner
-    # TODO: mejorar. Hay que esperar en la primera ejecución con kustomization, pero no en las sucesivas
-    # log_info "Verificando servicios... (esperando 45 segundos)..."
-    # sleep 45
 }
 
 verify_commands() {

@@ -3,11 +3,6 @@
 # Run chmod +x deploy-k8s.sh to make this script executable
 # Then, run ./deploy-k8s.sh to deploy the application in Minikube
 
-####################################################################################
-# Create ~/.bash_aliases and add this line uncommented to use kubectl with minikube:
-# alias kubectl="minikube kubectl --"
-####################################################################################
-
 source common-k8s.sh
 
 wait_for_ingress_controller() {

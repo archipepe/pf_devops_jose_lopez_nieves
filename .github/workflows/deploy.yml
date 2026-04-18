@@ -75,11 +75,11 @@ jobs:
         run: |
           ""
 
-      - name: Test green php-nginx deployment
+      - name: Test green php-nginx deployment (it should always pass)
         run: |
           ""
 
-      - name: Deploy green php-nginx service or cleanup green deployments if error
+      - name: Deploy green php-nginx service
         run: |
           ""
 
@@ -87,6 +87,6 @@ jobs:
         run: |
           ""
 
-      - name: Rollback to blue if error or cleanup blue deployments if success
+      - name: Rollback to blue and clean green if error or cleanup blue deployments if success
         run: |
           ""
