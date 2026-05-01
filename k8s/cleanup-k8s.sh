@@ -75,8 +75,10 @@ cleanup_deployment() {
         log_info "Eliminando recursos de Kubernetes..."
 
         local cluster_name=$(grep '^cluster_name=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
+        local aws_region=$(grep '^aws_region=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
+        local context=$(grep '^context=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
 
-        kubectl config use-context "$cluster_name"
+        aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
 
         kubectl delete -k "$KUSTOMIZATION_AWS_PATH" --ignore-not-found=true 2>/dev/null
 
@@ -96,9 +98,9 @@ cleanup_deployment() {
         # Limpiar clúster del kubeconfig
         kubectl config use-context minikube
 
-        kubectl config delete-context "$cluster_name" && \
-        kubectl config delete-cluster "$cluster_name" && \
-        kubectl config delete-user    "$cluster_name"
+        kubectl config delete-context "$context" && \
+        kubectl config delete-cluster "$context" && \
+        kubectl config delete-user    "$context"
 
         log_warn "⚠ ADVERTENCIA: Verifica manualmente en AWS que todos los recursos se hayan eliminado para evitar costes adicionales."
         log_warn "Revisa: VPC, NAT Gateways, Elastic IPs, Security Groups, EKS Node Group, instancias EC2, volúmenes EC2 y EFS..."
