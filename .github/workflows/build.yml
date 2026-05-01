@@ -48,7 +48,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
           push: true
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
-          cache-to: type=inline
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }},mode=max
 
       - name: Build base debug image
         uses: docker/build-push-action@v5
@@ -59,7 +59,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
           push: true
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
-          cache-to: type=inline
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }},mode=max
 
       - name: Build app image (Producción)
         uses: docker/build-push-action@v5
@@ -71,7 +71,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/mysymfony-php-nginx:latest
           push: true
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
-          cache-to: type=inline
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }},mode=max
 
       - name: Store image URLs
         id: image-urls
