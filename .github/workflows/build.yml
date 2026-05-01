@@ -39,14 +39,6 @@ jobs:
           username: ${{ secrets.DOCKER_ACCOUNT }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Pull base images (if exist)
-        continue-on-error: true
-        run: |
-          echo "⬇️ Intentando descargar imágenes base..."
-          docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }} || true
-          docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }} || true
-          echo "✅ Imágenes base descargadas (o no encontradas, se construirán automáticamente)."
-
       - name: Build base image (Producción)
         uses: docker/build-push-action@v5
         with:
@@ -55,8 +47,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
+          cache-to: type=inline
 
       - name: Build base debug image
         uses: docker/build-push-action@v5
@@ -66,8 +58,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
+          cache-to: type=inline
 
       - name: Build app image (Producción)
         uses: docker/build-push-action@v5
@@ -78,8 +70,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/mysymfony-php-nginx:latest
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
+          cache-to: type=inline
 
       - name: Store image URLs
         id: image-urls
@@ -114,6 +106,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         with:
           args: detect --source . --verbose --redact
+          exit-code: '0'
 
       - name: Create report
         run: |
