@@ -352,7 +352,7 @@ jobs:
           exit 1
 
   cleanup:
-    needs: [deploy-green, switch-traffic]
+    needs: [pre-deployment, deploy-green, switch-traffic, post-deployment-tests]
     runs-on: ubuntu-24.04
     
     if: always()

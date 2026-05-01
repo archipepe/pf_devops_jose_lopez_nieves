@@ -55,8 +55,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
           push: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build base debug image
         uses: docker/build-push-action@v5
@@ -66,8 +66,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
           push: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build app image (Producción)
         uses: docker/build-push-action@v5
@@ -78,8 +78,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/mysymfony-php-nginx:latest
           push: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Store image URLs
         id: image-urls
@@ -115,7 +115,7 @@ jobs:
         with:
           args: detect --source . --verbose --redact
 
-      - name: Create deployment report
+      - name: Create report
         run: |
           echo "### Imágenes de Docker construidas y subidas ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
