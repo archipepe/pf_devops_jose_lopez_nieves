@@ -25,7 +25,7 @@ spec:
 
       containers:
         - name: php-nginx-container
-          image: mysymfony/php-nginx:7.0-prod
+          image: archipepe/mysymfony-php-nginx:7.1-prod
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL

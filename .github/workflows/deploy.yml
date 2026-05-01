@@ -1,92 +1,420 @@
-name: Deploy to AWS EKS
+name: AWS EKS Blue/Green Deployment
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deployment_type:
+        description: 'Estrategia de despliegue.'
+        required: true
+        default: 'blue-green'
+        type: choice
+        options:
+          - blue-green
+          - canary
+          - rolling
+      enable_monitoring:
+        description: 'Habilitar monitorización post-despliegue.'
+        required: false
+        default: true
+        type: boolean
+      auto_rollback:
+        description: 'Habilitar rollback automático si falla el health check.'
+        required: false
+        default: true
+        type: boolean
+  workflow_run:
+    workflows: ["Ejecutar tests"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION || 'eu-west-1' }}
+  EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME || 'pf-devops-eks' }}
+  IMAGE_APP_PROD: mysymfony-php-nginx:7.1-prod
+  IMAGE_APP_LATEST: mysymfony-php-nginx:latest
+  KUBERNETES_NAMESPACE: symfony-ns
+  IMAGE_TAG: latest
 
 jobs:
-  build-and-deploy:
+  pre-deployment:
     runs-on: ubuntu-24.04
-
+    
+    # Sólo se ejecuta si:
+    # 1. Es workflow_dispatch (manual), O
+    # 2. Es workflow_run (automático después de test con éxito)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    
+    outputs:
+      deployment_status: ${{ steps.check.outputs.status }}
+      current_version: ${{ steps.current.outputs.version }}
+      new_version: ${{ steps.new.outputs.version }}
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Check EKS cluster health
+        id: check
+        run: |
+          if kubectl cluster-info &> /dev/null; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Get current deployment version
+        id: current
+        run: |
+          CURRENT=$(kubectl get deployment symfony-deployment -n ${{ env.KUBERNETES_NAMESPACE }} \
+            -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oP 'php-nginx:\K[^-]+' || echo "unknown")
+          echo "version=${CURRENT}" >> $GITHUB_OUTPUT
+          echo "📍 Current version: ${CURRENT}"
+
+      - name: Get new deployment version
+        id: new
+        run: |
+          NEW=v2
+          echo "version=${NEW}" >> $GITHUB_OUTPUT
+          echo "🆕 New version: ${NEW}"
+
+      - name: Pre-deployment checks
+        run: |
+          echo "### Comprobaciones Pre-Deployment ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- EKS Cluster: ${{ env.EKS_CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Region: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Namespace: ${{ env.KUBERNETES_NAMESPACE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Current Version: ${{ steps.current.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- New Version: ${{ steps.new.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy-green:
+    needs: pre-deployment
+    runs-on: ubuntu-24.04
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    
+    outputs:
+      deployment_status: ${{ steps.deploy.outputs.status }}
+      pods_ready: ${{ steps.verify.outputs.ready_count }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Create GREEN deployment
+        id: deploy
+        run: |
+          # Obtener deployment actual
+          kubectl get deployment symfony-deployment -n ${{ env.KUBERNETES_NAMESPACE }} -o yaml > current-deployment.yaml
           
-      - name: Login to Amazon ECR
+          # Crear GREEN deployment con las variables de entorno actualizadas
+          cat current-deployment.yaml | \
+            sed 's/name: symfony-deployment/name: symfony-deployment-green/' | \
+            sed 's/version: v1/version: v2/' | \
+            sed 's/value: blue.*$/value: green/' | \
+            sed 's/value: "Blue Deployment v1.0".*$/value: "Green Deployment v2.0"/' | \
+            sed 's/value: "1.0.0".*$/value: "2.0.0"/' | \
+            > green-deployment.yaml
+          
+          # Aplicar GREEN deployment
+          kubectl apply -f green-deployment.yaml
+          
+          if [ $? -eq 0 ]; then
+            echo "status=deployed" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Wait for GREEN pods to be ready
+        id: verify
+        timeout-minutes: 5
         run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
+          echo "⏳ Esperando a que los GREEN pods estén listos..."
+          
+          RETRY=0
+          MAX_RETRIES=30
+          
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            READY=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} \
+              -l version=v2 \
+              -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' | \
+              grep -c "True" || echo "0")
+            
+            TOTAL=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} \
+              -l version=v2 | tail -n +2 | wc -l)
+            
+            echo "Progreso: $READY/$TOTAL pods listos."
+            
+            if [ "$READY" -ge "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+              echo "ready_count=${READY}" >> $GITHUB_OUTPUT
+              echo "✅ Todos los GREEN pods están listos."
+              break
+            fi
+            
+            RETRY=$((RETRY + 1))
+            sleep 10
+          done
+          
+          if [ $RETRY -ge $MAX_RETRIES ]; then
+            echo "❌ Los pods no han llegado a estar listos."
+            exit 1
+          fi
 
-      - name: Build Ubuntu Base Docker image
-        run: docker build -t mysymfony/ubuntu:24.04-5.1-prod -f ./php-nginx/Dockerfile.base.prod ./php-nginx
-  
-      - name: Tag Ubuntu Base Docker image
-        run: docker tag mysymfony/ubuntu:24.04-5.1-prod public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:24.04-5.1-prod
-        
-      - name: Push Ubuntu Base Docker image to Amazon ECR
-        run: docker push public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:24.04-5.1-prod
-        
-      - name: Build php-nginx Docker image
-        run: docker build -t mysymfony/php-nginx:7.1-prod -f ./php-nginx/Dockerfile.app ./php-nginx
-
-      - name: Tag php-nginx Docker image
-        run: docker tag mysymfony/php-nginx:7.1-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
-      
-      - name: Push php-nginx Docker image to Amazon ECR
-        run: docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
-
-      - name: Run unit tests
+      - name: Run health checks
+        id: health
         run: |
-          echo "test"
+          echo "🏥 Ejecutando health checks..."
+          
+          GREEN_POD=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} \
+            -l version=v2 -o jsonpath='{.items[0].metadata.name}')
+          
+          if [ -z "$GREEN_POD" ]; then
+            echo "❌ No se han encontrado GREEN pods."
+            exit 1
+          fi
+          
+          # Comprobar endpoint /health
+          HEALTH_STATUS=$(kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} "$GREEN_POD" -- \
+            curl -s -o /dev/null -w "%{http_code}" http://localhost/health || echo "000")
+          
+          echo "Health status: $HEALTH_STATUS"
+          
+          if [ "$HEALTH_STATUS" != "200" ]; then
+            echo "❌ Fallo en health check con estado $HEALTH_STATUS."
+            exit 1
+          fi
+          
+          echo "health_status=${HEALTH_STATUS}" >> $GITHUB_OUTPUT
+          echo "✅ Health checks passados."
 
-      - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@master
+  switch-traffic:
+    needs: [pre-deployment, deploy-green]
+    runs-on: ubuntu-24.04
+    
+    if: success()
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          image-ref: php-nginx:7.1-prod
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
-          ignore-unfixed: true
-      
-      - name: Run Trivy secret scanner on repository
-        uses: aquasecurity/trivy-action@master
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Switch traffic to GREEN
+        run: |
+          echo "🔄 Cambiando tráfico de BLUE a GREEN..."
+          
+          # Obtener la versión del GREEN deployment
+          GREEN_VERSION=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} \
+            -l version=v2 -o jsonpath='{.items[0].metadata.labels.version}')
+          
+          # Actualizar el servicio para que apunte al GREEN deployment
+          kubectl patch service nginx-service -n ${{ env.KUBERNETES_NAMESPACE }} \
+            --type='json' \
+            -p='[{"op": "replace", "path": "/spec/selector/version", "value":"'${GREEN_VERSION}'"}]'
+          
+          echo "✅ Tráfico cambiado a GREEN (version: ${GREEN_VERSION})."
+
+  post-deployment-tests:
+    needs: [pre-deployment, deploy-green, switch-traffic]
+    runs-on: ubuntu-24.04
+    
+    if: ${{ inputs.enable_monitoring == true && success() }}
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
-          scanners: 'vuln,secret,misconfig'
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Monitor GREEN deployment (30 seconds)
+        id: monitor
+        run: |
+          echo "👀 Monitorizando el GREEN deployment durante 30 segundos..."
+          
+          FAILED_CHECKS=0
+          CHECK_INTERVAL=5
+          MAX_CHECKS=6
+          CHECK_COUNT=0
+          
+          while [ $CHECK_COUNT -lt $MAX_CHECKS ]; do
+            GREEN_POD=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} \
+              -l version=v2 -o jsonpath='{.items[0].metadata.name}')
+            
+            # Health check
+            HEALTH=$(kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} "$GREEN_POD" -- \
+              curl -s -o /dev/null -w "%{http_code}" http://localhost/error-test || echo "000")
+            
+            if [ "$HEALTH" != "200" ]; then
+              FAILED_CHECKS=$((FAILED_CHECKS + 1))
+              echo "⚠️ Fallo en health check ($FAILED_CHECKS): estado $HEALTH"
+              
+              if [ $FAILED_CHECKS -ge 4 ] && [ "${{ inputs.auto_rollback }}" == "true" ]; then
+                echo "❌ Demasiados fallos. Ejecutando rollback..."
+                exit 1
+              fi
+            else
+              echo "✅ Health check OK."
+            fi
+            
+            CHECK_COUNT=$((CHECK_COUNT + 1))
+            sleep $CHECK_INTERVAL
+          done
+          
+          echo "✅ Monitorización completada correctamente."
+
+      - name: Automatic Rollback (if monitoring failed)
+        if: failure() && inputs.auto_rollback == true
+        run: |
+          echo "🔄 Ejecutando rollback automático..."
+          
+          # Obtener el selector del deployment anterior
+          BLUE_VERSION=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} \
+            -l app=symfony-app -o jsonpath='{.items[0].metadata.labels.version}' | \
+            grep -v v2 | head -1)
+          
+          # Cambiar el servicio de nuevo a blue
+          kubectl patch service nginx-service -n ${{ env.KUBERNETES_NAMESPACE }} \
+            --type='json' \
+            -p='[{"op": "replace", "path": "/spec/selector/version", "value":"'${BLUE_VERSION}'"}]'
+          
+          # Marcar el GREEN deployment para eliminación
+          kubectl delete deployment symfony-deployment-green \
+            -n ${{ env.KUBERNETES_NAMESPACE }} --ignore-not-found
+          
+          echo "✅ Rollback completado. Tráfico devuelto a BLUE."
+          exit 1
+
+  cleanup:
+    needs: [deploy-green, switch-traffic]
+    runs-on: ubuntu-24.04
+    
+    if: always()
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          args: detect --source . --verbose --redact
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy green php-nginx deployment
+      - name: Install kubectl
         run: |
-          ""
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
-      - name: Test green php-nginx deployment (it should always pass)
+      - name: Configure kubectl
         run: |
-          ""
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
 
-      - name: Deploy green php-nginx service
+      - name: Clean old deployments
         run: |
-          ""
+          echo "🧹 Limpiando deployments anteriores..."
+          
+          # Mantener sólo las últimas 3 versiones
+          DEPLOYMENTS=$(kubectl get deployments -n ${{ env.KUBERNETES_NAMESPACE }} \
+            -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | sort -r | tail -n +4)
+          
+          for deployment in $DEPLOYMENTS; do
+            echo "Eliminando deployment anterior: $deployment"
+            kubectl delete deployment "$deployment" -n ${{ env.KUBERNETES_NAMESPACE }} || true
+          done
+          
+          echo "✅ Limpieza completada."
 
-      - name: Run integration tests
+  report:
+    needs: [pre-deployment, deploy-green, switch-traffic, post-deployment-tests]
+    runs-on: ubuntu-24.04
+    
+    if: always()
+    
+    steps:
+      - name: Generate deployment report
         run: |
-          ""
-
-      - name: Rollback to blue and clean green if error or cleanup blue deployments if success
-        run: |
-          ""
+          echo "### Resumen del Deployment 📋" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Type:** ${{ inputs.deployment_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster:** ${{ env.EKS_CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Namespace:** ${{ env.KUBERNETES_NAMESPACE }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Resumen del estado:**" >> $GITHUB_STEP_SUMMARY
+          echo "| Fase | Estado |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pre-Deployment | ${{ needs.pre-deployment.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy GREEN | ${{ needs.deploy-green.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Switch Traffic | ${{ needs.switch-traffic.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Post-Deployment | ${{ needs.post-deployment-tests.result == 'success' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Versions:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Previous: ${{ needs.pre-deployment.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- New: ${{ needs.pre-deployment.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY

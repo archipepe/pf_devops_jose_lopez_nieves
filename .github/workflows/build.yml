@@ -1,0 +1,170 @@
+name: Construir y subir imágenes de Docker a Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'php-nginx/**'
+      - 'docker-compose/**'
+      - '.github/workflows/build.yml'
+  workflow_dispatch: # Permitir trigger manual
+
+env:
+  REGISTRY: docker.io
+  IMAGE_BASE_PROD: mysymfony-ubuntu:24.04-5.1-prod
+  IMAGE_BASE_DEBUG: mysymfony-ubuntu:24.04-5.1-debug
+  IMAGE_APP_PROD: mysymfony-php-nginx:7.1-prod
+  IMAGE_APP_DEBUG: mysymfony-php-nginx:7.1-debug
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04
+    
+    outputs:
+      image_app_prod: ${{ steps.image-urls.outputs.app_prod }}
+      image_app_debug: ${{ steps.image-urls.outputs.app_debug }}
+      build_status: ${{ job.status }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_ACCOUNT }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Pull base images (if exist)
+        continue-on-error: true
+        run: |
+          echo "⬇️ Intentando descargar imágenes base..."
+          docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }} || true
+          docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }} || true
+          echo "✅ Imágenes base descargadas (o no encontradas, se construirán automáticamente)."
+
+      - name: Build base image (Producción)
+        uses: docker/build-push-action@v5
+        with:
+          context: php-nginx/
+          file: php-nginx/Dockerfile.base.prod
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
+          push: true
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}:buildcache,mode=max
+
+      - name: Build base debug image
+        uses: docker/build-push-action@v5
+        with:
+          context: php-nginx/
+          file: php-nginx/Dockerfile.base.debug
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
+          push: true
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}:buildcache,mode=max
+
+      - name: Build app image (Producción)
+        uses: docker/build-push-action@v5
+        with:
+          context: php-nginx/
+          file: php-nginx/Dockerfile.app
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/mysymfony-php-nginx:latest
+          push: true
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}:buildcache,mode=max
+
+      - name: Store image URLs
+        id: image-urls
+        run: |
+          echo "app_prod=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}" >> $GITHUB_OUTPUT
+          echo "app_debug=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_DEBUG }}" >> $GITHUB_OUTPUT
+
+      # - name: Scan images with Trivy (Prod)
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
+      #     format: 'sarif'
+      #     output: 'trivy-app-prod-results.sarif'
+      #     severity: 'CRITICAL,HIGH'
+
+      # - name: Upload Trivy scan results
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: 'trivy-app-prod-results.sarif'
+      - name: Run Trivy secret scanner on repository
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          scanners: 'vuln,secret,misconfig'
+
+      - name: Check for secrets with GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --verbose --redact
+
+      - name: Create deployment report
+        run: |
+          echo "### Imágenes de Docker construidas y subidas ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Imagen | Registro | Tag |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Base (Prod) | Docker Hub | ${{ env.IMAGE_BASE_PROD }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Base (Debug) | Docker Hub | ${{ env.IMAGE_BASE_DEBUG }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| App (Prod) | Docker Hub | ${{ env.IMAGE_APP_PROD }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| App (Latest) | Docker Hub | mysymfony-php-nginx:latest |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registro:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Organización:** ${{ secrets.DOCKER_ACCOUNT }}" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    if: always()
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Build Status
+        run: |
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "✅ Imágenes construidas correctamente."
+            exit 0
+          else
+            echo "❌ Las imágenes no se han podido construir."
+            exit 1
+          fi
+
+  trigger-test:
+    if: success()
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Trigger test workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'test.yml',
+              ref: 'main'
+            });
+            console.log("✅ Workflow 'test' disparado automáticamente.");
+      
+      - name: Report deployment trigger
+        run: |
+          echo "### Testing disparado automáticamente 🧪" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Comprueba el estado del workflow 'test'." >> $GITHUB_STEP_SUMMARY

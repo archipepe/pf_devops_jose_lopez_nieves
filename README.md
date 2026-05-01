@@ -1,296 +1,678 @@
-# ALB Ingress Controller + ECR
+# Proyecto DevOps: Symfony + Kubernetes + AWS
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                    AWS                                              │
-│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
-│  │                          ECR (Repositorio Público)                           │   │
-│  │             mysymfony/ubuntu:X.X  │  mysymfony/php-nginx:X.X                 │   │
-│  └───────────────────────────────────┬──────────────────────────────────────────┘   │
-│                                      │                                              │
-│                                      ▼                                              │
-│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
-│  │                            EKS Cluster                                       │   │
-│  │                                                                              │   │
-│  │  ┌────────────────────────────────────────────────────────────────────────┐  │   │
-│  │  │                     Namespace: symfony-ns                              │  │   │
-│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
-│  │  │  │  Deployments                                                     │  │  │   │
-│  │  │  │  ┌─────────────────────┐  ┌─────────────────────┐                │  │  │   │
-│  │  │  │  │  symfony-deployment │  │   mysql-deployment  │                │  │  │   │
-│  │  │  │  │  (php-nginx)        │  │   (mysql:8.0)       │                │  │  │   │
-│  │  │  │  │  Port: 80           │  │   Port: 3306        │                │  │  │   │
-│  │  │  │  └──────────┬──────────┘  └──────────┬──────────┘                │  │  │   │
-│  │  │  │             │                        │                           │  │  │   │
-│  │  │  │  Services   │                        │                           │  │  │   │
-│  │  │  │  ┌──────────▼──────────┐  ┌──────────▼──────────┐                │  │  │   │
-│  │  │  │  │  nginx-service      │  │  mysql-service      │                │  │  │   │
-│  │  │  │  │  Type: ClusterIP    │  │  Type: ClusterIP    │                │  │  │   │
-│  │  │  │  │  Port: 80 → 80      │  │  Port: 3306         │                │  │  │   │
-│  │  │  │  └──────────┬──────────┘  └─────────────────────┘                │  │  │   │
-│  │  │  │             │                                                    │  │  │   │
-│  │  │  │  Ingress    │                                                    │  │  │   │
-│  │  │  │  ┌──────────▼──────────┐                                         │  │  │   │
-│  │  │  │  │  symfony-ingress    │                                         │  │  │   │
-│  │  │  │  │  Class: alb         │                                         │  │  │   │
-│  │  │  │  │  Controller: ALB    │                                         │  │  │   │
-│  │  │  │  └─────────────────────┘                                         │  │  │   │
-│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
-│  │  └────────────────────────────────────────────────────────────────────────┘  │   │
-│  │                                                                              │   │
-│  │  ┌────────────────────────────────────────────────────────────────────────┐  │   │
-│  │  │                     Namespace: monitoring-ns                           │  │   │
-│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
-│  │  │  │  Deployments/Services                                            │  │  │   │
-│  │  │  │  ┌──────────────┐  ┌──────────┐  ┌─────────┐  ┌───────────┐      │  │  │   │
-│  │  │  │  │otel-collector│  │  tempo   │  │  loki   │  │prometheus │      │  │  │   │
-│  │  │  │  │  Port:4317   │  │ Port:4317│  │Port:3100│  │ Port:9090 │      │  │  │   │
-│  │  │  │  │  Port:4318   │  │ Port:3200│  │         │  │           │      │  │  │   │
-│  │  │  │  │  Port:9464   │  │          │  │         │  │           │      │  │  │   │
-│  │  │  │  └──────────────┘  └──────────┘  └─────────┘  └───────────┘      │  │  │   │
-│  │  │  │  ┌────────────┐                                                  │  │  │   │
-│  │  │  │  │  grafana   │                                                  │  │  │   │
-│  │  │  │  │  Port:3000 │                                                  │  │  │   │
-│  │  │  │  └────────────┘                                                  │  │  │   │
-│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
-│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
-│  │  │  │  DaemonSets/Services                                             │  │  │   │
-│  │  │  │  ┌────────────┐           ┌──────────────┐                       │  │  │   │
-│  │  │  │  │ node-      │           │   cAdvisor   │                       │  │  │   │
-│  │  │  │  │ exporter   │           │  Port:8080   │                       │  │  │   │
-│  │  │  │  │ Port:9100  │           │  (DaemonSet) │                       │  │  │   │
-│  │  │  │  └────────────┘           └──────────────┘                       │  │  │   │
-│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
-│  │  │  ┌──────────────────────────────────────────────────────────────────┐  │  │   │
-│  │  │  │                    Ingress                                       │  │  │   │
-│  │  │  │  ┌─────────────────────┐                                         │  │  │   │
-│  │  │  │  │  grafana-ingress    │                                         │  │  │   │
-│  │  │  │  │  Class: alb         │                                         │  │  │   │
-│  │  │  │  │  Controller: ALB    │                                         │  │  │   │
-│  │  │  │  └─────────────────────┘                                         │  │  │   │
-│  │  │  └──────────────────────────────────────────────────────────────────┘  │  │   │
-│  │  └────────────────────────────────────────────────────────────────────────┘  │   │
-│  │                                                                              │   │
-│  │  ALB Ingress Controller (kube-system)                                        │   │
-│  └─────────────────────────────────┼────────────────────────────────────────────┘   │
-│                                    │                                                │
-│                                    ▼                                                │
-│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
-│  │                    AWS Application Load Balancer                             │   │
-│  │  • Sticky Sessions: 3600 seg                                                 │   │
-│  │  • Health Check: /health (cada 10seg)                                        │   │
-│  │  • Target Group: EKS nodes                                                   │   │
-│  │  • Reglas:                                                                   │   │
-│  │    - /grafana/* → monitoring-ns/grafana:3000                                 │   │
-│  │    - /* → symfony-ns/nginx-service:80                                        │   │
-│  └──────────────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                                │
-└────────────────────────────────────┼────────────────────────────────────────────────┘
-                                     │
-                                HTTP (80)
-                                     │
-                    ┌────────────────▼────────────────┐
-                    │         Internet                │
-                    │  http://<ALB-DNS>               │
-                    │  http://<ALB-DNS>/grafana       │
-                    └─────────────────────────────────┘
-```
+## ✨ Implementación de un ecosistema DevOps. Proyecto final.
 
-### 1. Desplegar la infraestructura
+1. **Contenedorización de la aplicación** con Docker/Dockerfile/Docker Compose.
+
+2. **Orquestación con Kubernetes**:
+    - Infraestructura como código (IaC) con Terraform.
+    - Despliegue de la aplicación en Kubernetes.
+
+3. **Integración y entrega continua (CI/CD)**:
+    - Pipeline de CI/CD en GitHub Actions:
+        - Compilación y pruebas de la aplicación.
+        - Construcción de la imagen Docker y envío a registro de contenedores (Docker Hub o GitHub Container Registry).
+        - Despliegue en el clúster de Kubernetes.
+    - Manejo seguro de credenciales y secretos durante todo el proceso.
+
+4. **Despliegues con Blue-Green deployment y rollback automático**:
+    - Implementación de estrategia Blue-Green para minimizar el tiempo de inactividad.
+    - Configuración de mecanismos de rollback automático en caso de fallos.
+
+5. **Monitorización y observabilidad**:
+    - Sistema de monitorización que incluye:
+        - OpenTelemetry Collector para recolección y exportación de métricas y trazas.
+        - Prometheus como servidor de métricas que recoge datos de los exporters.
+        - Grafana para visualización de métricas y dashboards personalizados.
+        - Loki para gestión centralizada de logs.
+        - cAdvisor y Node Exporter para métricas del clúster.
+        - Alertas y notificaciones basadas en métricas y logs críticos.
+
+## 📋 Índice
+
+1. [Requisitos Previos](#requisitos-previos)
+2. [Despliegue Rápido](#despliegue-rápido)
+3. [Despliegue Manual en AWS](#despliegue-manual)
+4. [Blue/Green Deployment y rollback automático](#bluegreen-deployment-y-rollback-automático)
+5. [Destruir despliegue](#destruir-despliegue)
+6. [Secretos y Configuración](#secretos-y-configuración)
+7. [Workflows de GitHub Actions](#workflows-de-github-actions)
+8. [Arquitectura Desplegada](#arquitectura-desplegada)
+9. [Troubleshooting](#troubleshooting)
+10. [Documentación Adicional](#documentación-adicional)
+11. [Notas Importantes](#notas-importantes)
+12. [Proyecto Educativo](#proyecto-educativo)
+
+## 🔧 Requisitos Previos
+
+### Para ambos entornos (local y AWS)
+
+- **Docker**: v29.4.0+
+- **kubectl**: v1.35.4+ (con Kustomize v5.7.1+)
+- **Python3**: v3.13.5+
+- **Credenciales Docker Hub configuradas** (opcional)
+
+### Sólo para despliegue LOCAL
+
+- **Minikube**: v1.37.0+ (con Kubernetes v1.34.0, Docker 28.4.0)
+- **RAM**: 4 GB mínimo
+- **Sistema Operativo**: Debian 13 (probado)
+
+### Sólo para despliegue AWS
+
+- **aws-cli**: v2.23.6+
+- **Terraform**: v1.14.8+
+- **Credenciales AWS configuradas** con permisos de Administrador
 
 ```bash
-cd <project_root>/infra/bootstrap
+# Verificar versiones instaladas
+docker --version
+kubectl version --client
+minikube version     # Para local
+aws --version        # Para AWS
+terraform version    # Para AWS
+```
 
-# Inicializar
-# Se asume que estos cambios se guardan en local pero no contienen información sensible
+### Configurar AWS CLI
+
+```bash
+aws configure
+# Se te pedirá:
+# AWS Access Key ID
+# AWS Secret Access Key
+# Default region: eu-west-1
+# Default output: json
+
+# Verificar configuración
+aws sts get-caller-identity
+```
+
+### Configurar credenciales para Docker Hub (opcional)
+
+```bash
+# Asegúrate de iniciar el servicio de Docker
+sudo systemctl start docker
+
+# Crea un Personal Access Token (PAT) desde https://app.docker.com/settings
+
+# Inicia sesión en docker-cli reemplazando tu nombre de usuario en dockerhub_username
+# Luego se te pedirá tu PAT:
+export $DOCKER_ACCOUNT=dockerhub_username
+docker login -u "$DOCKER_ACCOUNT"
+
+# Verificar configuración
+docker info | grep "Username:"
+```
+
+## 🚀 Despliegue Rápido
+
+El script `deploy-k8s.sh` automatiza todo el proceso. Ofrece un menú interactivo:
+
+### Opción 1: Despliegue LOCAL (Minikube)
+
+```bash
+cd k8s
+chmod +x deploy-k8s.sh
+./deploy-k8s.sh
+
+# Selecciona opción 1 en el menú
+```
+
+**Lo que hace automáticamente:**
+- Valida todas las dependencias
+- Inicia Docker y Minikube
+- Crea directorios necesarios
+- Genera secrets de Kubernetes
+- Construye las imágenes Docker
+- Despliega en Minikube
+- Configura `/etc/hosts` para poder acceder con ingress
+
+**Resultado:**
+```
+✓ Accede a:
+http://symfony.local → Sitio web
+http://symfony.local/grafana → Monitorización
+```
+
+### Opción 2: Despliegue AWS (EKS)
+
+```bash
+cd k8s
+chmod +x deploy-k8s.sh
+./deploy-k8s.sh
+
+# Selecciona opción 2 en el menú
+```
+
+**Lo que hace automáticamente:**
+- Valida todas las dependencias y AWS CLI
+- Crea infraestructura base (S3 bucket para estado remoto de la infraestructura principal)
+- Crea infraestructura principal (VPC, EKS, ECR) ~10 minutos
+- Genera secrets y configura terraform.tfvars
+- Construye y sube imágenes a Docker Hub si fuera necesario (las imágenes son públicas y accesibles)
+- Despliega la aplicación en EKS
+
+**Resultado:**
+```bash
+# Obtener URL del ALB (Application Load Balancer)
+kubectl get ingress -n symfony-ns
+
+# Ejemplos:
+# http://symfony-alb-151921333.eu-west-1.elb.amazonaws.com
+# http://symfony-alb-151921333.eu-west-1.elb.amazonaws.com/grafana
+
+```
+
+### Opciones del Script
+
+El script también soporta argumentos:
+
+```bash
+#TODO añadir tercer argumento para DOCKER_ACCOUNT
+
+# Desplegar programáticamente
+cd <directorio-proyecto>/k8s
+
+./deploy-k8s.sh deploy local    # Desplegar en local
+./deploy-k8s.sh deploy aws      # Desplegar en AWS
+
+# Probar blue/green y rollback automático
+./deploy-k8s.sh test-blue-green local
+./deploy-k8s.sh test-blue-green aws
+
+# Limpiar recursos
+./deploy-k8s.sh cleanup local
+./deploy-k8s.sh cleanup aws
+```
+
+## 🔧 Despliegue Manual en AWS
+
+Si prefieres hacer los pasos manualmente:
+
+### Paso 1: Crear infraestructura base
+
+```bash
+cd infra/bootstrap
 terraform init
+terraform apply
+# Espera a que termine y guarda el nombre del bucket en una variable mediante:
+BUCKET_NAME=$(terraform output -raw bucket_name)
+```
 
-# Aplicar
-terraform apply [-auto-approve]
+### Paso 2: Crear infraestructura principal (AWS)
 
-# Una vez creados el bucket y la tabla, desplegamos el proyecto principal
-cd <project_root>/infra/main
-
-# Inicializar Terraform con estado remoto y cifrado
+```bash
+cd ../main
 terraform init \
-  -backend-config="bucket=bucket-terraform-state-jln-35y728xstkvuwr2l457zw4uqz" \
+  -backend-config="bucket=$BUCKET_NAME" \
   -backend-config="key=main/terraform.tfstate" \
   -backend-config="region=eu-west-1" \
   -backend-config="dynamodb_table=terraform-lock" \
   -backend-config="encrypt=true"
-
-# Aplicar
-terraform apply [-auto-approve]
+terraform apply
+# IMPORTANTE: Esto tardará ~10 minutos
 ```
 
-### 2. Subir imágenes al ECR
+### Paso 3: Configurar kubectl
 
 ```bash
-# Obtener credenciales ECR
-aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l7n5d2e2
-
-# Taguear imagen ubuntu
-docker tag mysymfony/ubuntu:5.1-prod public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:5.1-prod
-
-# Pushear
-docker push public.ecr.aws/l7n5d2e2/mysymfony/ubuntu:5.1-prod
-
-# Taguear imagen php-nginx
-docker tag mysymfony/php-nginx:7.1-prod public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
-
-# Pushear
-docker push public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.1-prod
-```
-
-### 3. Desplegar en EKS
-
-```bash
-cd <project_root>/infra/main
+# Para AWS EKS
+# Sin salir del directorrio main, ejecutar:
 aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
-cd <project_root>/k8s
-
-# Esto despliega application y observability
-kubectl apply -k overlays/aws
+# Verificar conexión
+kubectl cluster-info
 ```
 
-### 4. Verificar funcionamiento desde el pod
+### Paso 4: Construir y subir imágenes (opcional)
+
+Realiza este paso sólo si hiciste "Configurar credenciales para Docker Hub (opcional)".
 
 ```bash
+# Volver al directorio raíz del proyecto
+cd ../..
+
+docker build -t "$DOCKER_ACCOUNT/mysymfony-ubuntu:24.04-5.1-prod" -f php-nginx/Dockerfile.base.prod php-nginx/
+docker push "$DOCKER_ACCOUNT/mysymfony-ubuntu:24.04-5.1-prod"
+
+# Edita Dockerfile.app para que use el registro de tu cuenta de Docker Hub:
+sed -i 's/^FROM .*/FROM '"$DOCKER_ACCOUNT"'\/mysymfony-ubuntu:24.04-5.1-prod/' php-nginx/Dockerfile.app
+
+docker build -t "$DOCKER_ACCOUNT/mysymfony-php-nginx:7.1-prod" -f php-nginx/Dockerfile.app php-nginx/
+docker push "$DOCKER_ACCOUNT/mysymfony-php-nginx:7.1-prod"
+```
+
+### Paso 5: Desplegar con Kustomize
+
+```bash
+# Si quieres usar las imágenes que construiste opcionalmente, actualiza los dos deployments. En caso contrario, omite este paso:
+sed -i 's|image: .*|image: '"$DOCKER_ACCOUNT"'/mysymfony-php-nginx:7.1-prod|' k8s/overlays/local/application/deployments/deployment-symfony.yaml
+sed -i 's|image: .*|image: '"$DOCKER_ACCOUNT"'/mysymfony-php-nginx:7.1-prod|' k8s/overlays/aws/application/deployments/deployment-symfony.yaml
+
+# Despliega con Kustomize
+cd <directorio-proyecto>/k8s
+
+# Para local
+kubectl apply -k overlays/local/
+
+# Para AWS
+kubectl apply -k overlays/aws/
+```
+
+### Paso 6: Verificar despliegue
+
+```bash
+# Ver pods
 kubectl get pods -n symfony-ns
-kubectl exec -it <pod> -n symfony-ns -- bash
-curl http://localhost
-```
+kubectl get pods -n monitoring-ns
 
-### 5. Verificar funcionamiento desde el nodo
-
-```bash
+# Ver servicios
 kubectl get services -n symfony-ns
-kubectl run debug-pod --image=nicolaka/netshoot:latest -it --rm --restart=Never -- /bin/bash
-curl http://<IP SERVICIO>
-```
+kubectl get services -n monitoring-ns
 
-### 6. Verificar ALB Controller instalado
-
-```bash
-kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
-# Debería mostrar 2 pods corriendo
-
-# Obtener DNS del ALB
+# Ver ingress
 kubectl get ingress -n symfony-ns
-# Buscar: Address: y probar a acceder desde esa URL
-# NAMESPACE    NAME              CLASS   HOSTS   ADDRESS                                            PORTS   AGE
-# symfony-ns   symfony-ingress   alb     *       symfony-alb-89347301.eu-west-1.elb.amazonaws.com   80      10m
+kubectl get ingress -n monitoring-ns
 
-# Esperar a que ALB esté listo (puede tardar 1-2 minutos)
-ALB_URL=$(kubectl get ingress symfony-ingress -n symfony-ns -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+# Acceder a la aplicación
+# LOCAL: http://symfony.local
+# AWS: http://<ALB-DNS>
 
-# Test HTTP
-curl http://$ALB_URL
+# Acceder a la monitorización
+# LOCAL: http://symfony.local/grafana
+# AWS: http://<ALB-DNS>/grafana
 
-# Ver logs del pod en tiempo real [-f]
+# Ver logs del pod en tiempo real
 kubectl logs -n symfony-ns deployment/symfony-app -f
+
+# Ejecutar debug-pod
+kubectl run debug-pod --image=nicolaka/netshoot:latest -it --rm --restart=Never -- /bin/bash
+curl http://<IP_SERVICIO>
+
+# Verificar ALB Controller
+kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
 ```
 
-### 7. Eliminar despliegue
+## 🔄 Blue/Green Deployment y rollback automático
+
+El script incluye soporte integrado para blue/green deployment:
 
 ```bash
-kubectl delete -k overlays/aws
+# Durante el despliegue, el script ofrecerá probar blue/green:
+# ¿Deseas probar blue/green deployment? (s/n):
+
+# Responde 's' y el script:
+# 1. Creará un nuevo deployment GREEN
+# 2. Probará su salud (/health)
+# 3. Te preguntará si cambiar el tráfico a GREEN
+# 4. Probará /error-test para simular un error
+# 5. Si hay error, ejecutará rollback automático a BLUE
 ```
 
-### 8. Destruir infraestructura
+### Utilidades adicionales para blue/green
 
 ```bash
-# TODO
-# Eliminar las imágenes del ECR antes
+# Ver estado actual
+./blue-green-utils.sh status [namespace]
 
-cd <project_root>/infra/main
+# Probar salud de un pod específico
+./blue-green-utils.sh health <pod-name> [namespace] [endpoint]
+
+# Cambiar porcentaje de tráfico (0-100)
+./blue-green-utils.sh switch 50 [namespace]
+
+# Monitoreo automático con rollback
+./blue-green-utils.sh monitor [namespace] [error-threshold]
+
+# Comparar uso de recursos
+./blue-green-utils.sh compare [namespace]
+
+# Limpiar deployments antiguos
+./blue-green-utils.sh cleanup [namespace] [versions-to-keep]
+```
+
+## 🗑️ Destruir despliegue
+
+### Usando el script
+
+```bash
+cd <directorio-proyecto>/k8s
+
+# Para local
+./deploy-k8s.sh cleanup local
+
+# Para AWS
+./deploy-k8s.sh cleanup aws
+```
+
+### Eliminar despliegue manualmente
+
+```bash
+cd k8s
+
+# Para local
+kubectl delete -k overlays/local/
+
+# Para AWS
+kubectl delete -k overlays/aws/
+```
+
+### Destruir infraestructura manualmente
+
+```bash
+cd ../infra/main
 terraform destroy
 
-# TODO
-# Eliminar la carpeta main del bucket antes
-
-cd <project_root>/infra/bootstrap
+cd ../bootstrap
 terraform destroy
 ```
 
-Para que vaya más rápido, ve mientras eliminando manualmente:
-- EKS Node group
-- EC2 instances
-- EC2 Auto Scaling groups
-- EC2 Load balancers (elb)
-- EC2 volumes
-- EC2 target groups
-- EFS
-- ECR eliminar imagen (si no, no se podrá borrar el registro con el destroy)
-- VPC
-- Secrets Manager
-- Bucket S3
-- Dynamo DB
-
-### 9. Limpiar contextos de kubectl
+### Limpiar contextos de kubectl manualmente
 
 ```bash
 kubectl config get-contexts && \
 kubectl config use-context minikube
 
-kubectl config delete-context arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-OM8HCqEO && \
-kubectl config delete-cluster arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-OM8HCqEO && \
-kubectl config delete-user    arn:aws:eks:eu-west-1:961341509493:cluster/pf-devops-eks-OM8HCqEO
+kubectl config delete-context <arn:aws:eks:eu-west-1:context-name> && \
+kubectl config delete-cluster <arn:aws:eks:eu-west-1:context-name> && \
+kubectl config delete-user    <arn:aws:eks:eu-west-1:context-name>
 ```
 
-### Verificaciones importantes y troubleshooting
+## 🔐 Secretos y Configuración
 
-### Comprobar log del namespace
-```bash
-kubectl get events -n symfony-ns --sort-by='.lastTimestamp'
+### Secretos de Kubernetes
+
+Los secretos se generan automáticamente en `k8s/overlays/local/application/secrets/`:
+
+- `secret-app-symfony.yaml`: APP_SECRET para Symfony
+- `secret-database-symfony.yaml`: DATABASE_URL para conexión a MySQL
+- `secret-mysql.yaml`: Credenciales de MySQL
+- `secret-user-queries.yaml`: Queries de los usuarios iniciales de la BD
+
+Estos archivos están en `.gitignore`. El script los regenera automáticamente si no existen.
+
+### Variables de Terraform (AWS)
+
+El archivo `infra/main/terraform.tfvars` contiene:
+
+```hcl
+aws_region = "eu-west-1"
+project_name = "pf-devops"
+environment = "test"
+...
+
+# Secrets
+symfony_app_secret = "..."
+symfony_database_url = "..."
+mysql_root_password = "..."
+user_queries = "..."
 ```
 
-### ALB Ingress Controller activo
+Este archivo está en `.gitignore` y se genera automáticamente.
+
+## 🤖 Workflows de GitHub Actions
+
+### Estructura
+
+TODO: Revisar
+
+Los workflows están en `.github/workflows/`:
+
+1. **build.yml**: Construcción y push a ECR
+2. **test.yml**: Tests unitarios, Trivy, Gitleaks
+3. **deploy.yml**: Blue/green deployment en EKS
+
+### Configuración de GitHub Secrets
+
+Para que los workflows funcionen correctamente con Docker Hub, necesitas configurar estos secrets en GitHub:
+
+**Ve a**: `Settings → Secrets and variables → Actions → New repository secret`
+
+#### Secrets de Docker Hub (Obligatorios para build):
+
 ```bash
+# Tu usuario de Docker Hub
+DOCKER_ACCOUNT=archipepe
+
+# Token de acceso personal de Docker Hub
+# Obtenerlo en: https://hub.docker.com/settings/security → New Access Token
+DOCKER_TOKEN=<tu-docker-hub-personal-access-token>
+```
+
+#### Secrets de AWS (Opcionales para deploy en EKS):
+
+```bash
+# Si quieres desplegar en AWS EKS después de build
+AWS_ACCESS_KEY_ID=<tu-access-key>
+AWS_SECRET_ACCESS_KEY=<tu-secret-key>
+AWS_REGION=eu-west-1
+EKS_CLUSTER_NAME=pf-devops-eks
+```
+
+#### Secretos de GitHub (Automáticos):
+
+```bash
+# Este secret ya existe automáticamente en GitHub
+GITHUB_TOKEN  # No necesitas agregarlo manualmente
+```
+
+### Flujo de Workflows
+
+El flujo completo es:
+
+```
+Tu Push a main (con cambios en php-nginx/)
+    ↓
+build.yml se ejecuta
+  ├─ Login a Docker Hub
+  ├─ Pull de imágenes base (si existen)
+  ├─ Build de imágenes
+  ├─ Scan con Trivy
+  ├─ Push a Docker Hub
+  └─ Trigger automático de deploy.yml
+    ↓
+deploy.yml se ejecuta (automático después de build)
+  ├─ Conecta a EKS
+  ├─ Crea deployment GREEN
+  ├─ Health checks
+  ├─ Switch de tráfico
+  ├─ Monitoreo 30s
+  └─ Auto-rollback si error
+```
+
+**Triggers:**
+- **build.yml**: Push a `main` con cambios en `php-nginx/**`
+- **test.yml**: Pull Request a `main` con cambios en `php-nginx/**`
+- **deploy.yml**: Manual (workflow_dispatch) O Automático después de build exitoso
+
+### Monitorizar Workflows
+
+```bash
+# Ver status de workflows
+gh workflow list
+
+# Ver últimas ejecuciones
+gh run list
+
+# Ver detalles de ejecución
+gh run view <run-id>
+
+# Ver logs de un job
+gh run view <run-id> --log
+```
+
+## 📊 Arquitectura Desplegada
+
+### Local (Minikube)
+
+```
+┌────────────────────────────────────────┐
+│      Minikube Kubernetes Cluster       │
+├────────────────────────────────────────┤
+│  Namespace: symfony-ns                 │
+│  ├─ Deployment: symfony-app (v1)       │
+│  │  └─ Pod: php-nginx (2 réplicas)     │
+│  ├─ Deployment: mysql                  │
+│  ├─ Service: nginx-service (ClusterIP) │
+│  ├─ Service: mysql-service (ClusterIP) │
+│  └─ Ingress: symfony-ingress           │
+│                                        │
+│  Namespace: monitoring-ns              │
+│  ├─ Prometheus, Grafana                │
+│  ├─ Loki, Tempo                        │
+│  ├─ NodeExporter, cAdvisor             │
+│  └─ OTEL Collector                     │
+└────────────────────────────────────────┘
+         ↓
+   Ingress Controller (nginx w/ sticky sessions)
+         ↓
+   http://symfony.local
+```
+
+### AWS (EKS)
+
+```
+┌────────────────────────────────────────┐
+│       AWS EKS Kubernetes Cluster       │
+├────────────────────────────────────────┤
+│  Namespace: symfony-ns                 │
+│  ├─ Deployment: symfony-app (v1)       │
+│  │  └─ Pod: php-nginx (N réplicas)     │
+│  ├─ Deployment: mysql                  │
+│  ├─ Service: nginx-service (ClusterIP) │
+│  ├─ Service: mysql-service (ClusterIP) │
+│  └─ Ingress: symfony-ingress (ALB)     │
+│                                        │
+│  Namespace: monitoring-ns              │
+│  ├─ Prometheus, Grafana (Ingress)      │
+│  ├─ Loki, Tempo                        │
+│  ├─ NodeExporter, cAdvisor             │
+│  └─ OTEL Collector                     │
+│                                        │
+│  Persistent Storage:                   │
+│  ├─ EBS (MySQL, logs)                  │
+│  └─ EFS (shared logs)                  │
+└────────────────────────────────────────┘
+         ↓
+   ALB (AWS Application Load Balancer w/ sticky sessions)
+   ├─ /health → nginx:80
+   ├─ /grafana/* → grafana:3000
+   └─ /* → nginx:80
+         ↓
+   http://<ALB-DNS>
+```
+
+## 🐛 Troubleshooting
+
+### Local (Minikube)
+
+```bash
+# Minikube no inicia
+minikube delete
+minikube start --driver=docker
+
+# Docker no funciona
+sudo systemctl start docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+# No puedo acceder a symfony.local
+cat /etc/hosts  # Verificar que existe la línea
+# Si no existe, vuelve a ejecutar deploy-k8s.sh
+
+# Limpiar todo
+./deploy-k8s.sh cleanup local
+minikube delete
+```
+
+### AWS (EKS)
+
+```bash
+# No puedo conectar a EKS
+cd infra/main
+aws eks --region eu-west-1 update-kubeconfig --name $(terraform output -raw cluster_name)
+kubectl cluster-info
+
+# ALB no funciona
+kubectl get ingress -n symfony-ns -o yaml
 kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller -f
-```
-
-### Pod en estado Pending
-```bash
-kubectl describe pod -n symfony-ns deployment/symfony-app
-# Ver sección "Events" para errores de imagen o recursos
-```
-
-### Logs de un contenedor en concreto
-```bash
-kubectl logs -n symfony-ns symfony-deployment-74fdcdbd99-bs7xf -c init-code
-kubectl logs -n symfony-ns symfony-deployment-f4dd96cf5-fmtcj -c php-nginx-container
-
-kubectl logs -n symfony-ns deployment/symfony-app
-kubectl logs -n symfony-ns deployment/symfony-app -c php-nginx-container
-```
-
-### ALB no se crea
-```bash
-# Ver logs del ALB Controller
 kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=100
 
 # Verificar IAM role
 aws iam get-role-policy --role-name eks-alb-controller --policy-name AWSLoadBalancerControllerIAMPolicy
+
+# Comprobar si los CRD están instalados
+kubectl get crds | grep external
+
+# Comprobar si los pods de external-secrets están funcionando
+kubectl get pods -n external-secrets
+
+# Comprobar las versiones soportadas del manifiesto secretstore
+kubectl get crd secretstores.external-secrets.io -o jsonpath='{.spec.versions[*].name}'
+
+# Cleanup (CUIDADO - Elimina toda la infraestrucutra)
+./deploy-k8s.sh cleanup aws
+# Verifica manualmente en AWS Console que se hayan eliminado:
+# - VPC
+# - NAT Gateways
+# - Elastic IPs
+# - Security Groups
+# - EKS Node group
+# - EC2 instances
+# - EC2 Auto Scaling groups
+# - EC2 Load balancers (elb)
+# - EC2 volumes
+# - EC2 target groups
+# - EFS
+# - Secrets Manager
+# - Bucket S3
+# - Dynamo DB
 ```
 
-### Obtener info de un ingress
+### Común
+
 ```bash
+# Pods no despliegan
+kubectl describe pod <pod-name> -n symfony-ns
+kubectl describe pod -n symfony-ns deployment/symfony-app
+kubectl logs <pod-name> -n symfony-ns
+
+# Comprobar log del namespace
+kubectl get events -n symfony-ns --sort-by='.lastTimestamp'
+
+# Logs de un contenedor en concreto
+kubectl logs -n symfony-ns <symfony-deployment> -c php-nginx-container
+
+kubectl logs -n symfony-ns deployment/symfony-app
+kubectl logs -n symfony-ns deployment/symfony-app -c php-nginx-container
+
+# Obtener info de un ingress
 kubectl describe ingress grafana-ingress -n monitoring-ns
 ```
 
-### Comprobar si los CRD están instalados
-```bash
-kubectl get crds | grep external
-```
+## 📚 Documentación Adicional
 
-### Comprobar si los pods de external-secrets están funcionando
-```bash
-kubectl get pods -n external-secrets
-```
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [Kustomize](https://kustomize.io/)
+- [Symfony Documentation](https://symfony.com/doc/)
+- [Docker Documentation](https://docs.docker.com/)
 
-### Comprobar las versiones soportadas del manifiesto secretstore
-```bash
-kubectl get crd secretstores.external-secrets.io -o jsonpath='{.spec.versions[*].name}'
-```
+## 📝 Notas Importantes
+
+- **Seguridad**: Los archivos de secrets y terraform.tfvars están en `.gitignore`. NUNCA los hagas públicos.
+- **Costes AWS**: Asegúrate de ejecutar `./deploy-k8s.sh cleanup aws` después de terminar para evitar costes.
+- **Blue/Green**: El despliegue green mantiene 2 réplicas. Ajusta `replicas` en el deployment si es necesario.
+- **Certificados**: Para producción, configura SSL/TLS en el ALB (recomendado usar AWS Certificate Manager).
+
+## 👨‍🎓 Proyecto Educativo
+
+Este proyecto es un ejemplo práctico de DevOps que incluye:
+
+- ✅ Infraestructura como Código (Terraform)
+- ✅ Containerización (Docker)
+- ✅ Orquestación (Kubernetes)
+- ✅ Automatización (GitHub Actions)
+- ✅ Despliegue Blue/Green
+- ✅ Monitorización (Prometheus, Grafana)
+- ✅ Trazabilidad (Tempo, Loki)
