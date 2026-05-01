@@ -1,0 +1,12 @@
+title = "Custom GitLeaks Config"
+
+[allowlist]
+description = "Allowlist for personal names and dummy secrets"
+regexes = [
+  "José [A-Za-zÁÉÍÓÚÑáéíóúñ]+",
+  "MYSQL_ROOT_PASSWORD.*",
+  "local app_secret.*",
+  "symfony_app_secret.*",
+  "APP_SECRET.*",
+  "mysql_root_password.*"
+]

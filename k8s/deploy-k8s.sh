@@ -308,16 +308,19 @@ deploy_aws() {
     
     # Obtener outputs
     local cluster_name=$(terraform output -raw cluster_name)
-    local region=$(terraform output -raw region)
+    local aws_region=$(terraform output -raw region)
     cd - > /dev/null
     
     # Configurar kubectl
     log_info "Paso 3: Configurando kubectl para acceder al clúster EKS..."
-    aws eks --region "$region" update-kubeconfig --name "$cluster_name"
+    aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
+
+    local context=$(kubectl config get-contexts -o name | grep 'arn:aws:eks:eu-west-1:' | grep ':cluster/pf-devops-eks-')
 
     # Guardar información de despliegue
     echo "cluster_name=$cluster_name" >> "$DEPLOYED_AWS_RESOURCES_FILE"
-    echo "region=$region" >> "$DEPLOYED_AWS_RESOURCES_FILE"
+    echo "aws_region=$aws_region" >> "$DEPLOYED_AWS_RESOURCES_FILE"
+    echo "context=$context" >> $DEPLOYED_AWS_RESOURCES_FILE
     
     # Verificar acceso al clúster
     if ! kubectl cluster-info &>/dev/null; then
@@ -481,7 +484,8 @@ test_blue_green_deployment() {
         log_info "✓ Recursos de monitorización eliminados."
     elif [ "$env" == "aws" ]; then
         local cluster_name=$(grep '^cluster_name=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
-        kubectl config use-context "$cluster_name"
+        local aws_region=$(grep '^aws_region=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
+        aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
     fi
     
     # Crear GREEN deployment
