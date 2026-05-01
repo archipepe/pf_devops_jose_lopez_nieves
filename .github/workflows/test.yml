@@ -93,12 +93,14 @@ jobs:
       - name: Composer audit inside container
         run: |
           docker run --rm \
+            --entrypoint="" \
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }} \
             composer audit || true
 
       - name: Composer outdated inside container
         run: |
           docker run --rm \
+            --entrypoint="" \
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }} \
             composer outdated || true
 
