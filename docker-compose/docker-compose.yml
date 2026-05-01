@@ -1,7 +1,7 @@
 services:
   symfony-php-nginx-service:
-    image: ${REGISTRY}/${SYMFONY_APP_IMAGE}
-    # image: php-nginx:7.0-prod
+    image: ${DOCKER_ACCOUNT}/${REGISTRY}-${SYMFONY_APP_IMAGE}
+    # image: archipepe/mysymfony-php-nginx:7.1-prod
     environment:
       APP_ENV: prod
       FORCE_HEALTH_CHECK_ERROR: false
@@ -33,6 +33,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ../php-nginx/symfony-app/sql/2026.03.22-26.2.sql:/docker-entrypoint-initdb.d/2026.03.22-26.2.sql
 
   otel-collector:
     image: otel/opentelemetry-collector:0.135.0

@@ -1,0 +1,192 @@
+name: Ejecutar tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'php-nginx/symfony-app/**'
+      - 'php-nginx/Dockerfile.app'
+      - '.github/workflows/test.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'php-nginx/symfony-app/**'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Construir y subir imágenes de Docker a Docker Hub"]
+    types:
+      - completed
+
+env:
+  PHP_VERSION: '8.3'
+  SYMFONY_ENV: 'test'
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+
+    # Sólo se ejecuta si:
+    # 1. Es workflow_dispatch (manual), O
+    # 2. Es workflow_run (automático después de build con éxito)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: XjesGl0qzB7CZNuW
+          MYSQL_DATABASE: app
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql,mysqli,intl,opcache,xml,dom,mbstring
+          tools: composer:v2.6
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: php-nginx/symfony-app/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('php-nginx/symfony-app/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: |
+          cd php-nginx/symfony-app
+          composer install --no-progress
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 3306 2>/dev/null; then
+              echo "MySQL listo."
+              exit 0
+            fi
+            echo "Esperando al servicio de MySQL... ($i/30)"
+            sleep 1
+          done
+          echo "Error al iniciar el servicio de MySQL."
+          exit 1
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: mysql://root:XjesGl0qzB7CZNuW@127.0.0.1:3306/app?serverVersion=8.0
+        run: |
+          cd php-nginx/symfony-app
+          php bin/console doctrine:database:create --if-not-exists --env=test || true
+          php bin/console doctrine:migrations:migrate -n --env=test || true
+
+      - name: Run PHPUnit tests
+        env:
+          DATABASE_URL: mysql://root:XjesGl0qzB7CZNuW@127.0.0.1:3306/app?serverVersion=8.0
+          APP_ENV: test
+        run: |
+          cd php-nginx/symfony-app
+          php bin/phpunit
+
+  dependency-check:
+    if: success()
+    needs: unit-tests
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2.6
+
+      - name: Install dependencies
+        run: |
+          cd php-nginx/symfony-app
+          composer install --no-progress
+
+      - name: Check for vulnerabilities with Composer
+        run: |
+          cd php-nginx/symfony-app
+          composer audit || true
+
+      - name: Check for outdated packages
+        run: |
+          cd php-nginx/symfony-app
+          composer outdated || true
+
+  report:
+    if: always()
+    needs: [unit-tests, dependency-check]
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Generate test report
+        run: |
+          echo "### Resumen de las pruebas 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Estado |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PHP Lint | ${{ needs.php-lint.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dockerfile Security | ${{ needs.dockerfile-security.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Check | ${{ needs.dependency-check.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any test failed
+        if: |
+          needs.unit-tests.result != 'success' ||
+          needs.php-lint.result != 'success' ||
+          needs.dockerfile-security.result != 'success'
+        run: |
+          echo "❌ Algunos tests han fallado. Revísalos arriba."
+          exit 1
+
+  trigger-deploy:
+    if: success()
+    needs: [unit-tests, dependency-check]
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Trigger deployment workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main',
+              inputs: {
+                deployment_type: 'blue-green',
+                enable_monitoring: 'true',
+                auto_rollback: 'true'
+              }
+            });
+            console.log('✅ Deploy workflow triggered automatically');
+      
+      - name: Report deployment trigger
+        run: |
+          echo "### Despliegue automático disparado 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pruebas completadas correctamente. El workflow 'deploy' se ha disparado con:" >> $GITHUB_STEP_SUMMARY
+          echo "- Type: Blue/Green" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitoring: Enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- Auto Rollback: Enabled" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Comprueba el estado del workflow 'deploy'." >> $GITHUB_STEP_SUMMARY

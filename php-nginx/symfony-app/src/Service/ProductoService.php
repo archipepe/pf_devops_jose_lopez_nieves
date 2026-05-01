@@ -78,7 +78,7 @@ class ProductoService
                 sleep($tiempoEspera);
                 $this->logger->info('Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.');
             } else {
-                $tiempoEspera = rand(0.5, 1);
+                $tiempoEspera = rand(0, 1);
                 $this->logger->info('Recuperado producto con ID $idProducto después de esperar $tiempoEspera segundos.');
             }
 
@@ -107,7 +107,7 @@ class ProductoService
                 sleep($tiempoEspera);
                 $this->logger->info('Metadata actualizada para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
             } else {
-                $tiempoEspera = rand(0.5, 1);
+                $tiempoEspera = rand(0, 1);
                 $this->logger->info('Metadata actualizada para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
             }
 
@@ -136,7 +136,7 @@ class ProductoService
                 sleep($tiempoEspera);
                 $this->logger->info('Facebook Pixel enviado para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
             } else {
-                $tiempoEspera = rand(0.5, 1);
+                $tiempoEspera = rand(0, 1);
                 $this->logger->info('Facebook Pixel enviado para producto con ID $idProducto después de esperar $tiempoEspera segundos.');
             }
 

@@ -7,7 +7,7 @@ metadata:
     app: symfony-app
     version: v1
 spec:
-  replicas: 2 # Revisar sticky sessions en el ingress y en AWS ALB
+  replicas: 2
   selector:
     matchLabels:
       app: symfony-app
@@ -33,7 +33,7 @@ spec:
 
       containers:
         - name: php-nginx-container
-          image: public.ecr.aws/l7n5d2e2/mysymfony/php-nginx:7.0-prod
+          image: archipepe/mysymfony-php-nginx:7.1-prod
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL

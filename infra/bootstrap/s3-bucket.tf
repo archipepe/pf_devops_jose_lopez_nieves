@@ -1,6 +1,13 @@
 # s3-bucket.tf
+resource "random_id" "bucket_id" {
+  byte_length = 8
+}
+
 resource "aws_s3_bucket" "tfstate_bucket" {
-  bucket = "bucket-terraform-state-jln-35y728xstkvuwr2l457zw4uqz"
+  bucket = "bucket-terraform-state-jln-${random_id.bucket_id.hex}"
+
+  # Es necesario para hacer un cleanup completo
+  force_destroy = true
 }
 
 # Dynamodb Table

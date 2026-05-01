@@ -35,6 +35,7 @@ RUN apt update && apt install -y \
     php8.3-opcache \
     php8.3-xml \
     php8.3-dom \
+    php8.3-mbstring \
     php-cli \
     curl \
     unzip \

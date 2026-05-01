@@ -1,5 +1,5 @@
 # Dockerfile.app
-FROM mysymfony/ubuntu:24.04-5.0-prod
+FROM archipepe/mysymfony-ubuntu:24.04-5.1-prod
 
 # Copiar el código fuente
 WORKDIR /var/www/html
