@@ -116,9 +116,6 @@ jobs:
       - name: Check for secrets with GitLeaks
         continue-on-error: true
         uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . --verbose --redact
-          exit-code: '0'
 
       - name: Create report
         run: |
@@ -149,27 +146,3 @@ jobs:
             echo "❌ Las imágenes no se han podido construir."
             exit 1
           fi
-
-  trigger-test:
-    if: success()
-    needs: build-and-push
-    runs-on: ubuntu-24.04
-    
-    steps:
-      - name: Trigger test workflow
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'test.yml',
-              ref: 'main'
-            });
-            console.log("✅ Workflow 'test' disparado automáticamente.");
-      
-      - name: Report deployment trigger
-        run: |
-          echo "### Testing disparado automáticamente 🧪" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Comprueba el estado del workflow 'test'." >> $GITHUB_STEP_SUMMARY

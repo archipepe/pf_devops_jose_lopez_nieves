@@ -355,7 +355,10 @@ jobs:
     needs: [pre-deployment, deploy-green, switch-traffic, post-deployment-tests]
     runs-on: ubuntu-24.04
     
-    if: always()
+    if: needs.pre-deployment.result != 'skipped' &&
+      needs.deploy-green.result != 'skipped' &&
+      needs.switch-traffic.result != 'skipped' &&
+      needs.post-deployment-tests.result != 'skipped'
     
     steps:
       - name: Configure AWS credentials
@@ -392,10 +395,14 @@ jobs:
           echo "✅ Limpieza completada."
 
   report:
-    needs: [pre-deployment, deploy-green, switch-traffic, post-deployment-tests]
+    needs: [pre-deployment, deploy-green, switch-traffic, post-deployment-tests, cleanup]
     runs-on: ubuntu-24.04
     
-    if: always()
+    if: needs.pre-deployment.result != 'skipped' &&
+      needs.deploy-green.result != 'skipped' &&
+      needs.switch-traffic.result != 'skipped' &&
+      needs.post-deployment-tests.result != 'skipped' &&
+      needs.cleanup.result != 'skipped'
     
     steps:
       - name: Generate deployment report
