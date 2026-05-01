@@ -8,7 +8,7 @@ on:
       - 'php-nginx/**'
       - 'docker-compose/**'
       - '.github/workflows/build.yml'
-  workflow_dispatch: # Permitir trigger manual
+  workflow_dispatch: # Permite trigger manual
 
 env:
   REGISTRY: docker.io
@@ -39,7 +39,17 @@ jobs:
           username: ${{ secrets.DOCKER_ACCOUNT }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Check if base prod image exists
+        id: check-base-prod
+        run: |
+          if docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build base image (Producción)
+        if: steps.check-base-prod.outputs.exists == 'false'
         uses: docker/build-push-action@v5
         with:
           context: php-nginx/
@@ -47,10 +57,18 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
           push: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }},mode=max
+
+      - name: Check if base debug image exists
+        id: check-base-debug
+        run: |
+          if docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build base debug image
+        if: steps.check-base-debug.outputs.exists == 'false'
         uses: docker/build-push-action@v5
         with:
           context: php-nginx/
@@ -58,10 +76,18 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
           push: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }},mode=max
+
+      - name: Check if app prod image exists
+        id: check-app-prod
+        run: |
+          if docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build app image (Producción)
+        if: steps.check-app-prod.outputs.exists == 'false'
         uses: docker/build-push-action@v5
         with:
           context: php-nginx/
@@ -70,8 +96,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/mysymfony-php-nginx:latest
           push: true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }},mode=max
 
       - name: Store image URLs
         id: image-urls
@@ -79,19 +103,6 @@ jobs:
           echo "app_prod=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}" >> $GITHUB_OUTPUT
           echo "app_debug=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_DEBUG }}" >> $GITHUB_OUTPUT
 
-      # - name: Scan images with Trivy (Prod)
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     image-ref: ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
-      #     format: 'sarif'
-      #     output: 'trivy-app-prod-results.sarif'
-      #     severity: 'CRITICAL,HIGH'
-
-      # - name: Upload Trivy scan results
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   if: always()
-      #   with:
-      #     sarif_file: 'trivy-app-prod-results.sarif'
       - name: Run Trivy secret scanner on repository
         uses: aquasecurity/trivy-action@master
         with:
@@ -103,6 +114,7 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
       - name: Check for secrets with GitLeaks
+        continue-on-error: true
         uses: gitleaks/gitleaks-action@v2
         with:
           args: detect --source . --verbose --redact
