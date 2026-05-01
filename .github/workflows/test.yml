@@ -39,7 +39,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: XjesGl0qzB7CZNuW
+          MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: app
         options: >-
           --health-cmd="mysqladmin ping"
@@ -70,12 +70,10 @@ jobs:
           exit 1
 
       - name: Run PHPUnit inside container
-        env:
-          DATABASE_URL: mysql://root:XjesGl0qzB7CZNuW@127.0.0.1:3306/app?serverVersion=8.0
         run: |
           docker run --rm \
+            --entrypoint="" \
             --network=host \
-            -e DATABASE_URL="$DATABASE_URL" \
             -e APP_ENV=${{ env.SYMFONY_ENV }} \
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }} \
             php /var/www/html/bin/phpunit
