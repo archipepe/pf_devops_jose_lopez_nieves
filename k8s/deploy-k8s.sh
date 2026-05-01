@@ -411,8 +411,6 @@ change_permissions() {
     sudo chown -R $USER:$USER "$SYMFONY_UBUNTU_BASE_PROD_IMAGE_PATH"symfony-app && sudo chmod -R 777 "$SYMFONY_UBUNTU_BASE_PROD_IMAGE_PATH"symfony-app
 
     sudo chown -R $USER:$USER "$TEMPO_DATA_PATH" && sudo chmod -R 777 "$TEMPO_DATA_PATH"
-
-    chmod +x ./blue-green-utils.sh
 }
 
 modify_dockerfiles() {
@@ -514,7 +512,7 @@ test_blue_green_deployment() {
             
             # Comprobar si hay errores
             log_warn "Esperando 30 segundos antes de probar con /error-test para forzar un rollback automático..."
-            log_info "¡Puedes probar a actualizar la página y comprobar que los GREEN pods están sirviendo la web mientras!"
+            log_info "¡Mientras, puedes probar a actualizar la página y comprobar que los GREEN pods están sirviendo la web!"
             for i in {30..1}; do
                 echo -ne "\r$i segundos restantes... "
                 sleep 1
@@ -535,13 +533,19 @@ test_blue_green_deployment() {
             else
                 log_info "✓ No se detectaron errores en GREEN."
             fi
+            log_info "Para terminar de limpiar, ejecuta:"
+            log_info "  ./deploy-k8s.sh cleanup $env"
         else
             log_info "Eliminando GREEN deployment sin cambiar tráfico."
             delete_green_deployment "$env"
+            log_info "Para terminar de limpiar, ejecuta:"
+            log_info "  ./deploy-k8s.sh cleanup $env"
         fi
     else
         log_error "GREEN deployment no está healty. Eliminando..."
         delete_green_deployment "$env"
+        log_info "Para terminar de limpiar, ejecuta:"
+        log_info "  ./deploy-k8s.sh cleanup $env"
     fi
 }
 
@@ -712,7 +716,10 @@ show_menu() {
 if [ $# -eq 0 ]; then
     show_menu
 else
-    # TODO: aceptar tercer argumento para DOCKER_ACCOUNT
+    # Permitir sobrescribir DOCKER_ACCOUNT como tercer argumento
+    if [ $# -ge 3 ]; then
+        export DOCKER_ACCOUNT="$3"
+    fi
     case "$1" in
         deploy)
             ENVIRONMENT="${2:-local}"
@@ -757,7 +764,7 @@ else
             fi
             ;;
         *)
-            log_error "Uso: $0 [deploy|test-blue-green|cleanup] [local|aws]"
+            log_error "Uso: $0 [deploy|test-blue-green|cleanup] [local|aws] [DOCKER_ACCOUNT]"
             ;;
     esac
 fi

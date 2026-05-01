@@ -1,9 +1,14 @@
 #!/bin/bash
 
 # Ejecuta chmod +x deploy-docker-compose.sh
-# Luego ejecuta ./deploy-docker-compose.sh para desplegar la aplicación en Docker
+# Luego ejecuta ./deploy-docker-compose.sh [DOCKER_ACCOUNT] para desplegar la aplicación en Docker
 
 source ./common-docker-compose.sh
+
+# Permitir sobrescribir DOCKER_ACCOUNT como primer argumento
+if [ $# -ge 1 ]; then
+    export DOCKER_ACCOUNT="$1"
+fi
 
 modify_dockerfiles() {
     if [ "$APP_IMAGE_TYPE" == "$PROD_TYPE" ]; then

@@ -1,9 +1,14 @@
 #!/bin/bash
 
 # Ejecuta chmod +x cleanup-docker-compose.sh
-# Luego ejecuta ./cleanup-docker-compose.sh para borrar todos los recursos Docker
+# Luego ejecuta ./cleanup-docker-compose.sh [DOCKER_ACCOUNT] para borrar todos los recursos Docker
 
 source ./common-docker-compose.sh
+
+# Permitir sobrescribir DOCKER_ACCOUNT como primer argumento
+if [ $# -ge 1 ]; then
+    export DOCKER_ACCOUNT="$1"
+fi
 
 stop_and_remove_containers() {
     log_info "Deteniendo y eliminando contenedores de Docker..."
