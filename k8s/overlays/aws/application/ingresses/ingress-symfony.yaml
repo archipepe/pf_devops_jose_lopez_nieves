@@ -13,12 +13,11 @@ metadata:
     alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=3600
     
     # Health check
-    # TODO
-    # alb.ingress.kubernetes.io/healthcheck-path: /health
-    # alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
-    # alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-    # alb.ingress.kubernetes.io/healthy-threshold-count: "2"
-    # alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
 
     # Agrupación de ingresses para usar el mismo ALB controller
     # Si el group.name coincide, usan el mismo. No hay que crear main, es como un tag dinámico
