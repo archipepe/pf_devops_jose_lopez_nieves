@@ -63,53 +63,66 @@ cleanup_deployment() {
         review_images
 
         rm -f "$DEPLOYED_LOCAL_RESOURCES_FILE" "$BLUE_GREEN_CONFIG_FILE"
+
+        log_info "================================"
+        log_info "✓ LIMPIEZA COMPLETADA"
+        log_info "================================"
     elif [ "$env" == "aws" ]; then
         log_warn "IMPORTANTE: La limpieza de AWS eliminará todos los recursos de este proyecto."
-        read -p "¿Deseas continuar? (s/n): " -n 1 -r
+        
         echo ""
-        if [[ ! $REPLY =~ ^[Ss]$ ]]; then
-            log_info "Limpieza cancelada."
-            return 0
-        fi
-        
-        log_info "Eliminando recursos de Kubernetes..."
+        while true; do
+            read -p "¿Deseas continuar? (s/n): " -n 1 -r
+            echo ""
 
-        local cluster_name=$(grep '^cluster_name=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
-        local aws_region=$(grep '^aws_region=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
-        local context=$(grep '^context=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
+            if [[ $REPLY =~ ^[Ss]$ ]]; then
+                log_info "Eliminando recursos de Kubernetes..."
 
-        aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
+                local cluster_name=$(grep '^cluster_name=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
+                local aws_region=$(grep '^aws_region=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
+                local context=$(grep '^context=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
 
-        kubectl delete -k "$KUSTOMIZATION_AWS_PATH" --ignore-not-found=true 2>/dev/null
+                aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
 
-        log_info "Eliminando infraestructura de Terraform..."
-        log_info "IMPORTANTE: Esto puede tardar más de 10 minutos."
-        
-        cd "$SCRIPT_DIR/../infra/main"
-        log_info "Ejecutando: terraform destroy"
-        terraform destroy -auto-approve
-        cd - > /dev/null
+                kubectl delete -k "$KUSTOMIZATION_AWS_PATH" --ignore-not-found=true 2>/dev/null
 
-        cd "$SCRIPT_DIR/../infra/bootstrap"
-        log_info "Ejecutando: terraform destroy (bootstrap)"
-        terraform destroy -auto-approve
-        cd - > /dev/null
+                log_info "Eliminando infraestructura de Terraform..."
+                log_info "IMPORTANTE: Esto puede tardar más de 10 minutos."
+                
+                cd "$SCRIPT_DIR/../infra/main"
+                log_info "Ejecutando: terraform destroy"
+                terraform destroy -auto-approve
+                cd - > /dev/null
 
-        # Limpiar clúster del kubeconfig
-        kubectl config use-context minikube
+                cd "$SCRIPT_DIR/../infra/bootstrap"
+                log_info "Ejecutando: terraform destroy (bootstrap)"
+                terraform destroy -auto-approve
+                cd - > /dev/null
 
-        kubectl config delete-context "$context" && \
-        kubectl config delete-cluster "$context" && \
-        kubectl config delete-user    "$context"
+                # Limpiar clúster del kubeconfig
+                kubectl config use-context minikube
 
-        log_warn "⚠ ADVERTENCIA: Verifica manualmente en AWS que todos los recursos se hayan eliminado para evitar costes adicionales."
-        log_warn "Revisa: VPC, NAT Gateways, Elastic IPs, Security Groups, EKS Node Group, instancias EC2, volúmenes EC2 y EFS..."
+                kubectl config delete-context "$context" && \
+                kubectl config delete-cluster "$context" && \
+                kubectl config delete-user    "$context"
 
-        # Limpiar archivos locales
-        rm -f "$DEPLOYED_AWS_RESOURCES_FILE" "$BLUE_GREEN_CONFIG_FILE"
+                log_warn "⚠ ADVERTENCIA: Verifica manualmente en AWS que todos los recursos se hayan eliminado para evitar costes adicionales."
+                log_warn "Revisa: VPC, NAT Gateways, Elastic IPs, Security Groups, EKS Node Group, instancias EC2, volúmenes EC2 y EFS..."
+
+                # Limpiar archivos locales
+                rm -f "$DEPLOYED_AWS_RESOURCES_FILE" "$BLUE_GREEN_CONFIG_FILE"
+
+                log_info "================================"
+                log_info "✓ LIMPIEZA COMPLETADA"
+                log_info "================================"
+
+                break
+            elif [[ $REPLY =~ ^[Nn]$ ]]; then
+                log_info "Limpieza cancelada."
+                break
+            else
+                echo "Por favor, responde 's' o 'n'."
+            fi
+        done
     fi
-    
-    log_info "================================"
-    log_info "✓ LIMPIEZA COMPLETADA"
-    log_info "================================"
 }

@@ -11,6 +11,13 @@ metadata:
     nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
 
+    # Health check
+    nginx.ingress.kubernetes.io/healthcheck-path: /health
+    nginx.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    nginx.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    nginx.ingress.kubernetes.io/healthy-threshold-count: "2"
+    nginx.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+
     nginx.ingress.kubernetes.io/group.name: "main"
     nginx.ingress.kubernetes.io/group.order: "2"
 spec:

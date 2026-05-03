@@ -2,14 +2,15 @@
 
 # Ejecuta chmod +x deploy-k8s.sh para hacer este script ejecutable.
 # Luego ejecuta:
-# ./deploy-k8s.sh deploy [local|aws] → para empezar con el despliegue en local o AWS.
-# ./deploy-k8s.sh test-blue-green [local|aws] → para realizar la prueba de blue/green deployment y rollback automático.
-# ./deploy-k8s.sh cleanup [local|aws] → para limpiar el despliegue en local o AWS.
+# ./deploy-k8s.sh deploy [local|aws] [DOCKER_ACCOUNT] → para empezar con el despliegue en local o AWS.
+# ./deploy-k8s.sh test-blue-green [local|aws] [DOCKER_ACCOUNT] → para realizar la prueba de blue/green deployment y rollback automático.
+# ./deploy-k8s.sh cleanup [local|aws] [DOCKER_ACCOUNT] → para limpiar el despliegue en local o AWS.
 
 set -e
 
 source common-k8s.sh
 source cleanup-k8s.sh
+source blue-green-rollback.sh
 
 # ==================== CONFIGURACIÓN ====================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -124,6 +125,7 @@ metadata:
   namespace: symfony-ns
 type: Opaque
 data:
+  # Usar: echo -n "676bad43ce6494db4bc99a5be97212d2" | base64
   APP_SECRET: $app_secret_b64
 EOF
     
@@ -136,8 +138,8 @@ metadata:
   namespace: symfony-ns
 type: Opaque
 data:
-  DATABASE_URL: bXlzcWw6Ly9yb290OlhqZXNHbDBxekI3Q1pOdVdAbXlzcWwtc2VydmljZTozMzA2L2FwcD9zZXJ2
-  ZXJWZXJzaW9uPTguMCZjaGFyc2V0PXV0ZjhtYjQ=
+  # Usar: echo -n "mysql://root:XjesGl0qzB7CZNuW@mysql-service:3306/app?serverVersion=8.0&charset=utf8mb4" | base64
+  DATABASE_URL: bXlzcWw6Ly9yb290OlhqZXNHbDBxekI3Q1pOdVdAbXlzcWwtc2VydmljZTozMzA2L2FwcD9zZXJ2ZXJWZXJzaW9uPTguMCZjaGFyc2V0PXV0ZjhtYjQ=
 EOF
 
     # Crear secret-mysql.yaml
@@ -149,7 +151,8 @@ metadata:
   namespace: symfony-ns
 type: Opaque
 data:
-  MYSQL_ROOT_PASSWORD: $db_pass_b64
+  # Usar: echo -n "XjesGl0qzB7CZNuW" | base64
+  MYSQL_ROOT_PASSWORD: $db_pass_b64 # "XjesGl0qzB7CZNuW" codificado en base64
 EOF
 
     # Crear secret-user-queries.yaml
@@ -161,6 +164,14 @@ metadata:
   namespace: symfony-ns
 type: Opaque
 data:
+  # Crear archivo con el contenido de las inserts y guardar
+  # Aunque docker-entrypoint.sh sólo se ejecuta si detecta que /var/lib/mysql está vacío, preparamos los insert sin DELETE previo y con INSERT IGNORE para evitar errores de clave primaria duplicada
+  # Usar: cat users.sql | base64 -w 0 # Es necesario eliminar saltos de línea, se hace con -w 0
+  # Si lo guardas en un archivo, puedes ver el contenido mediante: base64 -d inserts-encrypted.sql
+  # Puedes generar automáticamente este archivo mediante:
+  # kubectl create secret generic user-queries-secret \
+  # --from-file=USER_QUERIES=users.sql \
+  # --dry-run=client -o yaml > secret-user-queries.yaml
   USER_QUERIES: LS0gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KLS0gSG9zdDogICAgICAgICAgICAgICAgICAgICAgICAgMTkyLjE2OC4xMDAuMgotLSBTZXJ2ZXIgdmVyc2lvbjogICAgICAgICAgICAgICA4LjAuNDUgLSBNeVNRTCBDb21tdW5pdHkgU2VydmVyIC0gR1BMCi0tIFNlcnZlciBPUzogICAgICAgICAgICAgICAgICAgIExpbnV4Ci0tIEhlaWRpU1FMIFZlcnNpb246ICAgICAgICAgICAgIDEyLjE2LjAuNzIyOQotLSAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKLyohNDAxMDEgU0VUIEBPTERfQ0hBUkFDVEVSX1NFVF9DTElFTlQ9QEBDSEFSQUNURVJfU0VUX0NMSUVOVCAqLzsKLyohNDAxMDEgU0VUIE5BTUVTIHV0ZjggKi87Ci8qITUwNTAzIFNFVCBOQU1FUyB1dGY4bWI0ICovOwovKiE0MDEwMyBTRVQgQE9MRF9USU1FX1pPTkU9QEBUSU1FX1pPTkUgKi87Ci8qITQwMTAzIFNFVCBUSU1FX1pPTkU9JyswMDowMCcgKi87Ci8qITQwMDE0IFNFVCBAT0xEX0ZPUkVJR05fS0VZX0NIRUNLUz1AQEZPUkVJR05fS0VZX0NIRUNLUywgRk9SRUlHTl9LRVlfQ0hFQ0tTPTAgKi87Ci8qITQwMTAxIFNFVCBAT0xEX1NRTF9NT0RFPUBAU1FMX01PREUsIFNRTF9NT0RFPSdOT19BVVRPX1ZBTFVFX09OX1pFUk8nICovOwovKiE0MDExMSBTRVQgQE9MRF9TUUxfTk9URVM9QEBTUUxfTk9URVMsIFNRTF9OT1RFUz0wICovOwoKLS0gRHVtcGluZyBkYXRhIGZvciB0YWJsZSBhcHAudXNlcjogfjExIHJvd3MgKGFwcHJveGltYXRlbHkpCi0tIFVuYSB2ZXogY3JlYWRhIGxhIHRhYmxhIGVzdMOhIHZhY8OtYSwgbm8gZXMgbmVjZXNhcmlvIGVsaW1pbmFyIGRhdG9zCi0tIERFTEVURSBGUk9NIGB1c2VyYDsKLS0gRXN0ZSBzY3JpcHQgc2UgdGllbmUgcXVlIGVqZWN1dGFyIHPDs2xvIGVuIGVsIHByaW1lciBhcnJhbnF1ZSBkZSBsYSBCQkRELCBwZXJvIHBvciBzaSBsbGVnYXJhIGEgZWplY3V0YXJzZSBzdWNlc2l2YXMgdmVjZXMgYWwgaW5pY2lhbGl6YXIgZWwgcG9kLCBzZSBhw7FhZGUgSUdOT1JFIHBhcmEgZXZpdGFyIGVycm9yZXMgZGUgY2xhdmUgcHJpbWFyaWEgZHVwbGljYWRhCklOU0VSVCBJR05PUkUgSU5UTyBgdXNlcmAgKGBpZGAsIGBlbWFpbGAsIGByb2xlc2AsIGBwYXNzd29yZGAsIGBmaXJzdF9uYW1lYCkgVkFMVUVTCiAgKDEsICdhYnJhY2FfYWRtaW5AZXhhbXBsZS5jb20nLCAnW10nLCAnJDJ5JDEzJGxaZEE5enNWZjJ0REFCakJRcnVRWmUwcGJ5eGJMSThPb3J2UVVqVTI1ZERCeUZJdmxHbmhhJywgJ0tlYWdhbicpLAogICgyLCAnc3V6YW5uZTc4QGphc3QuY29tJywgJ1tdJywgJyQyeSQxMyQ1T3djZVE0Q3RyQWlheG5UOTNpUlh1bE9JL3lZTGN3Ukc5bXRhVmFnR1ZmRnpQejlmald5bScsICdKYXJyZXR0JyksCiAgKDMsICd5d2lzb3prQHlhaG9vLmNvbScsICdbXScsICckMnkkMTMkTEhEV3paZEVPSzNRaFBrcVBMS0hNT1BsT24wLjlOTDJqeHpHMG44RERtOFlOQ1lzcDVYM0MnLCAnU2hhaW5hJyksCiAgKDQsICdkcmVtcGVsQGJvZ2lzaWNoLmJpeicsICdbXScsICckMnkkMTMkYWN1Y1RCVmtNbEdGUW1Ed2xXcUhZLmJqSXFCVmV4TXdHSGhWV2dZZ0s4SUdEb3U4c0lzaDInLCAnQWRvbGZvJyksCiAgKDUsICdqYXJlZDg0QGdtYWlsLmNvbScsICdbXScsICckMnkkMTMkNVhWYVFGRDlKcnplaTBxa1hGVGMuZVc0aVRPOWdnZXNicU9jVy44Z3UzNnFCSXJZUm5KaS4nLCAnS3lsaWUnKSwKICAoNiwgJ3BqYWNvYnNAbWNkZXJtb3R0LmNvbScsICdbXScsICckMnkkMTMkcFdBbjVpcUF2RHRhRVg3L1N6Z0J4LkVGa1BmZUJKQlNCcG5GOHJPZS8zOTh3S3pqNTFNT0cnLCAnVG9ycmFuY2UnKSwKICAoNywgJ2FsZXhhbm5lLmtsZWluQGhhcnJpcy5jb20nLCAnW10nLCAnJDJ5JDEzJEJabmpCbzFrN3VMODZZQWZBLjZVZHVtQndEanJSbnNzRjQzSHVMSlM2em93SGxVZDVKSUlHJywgJ1NoZWxkb24nKSwKICAoOCwgJ2FsdGVud2VydGguYW5hYmVsQGdtYWlsLmNvbScsICdbXScsICckMnkkMTMkcW01QnEwQ1JjR1VBTGNBOTdEWFpkLjNrUmNxR0RTR2xUdEpucklVMVlIVFk1enpRY09aSE8nLCAnRGFyYnknKSwKICAoOSwgJ21jZGVybW90dC5ydXNzZWxAZmlzaGVyLmNvbScsICdbXScsICckMnkkMTMkREFlTGFjWjdvWkRNSC9yRUFUcUFSLnRMN3A3ckZUUUtxNGxKbjJhWkllbnhyUUlnUnR0Yy4nLCAnQ2hhcmxlcycpLAogICgxMCwgJ2Nhc3Blci5zYW50b3NAaG90bWFpbC5jb20nLCAnW10nLCAnJDJ5JDEzJGR1WmJYbnJhMlkwazJsYmNTVVYyOC5MUmdwdngybENXNEJleFNxa3RXNVR2M2Zoeno0QVg2JywgJ1dpbm5pZnJlZCcpLAogICgxMSwgJ2Jvcm5AaG90bWFpbC5jb20nLCAnW10nLCAnJDJ5JDEzJDFWd3czQmNhTGlDZEtsc0J4TGxsbXV5bGF4VVBhQzZmL0hwbW5xUGVuL3guWTF0aFhLTklHJywgJ0FsbHknKTsKCi8qITQwMTAzIFNFVCBUSU1FX1pPTkU9SUZOVUxMKEBPTERfVElNRV9aT05FLCAnc3lzdGVtJykgKi87Ci8qITQwMTAxIFNFVCBTUUxfTU9ERT1JRk5VTEwoQE9MRF9TUUxfTU9ERSwgJycpICovOwovKiE0MDAxNCBTRVQgRk9SRUlHTl9LRVlfQ0hFQ0tTPUlGTlVMTChAT0xEX0ZPUkVJR05fS0VZX0NIRUNLUywgMSkgKi87Ci8qITQwMTAxIFNFVCBDSEFSQUNURVJfU0VUX0NMSUVOVD1AT0xEX0NIQVJBQ1RFUl9TRVRfQ0xJRU5UICovOwovKiE0MDExMSBTRVQgU1FMX05PVEVTPUlGTlVMTChAT0xEX1NRTF9OT1RFUywgMSkgKi87Cg==
 EOF
 
@@ -288,6 +299,55 @@ deploy_local() {
     log_info "  ./deploy-k8s.sh cleanup local"
 }
 
+# ==================== TERRAFORM INFRA ====================
+create_terraform_bootstrap_infra() {
+    # Bootstrap infra    
+    cd "$SCRIPT_DIR/../infra/bootstrap"
+    terraform init
+    terraform apply -auto-approve
+}
+
+create_terraform_main_infra() {
+    # Obtener output del bucket
+    local bucket_name=$(terraform output -raw bucket_name)
+    cd - > /dev/null
+    
+    # Main infra
+    cd "$SCRIPT_DIR/../infra/main"
+    terraform init \
+        -backend-config="bucket=$bucket_name" \
+        -backend-config="key=main/terraform.tfstate" \
+        -backend-config="region=eu-west-1" \
+        -backend-config="dynamodb_table=terraform-lock" \
+        -backend-config="encrypt=true"
+    terraform apply -auto-approve
+}
+
+# ==================== CONFIGURAR KUBECTL PARA AWS ====================
+setup_kubectl_for_aws() {
+    # Obtener outputs
+    local cluster_name=$(terraform output -raw cluster_name)
+    local aws_region=$(terraform output -raw region)
+    cd - > /dev/null
+    
+    # Configurar kubectl para AWS
+    aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
+
+    local context=$(kubectl config get-contexts -o name | grep 'arn:aws:eks:eu-west-1:' | grep ':cluster/pf-devops-eks-')
+
+    # Guardar información de despliegue
+    echo "cluster_name=$cluster_name" >> "$DEPLOYED_AWS_RESOURCES_FILE"
+    echo "aws_region=$aws_region" >> "$DEPLOYED_AWS_RESOURCES_FILE"
+    echo "context=$context" >> $DEPLOYED_AWS_RESOURCES_FILE
+    
+    # Verificar acceso al clúster
+    if ! kubectl cluster-info &>/dev/null; then
+        log_error "No se puede acceder al clúster EKS. Verifica tus credenciales de AWS."
+        exit 1
+    fi
+    log_info "✓ Acceso a EKS configurado."
+}
+
 # ==================== DESPLIEGUE AWS ====================
 deploy_aws() {
     log_info "================================"
@@ -305,60 +365,22 @@ deploy_aws() {
     log_warn "IMPORTANTE: El despliegue de EKS puede tardar alrededor de 10 minutos."
     log_info "Se mostrará el progreso de Terraform en tiempo real."
     
-    # Bootstrap infra
     log_info "Paso 1: Creando infraestructura base (S3 bucket)..."
-    cd "$SCRIPT_DIR/../infra/bootstrap"
-    terraform init
-    terraform apply -auto-approve
+    create_terraform_bootstrap_infra
 
-    # Obtener output del bucket
-    local bucket_name=$(terraform output -raw bucket_name)
-    cd - > /dev/null
-    
-    # Main infra
     log_info "Paso 2: Creando infraestructura principal: VPC, EKS, EFS, EBS..."
     log_warn "Este paso puede tardar alrededor de 10 minutos..."
-    cd "$SCRIPT_DIR/../infra/main"
-    terraform init \
-        -backend-config="bucket=$bucket_name" \
-        -backend-config="key=main/terraform.tfstate" \
-        -backend-config="region=eu-west-1" \
-        -backend-config="dynamodb_table=terraform-lock" \
-        -backend-config="encrypt=true"
-    terraform apply -auto-approve
-    
-    # Obtener outputs
-    local cluster_name=$(terraform output -raw cluster_name)
-    local aws_region=$(terraform output -raw region)
-    cd - > /dev/null
-    
-    # Configurar kubectl
+    create_terraform_main_infra    
+
     log_info "Paso 3: Configurando kubectl para acceder al clúster EKS..."
-    aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
-
-    local context=$(kubectl config get-contexts -o name | grep 'arn:aws:eks:eu-west-1:' | grep ':cluster/pf-devops-eks-')
-
-    # Guardar información de despliegue
-    echo "cluster_name=$cluster_name" >> "$DEPLOYED_AWS_RESOURCES_FILE"
-    echo "aws_region=$aws_region" >> "$DEPLOYED_AWS_RESOURCES_FILE"
-    echo "context=$context" >> $DEPLOYED_AWS_RESOURCES_FILE
+    setup_kubectl_for_aws
     
-    # Verificar acceso al clúster
-    if ! kubectl cluster-info &>/dev/null; then
-        log_error "No se puede acceder al clúster EKS. Verifica tus credenciales de AWS."
-        exit 1
-    fi
-    log_info "✓ Acceso a EKS configurado."
-    
-    # Construir y subir imágenes a Docker
     log_info "Paso 4: Construyendo imágenes Docker..."
     build_and_push_images
     
-    # Desplegar con Kustomize
     log_info "Paso 5: Desplegando aplicación con Kustomize..."
     apply_k8s_resources "$KUSTOMIZATION_AWS_PATH"
     
-    # Verificar despliegue
     log_info "Paso 6: Verificando despliegue..."
     verify_services
     
@@ -489,199 +511,6 @@ verify_services() {
     done
 }
 
-# ==================== PRUEBA DE BLUE/GREEN DEPLOYMENT ====================
-test_blue_green_deployment() {
-    local env=$1
-    
-    log_info "================================"
-    log_info "PRUEBA BLUE/GREEN DEPLOYMENT"
-    log_info "================================"
-
-    if [ "$env" == "local" ]; then
-        kubectl config use-context minikube
-        # Quitar la monitorización para poder llevar a cabo la prueba
-        log_warn "Eliminando recursos de monitorización para poder llevar a cabo la prueba..."
-        kubectl delete -k "$SCRIPT_DIR/$OVERLAYS_PATH""$env/observability/" --ignore-not-found=true 2>/dev/null
-        log_info "✓ Recursos de monitorización eliminados."
-    elif [ "$env" == "aws" ]; then
-        local cluster_name=$(grep '^cluster_name=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
-        local aws_region=$(grep '^aws_region=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
-        aws eks --region "$aws_region" update-kubeconfig --name "$cluster_name"
-    fi
-    
-    # Crear GREEN deployment
-    log_info "Creando GREEN deployment..."
-    create_green_deployment "$env"
-
-    sleep 5
-    
-    # Esperar a los GREEN pods
-    log_info "Esperando a que los GREEN pods estén listos..."
-    wait_for_green_pods
-    
-    # Probar la salud de GREEN deployment
-    log_info "Probando la salud del GREEN deployment..."
-    if test_green_health "$env"; then
-        log_info "✓ Green deployment está healty."
-        
-        # Preguntar por el cambio
-        echo ""
-        read -p "¿Cambiar el tráfico al GREEN deployment? (s/n): " -n 1 -r
-        echo ""
-        if [[ $REPLY =~ ^[Ss]$ ]]; then
-            switch_service_to_green "$env"
-
-            sleep 5
-
-            log_info "✓ Tráfico cambiado a GREEN."
-            
-            # Comprobar si hay errores
-            log_warn "Esperando 30 segundos antes de probar con /error-test para forzar un rollback automático..."
-            log_info "¡Mientras puedes probar a actualizar la página y comprobar que los GREEN pods están sirviendo la web!"
-            for i in {30..1}; do
-                echo -ne "\r$i segundos restantes... "
-                sleep 1
-            done
-            echo ""
-            
-            if test_green_error "$env"; then
-                log_warn "GREEN deployment tiene errores. Ejecutando rollback..."
-                rollback_to_blue "$env"
-
-                sleep 5
-
-                log_info "Rollback completado. Tráfico devuelto a BLUE."
-                
-                log_info "Eliminando GREEN deployment."
-                delete_green_deployment "$env"
-                # TODO: restituir monitoring?
-            else
-                log_info "✓ No se detectaron errores en GREEN."
-            fi
-            log_info "Para terminar de limpiar, ejecuta:"
-            log_info "  ./deploy-k8s.sh cleanup $env"
-        else
-            log_info "Eliminando GREEN deployment sin cambiar tráfico."
-            delete_green_deployment "$env"
-            log_info "Para terminar de limpiar, ejecuta:"
-            log_info "  ./deploy-k8s.sh cleanup $env"
-        fi
-    else
-        log_error "GREEN deployment no está healty. Eliminando..."
-        delete_green_deployment "$env"
-        log_info "Para terminar de limpiar, ejecuta:"
-        log_info "  ./deploy-k8s.sh cleanup $env"
-    fi
-}
-
-create_green_deployment() {
-    local env=$1
-    local deployment_file="$SCRIPT_DIR/$OVERLAYS_PATH""$env/application/deployments/deployment-symfony-green.yaml"
-    local original_file="$SCRIPT_DIR/$OVERLAYS_PATH""$env/application/deployments/deployment-symfony.yaml"
-    
-    # Copiar deployment original y modificarlo a GREEN
-    cp "$original_file" "$deployment_file"
-    
-    # Modificar labels y variables de entorno a GREEN
-    sed -i "s/name: symfony-deployment/name: symfony-deployment-green/g" "$deployment_file"
-    sed -i "s/version: v1/version: v2/g" "$deployment_file"
-    sed -i "s/value: blue.*$/value: green/g" "$deployment_file"
-    sed -i "s/value: \"Blue Deployment v1.0\".*$/value: \"Green Deployment v2.0\"/g" "$deployment_file"
-    sed -i "s/value: \"1.0.0\".*$/value: \"2.0.0\"/g" "$deployment_file"
-    
-    kubectl apply -f "$deployment_file"
-}
-
-wait_for_green_pods() {
-    if kubectl wait --for=condition=ready pod -l version=v2 -n "$SYMFONY_NAMESPACE_NAME" --timeout=120s 2>/dev/null; then
-        log_info "✓ Pods listos en $SYMFONY_NAMESPACE_NAME"
-        return 0
-    else
-        log_warn "Timeout: Los pods no están listos en $SYMFONY_NAMESPACE_NAME"
-        return 1
-    fi
-}
-
-test_green_health() {
-    local env=$1
-    
-    # Obtener un GREEN pod
-    local green_pod=$(kubectl get pods -n "$SYMFONY_NAMESPACE_NAME" -l version=v2 -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-    
-    if [ -z "$green_pod" ]; then
-        return 1
-    fi
-    
-    # Probar endpoint /health
-    local health_status=$(kubectl exec -n "$SYMFONY_NAMESPACE_NAME" "$green_pod" -- \
-        curl -s -o /dev/null -w "%{http_code}" http://localhost/health 2>/dev/null || echo "000")
-    
-    if [ "$health_status" == "200" ]; then
-        return 0
-    else
-        log_warn "Health status: $health_status"
-        return 1
-    fi
-}
-
-test_green_error() {
-    local env=$1
-    
-    # Obtener un GREEN pod
-    local green_pod=$(kubectl get pods -n "$SYMFONY_NAMESPACE_NAME" -l version=v2 -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-    
-    if [ -z "$green_pod" ]; then
-        return 1
-    fi
-    
-    # Probar endpoint /error-test (devuelve 500)
-    local error_status=$(kubectl exec -n "$SYMFONY_NAMESPACE_NAME" "$green_pod" -- \
-        curl -s -o /dev/null -w "%{http_code}" http://localhost/error-test 2>/dev/null || echo "000")
-    
-    if [ "$error_status" == "500" ]; then
-        return 0  # Error encontrado: rollback
-    else
-        return 1  # Sin errores
-    fi
-}
-
-switch_service_to_green() {
-    local env=$1
-    
-    # Actualizar el selector del servicio para apuntar a los GREEN pods
-    if kubectl patch service nginx-service -n "$SYMFONY_NAMESPACE_NAME" --type='merge' \
-        -p='{"spec": {"selector": {"version": "v2"}}}' 2>/dev/null; then
-        return 0
-    else
-        log_error "Error al cambiar selector del servicio a v2."
-        return 1
-    fi
-}
-
-rollback_to_blue() {
-    local env=$1
-    
-    # Actualizar el selector del servicio para apuntar a los BLUE pods
-    if kubectl patch service nginx-service -n "$SYMFONY_NAMESPACE_NAME" --type='merge' \
-        -p='{"spec": {"selector": {"version": "v1"}}}' 2>/dev/null; then
-        log_info "✓ Servicio apuntando a BLUE (v1)"
-    else
-        log_error "Error al cambiar selector del servicio a v1."
-        return 1
-    fi
-}
-
-delete_green_deployment() {
-    local env=$1
-    
-    local deployment_file="$SCRIPT_DIR/$OVERLAYS_PATH""$env/application/deployments/deployment-symfony-green.yaml"
-    
-    if [ -f "$deployment_file" ]; then
-        kubectl delete -f "$deployment_file" --ignore-not-found=true
-        rm "$deployment_file"
-    fi
-}
-
 # ==================== MENÚ PRINCIPAL ====================
 show_menu() {
     echo ""
@@ -710,31 +539,43 @@ show_menu() {
             ;;
         *)
             log_error "Opción inválida."
-            exit 1
+            show_menu
             ;;
     esac
     
-    # Preguntar para hacer la prueba blue/green deployment
     echo ""
-    read -p "¿Deseas probar blue/green deployment? (s/n): " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
-        test_blue_green_deployment "$ENVIRONMENT"
-    else
-        log_info "Para probar blue/green deployment, ejecuta:"
-        log_info "  ./deploy-k8s.sh test-blue-green $ENVIRONMENT"
-    fi
+    while true; do
+        read -p "¿Deseas probar blue/green deployment? (s/n): " -n 1 -r
+        echo ""
+
+        if [[ $REPLY =~ ^[Ss]$ ]]; then
+            test_blue_green_deployment "$ENVIRONMENT"
+            break
+        elif [[ $REPLY =~ ^[Nn]$ ]]; then
+            log_info "Para probar blue/green deployment, ejecuta:"
+            log_info "  ./deploy-k8s.sh test-blue-green $ENVIRONMENT"
+            break
+        else
+            echo "Por favor, responde 's' o 'n'."
+        fi
+    done
     
-    # Preguntar por cleanup
     echo ""
-    read -p "¿Deseas limpiar todos los recursos? (s/n): " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
-        cleanup_deployment "$ENVIRONMENT"
-    else
-        log_info "Para limpiar, ejecuta:"
-        log_info "  ./deploy-k8s.sh cleanup $ENVIRONMENT"
-    fi
+    while true; do
+        read -p "¿Deseas limpiar todos los recursos? (s/n): " -n 1 -r
+        echo ""
+
+        if [[ $REPLY =~ ^[Ss]$ ]]; then
+            cleanup_deployment "$ENVIRONMENT"
+            break
+        elif [[ $REPLY =~ ^[Nn]$ ]]; then
+            log_info "Para limpiar, ejecuta:"
+            log_info "  ./deploy-k8s.sh cleanup $ENVIRONMENT"
+            break
+        else
+            echo "Por favor, responde 's' o 'n'."
+        fi
+    done
 }
 
 # ==================== SCRIPT ENTRY POINT ====================

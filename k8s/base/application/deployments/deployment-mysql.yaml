@@ -42,26 +42,26 @@ spec:
                   key: USER_QUERIES
             - name: MYSQL_DATABASE
               value: app
-          # livenessProbe:
-          #   exec:
-          #     command:
-          #     - bash
-          #     - -c
-          #     - mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}
-          #   initialDelaySeconds: 30
-          #   periodSeconds: 10
-          #   timeoutSeconds: 5
-          #   failureThreshold: 3
-          # readinessProbe:
-          #   exec:
-          #     command:
-          #     - bash
-          #     - -c
-          #     - mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "SELECT 1"
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 5
-          #   timeoutSeconds: 3
-          #   failureThreshold: 2
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "SELECT 1"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql

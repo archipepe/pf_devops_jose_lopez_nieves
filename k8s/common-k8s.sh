@@ -1,5 +1,14 @@
 #!/bin/bash
 
+export PROD_TYPE="prod"
+export DEBUG_TYPE="debug"
+
+################ CONFIGURACIÓN DE VERSIONES ################
+BASE_IMAGE_VERSION="5.1"
+APP_IMAGE_VERSION="7.1"
+export APP_IMAGE_TYPE="$PROD_TYPE"
+############################################################
+
 # Configuración
 export OVERLAYS_PATH="overlays/"
 export KUSTOMIZATION_LOCAL_PATH="$OVERLAYS_PATH""local/"
@@ -11,16 +20,7 @@ export NAMESPACES_NAMES=($SYMFONY_NAMESPACE_NAME $MONITORING_NAMESPACE_NAME)
 
 export INGRESS_HOST="symfony.local"
 
-# No olvidar export en las variables externas al script
 export REGISTRY="mysymfony"
-export PROD_TYPE="prod"
-export DEBUG_TYPE="debug"
-
-################ CONFIGURACIÓN DE VERSIONES ################
-BASE_IMAGE_VERSION="5.1"
-APP_IMAGE_VERSION="7.1"
-export APP_IMAGE_TYPE="$PROD_TYPE"
-############################################################
 
 export DOCKER_ACCOUNT="archipepe"
 
