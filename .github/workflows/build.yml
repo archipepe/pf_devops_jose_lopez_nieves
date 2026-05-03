@@ -1,0 +1,146 @@
+name: Construir y subir imágenes de Docker a Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'php-nginx/**'
+      - 'k8s/**'
+      - 'docker-compose/**'
+      - '.github/workflows/build.yml'
+  workflow_dispatch: # Permite trigger manual
+
+env:
+  REGISTRY: docker.io
+  IMAGE_BASE_PROD: mysymfony-ubuntu:24.04-5.1-prod    # mysymfony-ubuntu:24.04-${{ github.sha }}-prod
+  IMAGE_BASE_DEBUG: mysymfony-ubuntu:24.04-5.1-debug  # mysymfony-ubuntu:24.04-${{ github.sha }}-debug
+  IMAGE_APP_PROD: mysymfony-php-nginx:7.1-prod        # mysymfony-php-nginx:${{ github.sha }}-prod
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04
+    
+    outputs:
+      image_app_prod_url: ${{ steps.image-urls.outputs.app_prod }}
+      build_status: ${{ job.status }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_ACCOUNT }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Check if base prod image exists
+        id: check-base-prod
+        run: |
+          if docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build base image (Producción)
+        if: steps.check-base-prod.outputs.exists == 'false'
+        uses: docker/build-push-action@v5
+        with:
+          context: php-nginx/
+          file: php-nginx/Dockerfile.base.prod
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_PROD }}
+          push: true
+
+      - name: Check if base debug image exists
+        id: check-base-debug
+        run: |
+          if docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build base debug image
+        if: steps.check-base-debug.outputs.exists == 'false'
+        uses: docker/build-push-action@v5
+        with:
+          context: php-nginx/
+          file: php-nginx/Dockerfile.base.debug
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_BASE_DEBUG }}
+          push: true
+
+      - name: Check if app prod image exists
+        id: check-app-prod
+        run: |
+          if docker pull ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build app image (Producción)
+        if: steps.check-app-prod.outputs.exists == 'false'
+        uses: docker/build-push-action@v5
+        with:
+          context: php-nginx/
+          file: php-nginx/Dockerfile.app
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}
+            ${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/mysymfony-php-nginx:latest
+          push: true
+
+      - name: Store image URLs
+        id: image-urls
+        run: |
+          echo "app_prod=${{ env.REGISTRY }}/${{ secrets.DOCKER_ACCOUNT }}/${{ env.IMAGE_APP_PROD }}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy secret scanner on repository
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          scanners: 'vuln,secret,misconfig'
+
+      - name: Check for secrets with GitLeaks
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Create report
+        run: |
+          echo "### Imágenes de Docker construidas y subidas ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Imagen | Registro | Tag |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Base (Prod) | Docker Hub | ${{ env.IMAGE_BASE_PROD }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Base (Debug) | Docker Hub | ${{ env.IMAGE_BASE_DEBUG }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| App (Prod) | Docker Hub | ${{ env.IMAGE_APP_PROD }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| App (Latest) | Docker Hub | mysymfony-php-nginx:latest |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registro:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Organización:** ${{ secrets.DOCKER_ACCOUNT }}" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    if: always()
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Build Status
+        run: |
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "✅ Imágenes construidas correctamente."
+            exit 0
+          else
+            echo "❌ Las imágenes no se han podido construir."
+            exit 1
+          fi

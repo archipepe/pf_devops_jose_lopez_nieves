@@ -31,19 +31,20 @@
 ## 📋 Índice
 
 1. [Requisitos Previos](#requisitos-previos)
-2. [Despliegue Rápido](#despliegue-rápido)
+2. [Despliegue Rápido](#despliegue-rapido)
 3. [Despliegue Manual en AWS](#despliegue-manual)
-4. [Blue/Green Deployment y rollback automático](#bluegreen-deployment-y-rollback-automático)
+4. [Blue/Green Deployment y rollback automático](#bluegreen-deployment-y-rollback-automatico)
 5. [Destruir despliegue](#destruir-despliegue)
-6. [Secretos y Configuración](#secretos-y-configuración)
+6. [Secretos y Configuración](#secretos-y-configuracion)
 7. [Workflows de GitHub Actions](#workflows-de-github-actions)
 8. [Arquitectura Desplegada](#arquitectura-desplegada)
 9. [Troubleshooting](#troubleshooting)
-10. [Documentación Adicional](#documentación-adicional)
+10. [Documentación Adicional](#documentacion-adicional)
 11. [Notas Importantes](#notas-importantes)
 12. [Proyecto Educativo](#proyecto-educativo)
+13. [Licencia](#licencia)
 
-## 🔧 Requisitos Previos
+## 🔧 Requisitos Previos <a name="requisitos-previos" />
 
 ### Para ambos entornos (local y AWS)
 
@@ -104,7 +105,7 @@ docker login -u "$DOCKER_ACCOUNT"
 docker info | grep "Username:"
 ```
 
-## 🚀 Despliegue Rápido
+## 🚀 Despliegue Rápido <a name="despliegue-rapido" />
 
 El script `deploy-k8s.sh` automatiza todo el proceso. Ofrece un menú interactivo:
 
@@ -168,24 +169,22 @@ kubectl get ingress -n symfony-ns
 El script también soporta argumentos:
 
 ```bash
-#TODO añadir tercer argumento para DOCKER_ACCOUNT
-
 # Desplegar programáticamente
 cd <directorio-proyecto>/k8s
 
-./deploy-k8s.sh deploy local    # Desplegar en local
-./deploy-k8s.sh deploy aws      # Desplegar en AWS
+./deploy-k8s.sh deploy local [DOCKER_ACCOUNT]   # Desplegar en local
+./deploy-k8s.sh deploy aws [DOCKER_ACCOUNT]     # Desplegar en AWS
 
 # Probar blue/green y rollback automático
-./deploy-k8s.sh test-blue-green local
-./deploy-k8s.sh test-blue-green aws
+./deploy-k8s.sh test-blue-green local [DOCKER_ACCOUNT]
+./deploy-k8s.sh test-blue-green aws [DOCKER_ACCOUNT]
 
 # Limpiar recursos
-./deploy-k8s.sh cleanup local
-./deploy-k8s.sh cleanup aws
+./deploy-k8s.sh cleanup local [DOCKER_ACCOUNT]
+./deploy-k8s.sh cleanup aws [DOCKER_ACCOUNT]
 ```
 
-## 🔧 Despliegue Manual en AWS
+## 🔧 Despliegue Manual en AWS <a name="despliegue-manual" />
 
 Si prefieres hacer los pasos manualmente:
 
@@ -252,10 +251,6 @@ sed -i 's|image: .*|image: '"$DOCKER_ACCOUNT"'/mysymfony-php-nginx:7.1-prod|' k8
 # Despliega con Kustomize
 cd <directorio-proyecto>/k8s
 
-# Para local
-kubectl apply -k overlays/local/
-
-# Para AWS
 kubectl apply -k overlays/aws/
 ```
 
@@ -275,11 +270,9 @@ kubectl get ingress -n symfony-ns
 kubectl get ingress -n monitoring-ns
 
 # Acceder a la aplicación
-# LOCAL: http://symfony.local
 # AWS: http://<ALB-DNS>
 
 # Acceder a la monitorización
-# LOCAL: http://symfony.local/grafana
 # AWS: http://<ALB-DNS>/grafana
 
 # Ver logs del pod en tiempo real
@@ -293,9 +286,9 @@ curl http://<IP_SERVICIO>
 kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
 ```
 
-## 🔄 Blue/Green Deployment y rollback automático
+## 🔄 Blue/Green Deployment y rollback automático <a name="bluegreen-deployment-y-rollback-automatico" />
 
-El script incluye soporte integrado para blue/green deployment:
+El script incluye soporte integrado para blue/green deployment y rollback automático:
 
 ```bash
 # Durante el despliegue, el script ofrecerá probar blue/green:
@@ -306,32 +299,10 @@ El script incluye soporte integrado para blue/green deployment:
 # 2. Probará su salud (/health)
 # 3. Te preguntará si cambiar el tráfico a GREEN
 # 4. Probará /error-test para simular un error
-# 5. Si hay error, ejecutará rollback automático a BLUE
+# 5. Ejecutará rollback automático a BLUE
 ```
 
-### Utilidades adicionales para blue/green
-
-```bash
-# Ver estado actual
-./blue-green-utils.sh status [namespace]
-
-# Probar salud de un pod específico
-./blue-green-utils.sh health <pod-name> [namespace] [endpoint]
-
-# Cambiar porcentaje de tráfico (0-100)
-./blue-green-utils.sh switch 50 [namespace]
-
-# Monitoreo automático con rollback
-./blue-green-utils.sh monitor [namespace] [error-threshold]
-
-# Comparar uso de recursos
-./blue-green-utils.sh compare [namespace]
-
-# Limpiar deployments antiguos
-./blue-green-utils.sh cleanup [namespace] [versions-to-keep]
-```
-
-## 🗑️ Destruir despliegue
+## 🗑️ Destruir despliegue <a name="destruir-despliegue" />
 
 ### Usando el script
 
@@ -348,7 +319,7 @@ cd <directorio-proyecto>/k8s
 ### Eliminar despliegue manualmente
 
 ```bash
-cd k8s
+cd <directorio-proyecto>/k8s
 
 # Para local
 kubectl delete -k overlays/local/
@@ -378,7 +349,7 @@ kubectl config delete-cluster <arn:aws:eks:eu-west-1:context-name> && \
 kubectl config delete-user    <arn:aws:eks:eu-west-1:context-name>
 ```
 
-## 🔐 Secretos y Configuración
+## 🔐 Secretos y Configuración <a name="secretos-y-configuracion" />
 
 ### Secretos de Kubernetes
 
@@ -410,11 +381,9 @@ user_queries = "..."
 
 Este archivo está en `.gitignore` y se genera automáticamente.
 
-## 🤖 Workflows de GitHub Actions
+## 🤖 Workflows de GitHub Actions <a name="workflows-de-github-actions" />
 
 ### Estructura
-
-TODO: Revisar
 
 Los workflows están en `.github/workflows/`:
 
@@ -428,18 +397,18 @@ Para que los workflows funcionen correctamente con Docker Hub, necesitas configu
 
 **Ve a**: `Settings → Secrets and variables → Actions → New repository secret`
 
-#### Secrets de Docker Hub (Obligatorios para build):
+#### Secrets de Docker Hub (obligatorios para nuevas construcciones de imágenes):
 
 ```bash
 # Tu usuario de Docker Hub
-DOCKER_ACCOUNT=archipepe
+DOCKER_ACCOUNT=<tu-nombre-de-usuario>
 
 # Token de acceso personal de Docker Hub
 # Obtenerlo en: https://hub.docker.com/settings/security → New Access Token
 DOCKER_TOKEN=<tu-docker-hub-personal-access-token>
 ```
 
-#### Secrets de AWS (Opcionales para deploy en EKS):
+#### Secrets de AWS (obligatorios para deploy en EKS):
 
 ```bash
 # Si quieres desplegar en AWS EKS después de build
@@ -449,59 +418,34 @@ AWS_REGION=eu-west-1
 EKS_CLUSTER_NAME=pf-devops-eks
 ```
 
-#### Secretos de GitHub (Automáticos):
-
-```bash
-# Este secret ya existe automáticamente en GitHub
-GITHUB_TOKEN  # No necesitas agregarlo manualmente
-```
-
 ### Flujo de Workflows
 
 El flujo completo es:
 
 ```
-Tu Push a main (con cambios en php-nginx/)
+Push a main
     ↓
 build.yml se ejecuta
   ├─ Login a Docker Hub
   ├─ Pull de imágenes base (si existen)
-  ├─ Build de imágenes
-  ├─ Scan con Trivy
-  ├─ Push a Docker Hub
-  └─ Trigger automático de deploy.yml
+  ├─ Build y push de imágenes (si no existen)
+  ├─ Scan con Trivy/GitLeaks
+  └─ Trigger automático de test.yml
     ↓
-deploy.yml se ejecuta (automático después de build)
-  ├─ Conecta a EKS
-  ├─ Crea deployment GREEN
+test.yml se ejecuta (automático después de build)
+  ├─ Unit tests
+  └─ Dependency check
+    ↓
+deploy.yml se ejecuta (automático después de test)
+  ├─ Conecta a AWS EKS
+  ├─ Crea deployment GREEN (v2)
   ├─ Health checks
-  ├─ Switch de tráfico
+  ├─ Cambio de tráfico
   ├─ Monitoreo 30s
   └─ Auto-rollback si error
 ```
 
-**Triggers:**
-- **build.yml**: Push a `main` con cambios en `php-nginx/**`
-- **test.yml**: Pull Request a `main` con cambios en `php-nginx/**`
-- **deploy.yml**: Manual (workflow_dispatch) O Automático después de build exitoso
-
-### Monitorizar Workflows
-
-```bash
-# Ver status de workflows
-gh workflow list
-
-# Ver últimas ejecuciones
-gh run list
-
-# Ver detalles de ejecución
-gh run view <run-id>
-
-# Ver logs de un job
-gh run view <run-id> --log
-```
-
-## 📊 Arquitectura Desplegada
+## 📊 Arquitectura Desplegada <a name="arquitectura-desplegada" />
 
 ### Local (Minikube)
 
@@ -562,7 +506,7 @@ gh run view <run-id> --log
    http://<ALB-DNS>
 ```
 
-## 🐛 Troubleshooting
+## 🐛 Troubleshooting <a name="troubleshooting" />
 
 ### Local (Minikube)
 
@@ -650,7 +594,7 @@ kubectl logs -n symfony-ns deployment/symfony-app -c php-nginx-container
 kubectl describe ingress grafana-ingress -n monitoring-ns
 ```
 
-## 📚 Documentación Adicional
+## 📚 Documentación Adicional <a name="documentacion-adicional" />
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
@@ -658,21 +602,27 @@ kubectl describe ingress grafana-ingress -n monitoring-ns
 - [Symfony Documentation](https://symfony.com/doc/)
 - [Docker Documentation](https://docs.docker.com/)
 
-## 📝 Notas Importantes
+## 📝 Notas Importantes <a name="notas-importantes" />
 
 - **Seguridad**: Los archivos de secrets y terraform.tfvars están en `.gitignore`. NUNCA los hagas públicos.
-- **Costes AWS**: Asegúrate de ejecutar `./deploy-k8s.sh cleanup aws` después de terminar para evitar costes.
+- **Costes AWS**: Asegúrate de ejecutar `./deploy-k8s.sh cleanup aws` después de terminar para evitar costes no deseados.
 - **Blue/Green**: El despliegue green mantiene 2 réplicas. Ajusta `replicas` en el deployment si es necesario.
 - **Certificados**: Para producción, configura SSL/TLS en el ALB (recomendado usar AWS Certificate Manager).
+- **Responsabilidad**: Este proyecto y los scripts incluidos se proporcionan tal cual. No me hago responsable del mal uso del código, errores de ejecución, pérdidas de datos o daños derivados directa o indirectamente del uso de este repositorio.
+- **Entorno recomendado**: Para evitar problemas en tu máquina local y aislar dependencias, se recomienda ejecutar los scripts en una máquina virtual (VM) o entorno controlado.
 
-## 👨‍🎓 Proyecto Educativo
+## 👨‍🎓 Proyecto Educativo <a name="proyecto-educativo" />
 
 Este proyecto es un ejemplo práctico de DevOps que incluye:
 
 - ✅ Infraestructura como Código (Terraform)
-- ✅ Containerización (Docker)
+- ✅ Contenedorización (Docker)
 - ✅ Orquestación (Kubernetes)
 - ✅ Automatización (GitHub Actions)
 - ✅ Despliegue Blue/Green
 - ✅ Monitorización (Prometheus, Grafana)
 - ✅ Trazabilidad (Tempo, Loki)
+
+## 🤝🏻 Licencia <a name="licencia" />
+
+Distribuido bajo la Licencia MIT. Para más información, consulta el archivo LICENSE.

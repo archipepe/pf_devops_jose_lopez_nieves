@@ -1,0 +1,137 @@
+name: AWS EKS Blue/Green Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_type:
+        description: "Tipo de despliegue"
+        required: true
+        default: "blue-green-ok"
+        type: choice
+        options:
+          - blue-green-ok
+          - blue-green-ko-rollback
+
+  workflow_run:
+    workflows: ["Ejecutar tests"]
+    types: [completed]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+  KUBERNETES_NAMESPACE: symfony-ns
+  IMAGE_APP_PROD_URL: ${{ github.event.workflow_run.outputs.image_app_prod_url || 'docker.io/archipepe/mysymfony-php-nginx:7.1-prod' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl & kustomize
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+          sudo apt update && sudo apt install -y kustomize
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Apply BLUE + GREEN deployments
+        run: |
+          kubectl apply -k k8s/overlays/aws
+
+      - name: Wait for GREEN pods
+        run: |
+          for i in {1..30}; do
+            READY=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 \
+              -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' | grep -c True || echo 0)
+            TOTAL=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 | tail -n +2 | wc -l)
+            echo "$READY/$TOTAL listos."
+            [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ] && exit 0
+            sleep 5
+          done
+          exit 1
+
+      - name: Setup GREEN deployment image
+        run: |
+          kubectl set image deployment/symfony-deployment-green \
+            php-nginx-container=${{ env.IMAGE_APP_PROD_URL }} \
+            -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          for i in {1..30}; do
+            READY=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 \
+              -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' | grep -c True || echo 0)
+            TOTAL=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 | tail -n +2 | wc -l)
+            echo "$READY/$TOTAL listos."
+            [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ] && exit 0
+            sleep 5
+          done
+          exit 1
+
+      - name: Health check BEFORE switching traffic
+        run: |
+          POD=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 -o jsonpath='{.items[0].metadata.name}')
+          STATUS=$(kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} "$POD" -- \
+            curl -s -o /dev/null -w "%{http_code}" http://localhost/health)
+          test "$STATUS" = "200"
+
+      - name: Switch traffic to GREEN
+        run: |
+          kubectl patch service nginx-service -n ${{ env.KUBERNETES_NAMESPACE }} \
+            --type=json \
+            -p='[{"op":"replace","path":"/spec/selector/version","value":"v2"}]'
+
+      - name: Wait 30 seconds (visual green footer)
+        run: sleep 30
+
+      - name: Post-switch health check (OK or rollback)
+        id: post
+        run: |
+          POD=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 -o jsonpath='{.items[0].metadata.name}')
+
+          if [ "${{ inputs.deployment_type }}" = "blue-green-ok" ]; then
+            URL="/health"
+          else
+            URL="/error-test"
+          fi
+
+          STATUS=$(kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} "$POD" -- \
+            curl -s -o /dev/null -w "%{http_code}" http://localhost$URL)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+      - name: Rollback if needed
+        if: steps.post.outputs.status != '200'
+        run: |
+          echo "Efectuando rollback. Devolviendo tráfico a BLUE..."
+          kubectl patch service nginx-service -n ${{ env.KUBERNETES_NAMESPACE }} \
+            --type=json \
+            -p='[{"op":"replace","path":"/spec/selector/version","value":"v1"}]'
+
+          kubectl delete deployment symfony-deployment-green -n ${{ env.KUBERNETES_NAMESPACE }} || true
+
+      - name: Deployment summary
+        run: |
+          echo "### Resumen de Blue/Green Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- Estrategia: ${{ inputs.deployment_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Estado post-switch: ${{ steps.post.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.post.outputs.status }}" = "200" ]; then
+            echo "- Resultado: ✅ Despliegue efectuado." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Resultado: 🔄 Rollback ejecutado." >> $GITHUB_STEP_SUMMARY
+          fi

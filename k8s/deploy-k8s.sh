@@ -71,7 +71,24 @@ create_required_directories() {
     log_info "Creando directorios requeridos..."
     
     mkdir -p "$SCRIPT_DIR/""$TEMPO_DATA_PATH"
+
+    # Crear .gitignore
+    cat > "$SCRIPT_DIR/""$TEMPO_DATA_PATH""/.gitignore" <<EOF
+# docker-compose/monitoring/tempo/tempo-data/.gitignore
+
+# Ignorar todo
+*
+EOF
+
     mkdir -p "$SCRIPT_DIR/""$VSCODE_SERVER_PATH"
+
+    # Crear .gitignore
+    cat > "$SCRIPT_DIR/""$VSCODE_SERVER_PATH""/.gitignore" <<EOF
+# php-nginx/symfony-app/.vscode-server/.gitignore
+
+# Ignorar todo
+*
+EOF
     
     log_info "✓ Directorios creados correctamente."
 }
@@ -94,13 +111,8 @@ generate_local_secrets() {
     local app_secret="676bad43ce6494db4bc99a5be97212d2" # Valor por defecto
     local app_secret_b64=$(echo -n "$app_secret" | base64)
     
-    # Generar symfony-database-secret
-    local db_user="root"
-    local db_pass="XjesGl0qzB7CZNuW" # Valor por defecto
-    local db_url="mysql://${db_user}:${db_pass}@mysql-service:3306/app?serverVersion=8.0&charset=utf8mb4"
-    local db_url_b64=$(echo -n "$db_url" | base64)
-
     # Generar mysql-secret
+    local db_pass="XjesGl0qzB7CZNuW" # Valor por defecto
     local db_pass_b64=$(echo -n "$db_pass" | base64)
     
     # Crear secret-app-symfony.yaml
@@ -124,7 +136,8 @@ metadata:
   namespace: symfony-ns
 type: Opaque
 data:
-  DATABASE_URL: $db_url_b64
+  DATABASE_URL: bXlzcWw6Ly9yb290OlhqZXNHbDBxekI3Q1pOdVdAbXlzcWwtc2VydmljZTozMzA2L2FwcD9zZXJ2
+  ZXJWZXJzaW9uPTguMCZjaGFyc2V0PXV0ZjhtYjQ=
 EOF
 
     # Crear secret-mysql.yaml
@@ -149,6 +162,14 @@ metadata:
 type: Opaque
 data:
   USER_QUERIES: LS0gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KLS0gSG9zdDogICAgICAgICAgICAgICAgICAgICAgICAgMTkyLjE2OC4xMDAuMgotLSBTZXJ2ZXIgdmVyc2lvbjogICAgICAgICAgICAgICA4LjAuNDUgLSBNeVNRTCBDb21tdW5pdHkgU2VydmVyIC0gR1BMCi0tIFNlcnZlciBPUzogICAgICAgICAgICAgICAgICAgIExpbnV4Ci0tIEhlaWRpU1FMIFZlcnNpb246ICAgICAgICAgICAgIDEyLjE2LjAuNzIyOQotLSAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKLyohNDAxMDEgU0VUIEBPTERfQ0hBUkFDVEVSX1NFVF9DTElFTlQ9QEBDSEFSQUNURVJfU0VUX0NMSUVOVCAqLzsKLyohNDAxMDEgU0VUIE5BTUVTIHV0ZjggKi87Ci8qITUwNTAzIFNFVCBOQU1FUyB1dGY4bWI0ICovOwovKiE0MDEwMyBTRVQgQE9MRF9USU1FX1pPTkU9QEBUSU1FX1pPTkUgKi87Ci8qITQwMTAzIFNFVCBUSU1FX1pPTkU9JyswMDowMCcgKi87Ci8qITQwMDE0IFNFVCBAT0xEX0ZPUkVJR05fS0VZX0NIRUNLUz1AQEZPUkVJR05fS0VZX0NIRUNLUywgRk9SRUlHTl9LRVlfQ0hFQ0tTPTAgKi87Ci8qITQwMTAxIFNFVCBAT0xEX1NRTF9NT0RFPUBAU1FMX01PREUsIFNRTF9NT0RFPSdOT19BVVRPX1ZBTFVFX09OX1pFUk8nICovOwovKiE0MDExMSBTRVQgQE9MRF9TUUxfTk9URVM9QEBTUUxfTk9URVMsIFNRTF9OT1RFUz0wICovOwoKLS0gRHVtcGluZyBkYXRhIGZvciB0YWJsZSBhcHAudXNlcjogfjExIHJvd3MgKGFwcHJveGltYXRlbHkpCi0tIFVuYSB2ZXogY3JlYWRhIGxhIHRhYmxhIGVzdMOhIHZhY8OtYSwgbm8gZXMgbmVjZXNhcmlvIGVsaW1pbmFyIGRhdG9zCi0tIERFTEVURSBGUk9NIGB1c2VyYDsKLS0gRXN0ZSBzY3JpcHQgc2UgdGllbmUgcXVlIGVqZWN1dGFyIHPDs2xvIGVuIGVsIHByaW1lciBhcnJhbnF1ZSBkZSBsYSBCQkRELCBwZXJvIHBvciBzaSBsbGVnYXJhIGEgZWplY3V0YXJzZSBzdWNlc2l2YXMgdmVjZXMgYWwgaW5pY2lhbGl6YXIgZWwgcG9kLCBzZSBhw7FhZGUgSUdOT1JFIHBhcmEgZXZpdGFyIGVycm9yZXMgZGUgY2xhdmUgcHJpbWFyaWEgZHVwbGljYWRhCklOU0VSVCBJR05PUkUgSU5UTyBgdXNlcmAgKGBpZGAsIGBlbWFpbGAsIGByb2xlc2AsIGBwYXNzd29yZGAsIGBmaXJzdF9uYW1lYCkgVkFMVUVTCiAgKDEsICdhYnJhY2FfYWRtaW5AZXhhbXBsZS5jb20nLCAnW10nLCAnJDJ5JDEzJGxaZEE5enNWZjJ0REFCakJRcnVRWmUwcGJ5eGJMSThPb3J2UVVqVTI1ZERCeUZJdmxHbmhhJywgJ0tlYWdhbicpLAogICgyLCAnc3V6YW5uZTc4QGphc3QuY29tJywgJ1tdJywgJyQyeSQxMyQ1T3djZVE0Q3RyQWlheG5UOTNpUlh1bE9JL3lZTGN3Ukc5bXRhVmFnR1ZmRnpQejlmald5bScsICdKYXJyZXR0JyksCiAgKDMsICd5d2lzb3prQHlhaG9vLmNvbScsICdbXScsICckMnkkMTMkTEhEV3paZEVPSzNRaFBrcVBMS0hNT1BsT24wLjlOTDJqeHpHMG44RERtOFlOQ1lzcDVYM0MnLCAnU2hhaW5hJyksCiAgKDQsICdkcmVtcGVsQGJvZ2lzaWNoLmJpeicsICdbXScsICckMnkkMTMkYWN1Y1RCVmtNbEdGUW1Ed2xXcUhZLmJqSXFCVmV4TXdHSGhWV2dZZ0s4SUdEb3U4c0lzaDInLCAnQWRvbGZvJyksCiAgKDUsICdqYXJlZDg0QGdtYWlsLmNvbScsICdbXScsICckMnkkMTMkNVhWYVFGRDlKcnplaTBxa1hGVGMuZVc0aVRPOWdnZXNicU9jVy44Z3UzNnFCSXJZUm5KaS4nLCAnS3lsaWUnKSwKICAoNiwgJ3BqYWNvYnNAbWNkZXJtb3R0LmNvbScsICdbXScsICckMnkkMTMkcFdBbjVpcUF2RHRhRVg3L1N6Z0J4LkVGa1BmZUJKQlNCcG5GOHJPZS8zOTh3S3pqNTFNT0cnLCAnVG9ycmFuY2UnKSwKICAoNywgJ2FsZXhhbm5lLmtsZWluQGhhcnJpcy5jb20nLCAnW10nLCAnJDJ5JDEzJEJabmpCbzFrN3VMODZZQWZBLjZVZHVtQndEanJSbnNzRjQzSHVMSlM2em93SGxVZDVKSUlHJywgJ1NoZWxkb24nKSwKICAoOCwgJ2FsdGVud2VydGguYW5hYmVsQGdtYWlsLmNvbScsICdbXScsICckMnkkMTMkcW01QnEwQ1JjR1VBTGNBOTdEWFpkLjNrUmNxR0RTR2xUdEpucklVMVlIVFk1enpRY09aSE8nLCAnRGFyYnknKSwKICAoOSwgJ21jZGVybW90dC5ydXNzZWxAZmlzaGVyLmNvbScsICdbXScsICckMnkkMTMkREFlTGFjWjdvWkRNSC9yRUFUcUFSLnRMN3A3ckZUUUtxNGxKbjJhWkllbnhyUUlnUnR0Yy4nLCAnQ2hhcmxlcycpLAogICgxMCwgJ2Nhc3Blci5zYW50b3NAaG90bWFpbC5jb20nLCAnW10nLCAnJDJ5JDEzJGR1WmJYbnJhMlkwazJsYmNTVVYyOC5MUmdwdngybENXNEJleFNxa3RXNVR2M2Zoeno0QVg2JywgJ1dpbm5pZnJlZCcpLAogICgxMSwgJ2Jvcm5AaG90bWFpbC5jb20nLCAnW10nLCAnJDJ5JDEzJDFWd3czQmNhTGlDZEtsc0J4TGxsbXV5bGF4VVBhQzZmL0hwbW5xUGVuL3guWTF0aFhLTklHJywgJ0FsbHknKTsKCi8qITQwMTAzIFNFVCBUSU1FX1pPTkU9SUZOVUxMKEBPTERfVElNRV9aT05FLCAnc3lzdGVtJykgKi87Ci8qITQwMTAxIFNFVCBTUUxfTU9ERT1JRk5VTEwoQE9MRF9TUUxfTU9ERSwgJycpICovOwovKiE0MDAxNCBTRVQgRk9SRUlHTl9LRVlfQ0hFQ0tTPUlGTlVMTChAT0xEX0ZPUkVJR05fS0VZX0NIRUNLUywgMSkgKi87Ci8qITQwMTAxIFNFVCBDSEFSQUNURVJfU0VUX0NMSUVOVD1AT0xEX0NIQVJBQ1RFUl9TRVRfQ0xJRU5UICovOwovKiE0MDExMSBTRVQgU1FMX05PVEVTPUlGTlVMTChAT0xEX1NRTF9OT1RFUywgMSkgKi87Cg==
+EOF
+
+    # Crear .gitignore
+    cat > "$secrets_dir/.gitignore" <<EOF
+# k8s/overlays/local/application/secrets/.gitignore
+
+# Ignorar todo
+*
 EOF
     
     log_info "✓ Secrets generados en $secrets_dir"
@@ -480,7 +501,7 @@ test_blue_green_deployment() {
         kubectl config use-context minikube
         # Quitar la monitorización para poder llevar a cabo la prueba
         log_warn "Eliminando recursos de monitorización para poder llevar a cabo la prueba..."
-        kubectl delete -k "$SCRIPT_DIR/overlays/$env/observability/" --ignore-not-found=true 2>/dev/null
+        kubectl delete -k "$SCRIPT_DIR/$OVERLAYS_PATH""$env/observability/" --ignore-not-found=true 2>/dev/null
         log_info "✓ Recursos de monitorización eliminados."
     elif [ "$env" == "aws" ]; then
         local cluster_name=$(grep '^cluster_name=' "$DEPLOYED_AWS_RESOURCES_FILE" | cut -d'=' -f2)
@@ -516,7 +537,7 @@ test_blue_green_deployment() {
             
             # Comprobar si hay errores
             log_warn "Esperando 30 segundos antes de probar con /error-test para forzar un rollback automático..."
-            log_info "¡Mientras, puedes probar a actualizar la página y comprobar que los GREEN pods están sirviendo la web!"
+            log_info "¡Mientras puedes probar a actualizar la página y comprobar que los GREEN pods están sirviendo la web!"
             for i in {30..1}; do
                 echo -ne "\r$i segundos restantes... "
                 sleep 1
@@ -555,8 +576,8 @@ test_blue_green_deployment() {
 
 create_green_deployment() {
     local env=$1
-    local deployment_file="$SCRIPT_DIR/overlays/$env/application/deployments/deployment-symfony-green.yaml"
-    local original_file="$SCRIPT_DIR/overlays/$env/application/deployments/deployment-symfony.yaml"
+    local deployment_file="$SCRIPT_DIR/$OVERLAYS_PATH""$env/application/deployments/deployment-symfony-green.yaml"
+    local original_file="$SCRIPT_DIR/$OVERLAYS_PATH""$env/application/deployments/deployment-symfony.yaml"
     
     # Copiar deployment original y modificarlo a GREEN
     cp "$original_file" "$deployment_file"
@@ -653,7 +674,7 @@ rollback_to_blue() {
 delete_green_deployment() {
     local env=$1
     
-    local deployment_file="$SCRIPT_DIR/overlays/$env/application/deployments/deployment-symfony-green.yaml"
+    local deployment_file="$SCRIPT_DIR/$OVERLAYS_PATH""$env/application/deployments/deployment-symfony-green.yaml"
     
     if [ -f "$deployment_file" ]; then
         kubectl delete -f "$deployment_file" --ignore-not-found=true

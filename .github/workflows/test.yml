@@ -1,0 +1,128 @@
+name: Ejecutar tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'php-nginx/symfony-app/**'
+      - 'php-nginx/Dockerfile.app'
+      - '.github/workflows/test.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'php-nginx/symfony-app/**'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Construir y subir imágenes de Docker a Docker Hub"]
+    types:
+      - completed
+
+env:
+  SYMFONY_ENV: 'test'
+  IMAGE_APP_PROD_URL: ${{ github.event.workflow_run.outputs.image_app_prod_url || 'docker.io/archipepe/mysymfony-php-nginx:7.1-prod' }}
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+
+    # Sólo se ejecuta si:
+    # 1. Es workflow_dispatch (manual), O
+    # 2. Es workflow_run (automático después de build con éxito)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: app
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull app image
+        run: docker pull ${{ env.IMAGE_APP_PROD_URL }}
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 3306 2>/dev/null; then
+              echo "MySQL listo."
+              exit 0
+            fi
+            echo "Esperando al servicio de MySQL... ($i/30)"
+            sleep 1
+          done
+          echo "Error al iniciar el servicio de MySQL."
+          exit 1
+
+      - name: Run PHPUnit inside container
+        run: |
+          docker run --rm \
+            --entrypoint="" \
+            --network=host \
+            -e APP_ENV=${{ env.SYMFONY_ENV }} \
+            ${{ env.IMAGE_APP_PROD_URL }} \
+            php /var/www/html/bin/phpunit
+
+  dependency-check:
+    if: success()
+    needs: unit-tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull app image
+        run: docker pull ${{ env.IMAGE_APP_PROD_URL }}
+
+      - name: Composer audit inside container
+        run: |
+          docker run --rm \
+            --entrypoint="" \
+            ${{ env.IMAGE_APP_PROD_URL }} \
+            composer audit || true
+
+      - name: Composer outdated inside container
+        run: |
+          docker run --rm \
+            --entrypoint="" \
+            ${{ env.IMAGE_APP_PROD_URL }} \
+            composer outdated || true
+
+  report:
+    if: |
+      needs.unit-tests.result != 'skipped' &&
+      needs.dependency-check.result != 'skipped'
+    needs: [unit-tests, dependency-check]
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Generate test report
+        run: |
+          echo "### Resumen de las pruebas 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Estado |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Check | ${{ needs.dependency-check.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any critical test failed
+        if: |
+          needs.unit-tests.result != 'success'
+        run: |
+          echo "❌ Algunos tests han fallado."
+          exit 1

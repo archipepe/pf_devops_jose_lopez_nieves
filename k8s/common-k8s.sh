@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuración
-OVERLAYS_PATH="overlays/"
+export OVERLAYS_PATH="overlays/"
 export KUSTOMIZATION_LOCAL_PATH="$OVERLAYS_PATH""local/"
 export KUSTOMIZATION_AWS_PATH="$OVERLAYS_PATH""aws/"
 
@@ -41,8 +41,8 @@ export SYMFONY_APP_IMAGE="$SYMFONY_APP_IMAGE_NAME"":""$SYMFONY_APP_IMAGE_TAG"
 export SYMFONY_APP_IMAGE_DOCKERFILE="../php-nginx/Dockerfile.app"
 export IMAGES=("SYMFONY_UBUNTU_BASE_PROD" "SYMFONY_UBUNTU_BASE_DEBUG" "SYMFONY_APP")
 
-export DEPLOYMENT_SYMFONY_LOCAL_PATH="overlays/local/application/deployments/deployment-symfony.yaml"
-export DEPLOYMENT_SYMFONY_AWS_PATH="overlays/aws/application/deployments/deployment-symfony.yaml"
+export DEPLOYMENT_SYMFONY_LOCAL_PATH="$KUSTOMIZATION_LOCAL_PATH""application/deployments/deployment-symfony.yaml"
+export DEPLOYMENT_SYMFONY_AWS_PATH="$KUSTOMIZATION_AWS_PATH""application/deployments/deployment-symfony.yaml"
 
 # tempo-data
 export TEMPO_DATA_PATH="../docker-compose/monitoring/tempo/tempo-data"
