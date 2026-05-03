@@ -57,7 +57,24 @@ create_required_directories() {
     log_info "Creando directorios requeridos..."
     
     mkdir -p "$TEMPO_DATA_PATH"
+
+    # Crear .gitignore
+    cat > "$TEMPO_DATA_PATH""/.gitignore" <<EOF
+# docker-compose/monitoring/tempo/tempo-data/.gitignore
+
+# Ignorar todo
+*
+EOF
+
     mkdir -p "$VSCODE_SERVER_PATH"
+
+    # Crear .gitignore
+    cat > "$VSCODE_SERVER_PATH""/.gitignore" <<EOF
+# php-nginx/symfony-app/.vscode-server/.gitignore
+
+# Ignorar todo
+*
+EOF
     
     log_info "✓ Directorios creados correctamente."
 }
