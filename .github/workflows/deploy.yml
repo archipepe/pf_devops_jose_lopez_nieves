@@ -57,13 +57,21 @@ jobs:
 
       - name: Wait for GREEN pods
         run: |
-          if kubectl wait --for=condition=ready pod -l version=$version -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=120s 2>/dev/null; then
-              echo "✓ Pods listos en ${{ env.KUBERNETES_NAMESPACE }}"
-              exit 0
-          else
-              echo "Timeout: Los pods no están listos en ${{ env.KUBERNETES_NAMESPACE }}"
-              exit 1
-          fi
+          for i in {1..30}; do
+            READY=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 \
+              -o jsonpath='{range .items[*]}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\n"}{end}{end}' \
+              | grep -c True)
+
+            TOTAL=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 --no-headers | wc -l)
+
+            echo "$READY/$TOTAL listos."
+
+            [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ] && exit 0
+            sleep 5
+          done
+
+          exit 1
+
 
       - name: Setup GREEN deployment image
         run: |
@@ -71,13 +79,21 @@ jobs:
             php-nginx-container=${{ env.IMAGE_APP_PROD_URL }} \
             -n ${{ env.KUBERNETES_NAMESPACE }}
 
-          if kubectl wait --for=condition=ready pod -l version=$version -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=120s 2>/dev/null; then
-              echo "✓ Pods listos en ${{ env.KUBERNETES_NAMESPACE }}"
-              exit 0
-          else
-              echo "Timeout: Los pods no están listos en ${{ env.KUBERNETES_NAMESPACE }}"
-              exit 1
-          fi
+          for i in {1..30}; do
+            READY=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 \
+              -o jsonpath='{range .items[*]}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\n"}{end}{end}' \
+              | grep -c True)
+
+            TOTAL=$(kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l version=v2 --no-headers | wc -l)
+
+            echo "$READY/$TOTAL listos."
+
+            [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ] && exit 0
+            sleep 5
+          done
+
+          exit 1
+
 
       - name: Health check BEFORE switching traffic
         run: |
