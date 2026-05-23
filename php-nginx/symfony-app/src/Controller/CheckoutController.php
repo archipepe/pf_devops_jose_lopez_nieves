@@ -102,7 +102,7 @@ class CheckoutController extends AbstractController
                 $request);            
 
             // Simular pago (siempre exitoso para pruebas)
-            $pagoExitoso = $this->simularPago($pedido);
+            $pagoExitoso = $this->simularPago();
 
             if (!$pagoExitoso) {
                 throw new \Exception('Error en el procesamiento del pago');

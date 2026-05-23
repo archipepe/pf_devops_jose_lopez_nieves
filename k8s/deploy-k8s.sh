@@ -198,7 +198,7 @@ generate_aws_secrets() {
     fi
     
     # Generar el contenido de tfvars
-    cat > "$tfvars_file" <<REALEND
+    cat > "$tfvars_file" <<'REALEND'
 aws_region = "eu-west-1"
 aws_ebs_az = "eu-west-1a"
 project_name = "pf-devops"
@@ -208,6 +208,8 @@ subnet_a_cidr = "10.0.1.0/24"
 subnet_b_cidr = "10.0.2.0/24"
 subnet_c_cidr = "10.0.3.0/24"
 subnet_d_cidr = "10.0.4.0/24"
+
+# Secrets
 symfony_app_secret = "676bad43ce6494db4bc99a5be97212d2"
 symfony_database_url = "mysql://root:XjesGl0qzB7CZNuW@mysql-service:3306/app?serverVersion=8.0&charset=utf8mb4"
 mysql_root_password = "XjesGl0qzB7CZNuW"
@@ -250,6 +252,7 @@ INSERT IGNORE INTO `user` (`id`, `email`, `roles`, `password`, `first_name`) VAL
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
+
 EOF
 REALEND
     
@@ -387,11 +390,8 @@ deploy_aws() {
     log_info "================================"
     log_info "✓ DESPLIEGUE AWS COMPLETADO"
     log_info "================================"
-    log_info "Clúster: $cluster_name"
-    log_info "Región: $region"
     
-    local host_url=$(kubectl get ingress -n "$SYMFONY_NAMESPACE_NAME" -o jsonpath='{.items[0].spec.rules[0].host}')
-    # TODO: comprobar que lo devuelve bien en AWS
+    local host_url=$(kubectl get ingress -n "$SYMFONY_NAMESPACE_NAME" -o jsonpath='{.items[0].spec.rules[0].host}')    
     log_info "Accede a la aplicación en:"
     log_info "  http://$host_url"
     log_info "Accede a la monitorización en:"
@@ -500,7 +500,7 @@ verify_services() {
     for namespace_name in "${NAMESPACES_NAMES[@]}"; do    
         log_info "Esperando pods en $namespace_name..."
         
-        if kubectl wait --for=condition=ready pod --all -n "$namespace_name" --timeout=120s 2>/dev/null; then
+        if kubectl wait --for=condition=ready pod --all -n "$namespace_name" --timeout=300s 2>/dev/null; then
             log_info "✓ Pods listos en $namespace_name"
             kubectl get pods -n "$namespace_name"
         else

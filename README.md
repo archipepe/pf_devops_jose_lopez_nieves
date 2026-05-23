@@ -148,7 +148,7 @@ chmod +x deploy-k8s.sh
 **Lo que hace automáticamente:**
 - Valida todas las dependencias y AWS CLI
 - Crea infraestructura base (S3 bucket para estado remoto de la infraestructura principal)
-- Crea infraestructura principal (VPC, EKS, ECR) ~10 minutos
+- Crea infraestructura principal (VPC, EKS, EC2) ~10 minutos
 - Genera secrets y configura terraform.tfvars
 - Construye y sube imágenes a Docker Hub si fuera necesario (las imágenes son públicas y accesibles)
 - Despliega la aplicación en EKS
@@ -387,7 +387,7 @@ Este archivo está en `.gitignore` y se genera automáticamente.
 
 Los workflows están en `.github/workflows/`:
 
-1. **build.yml**: Construcción y push a ECR
+1. **build.yml**: Construcción y push a Docker Hub
 2. **test.yml**: Tests unitarios, Trivy, Gitleaks
 3. **deploy.yml**: Blue/green deployment en EKS
 

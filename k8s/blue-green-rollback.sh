@@ -42,7 +42,7 @@ create_green_deployment() {
 wait_for_green_pods() {
     local version=$1
 
-    if kubectl wait --for=condition=ready pod -l version=$version -n "$SYMFONY_NAMESPACE_NAME" --timeout=120s 2>/dev/null; then
+    if kubectl wait --for=condition=ready pod -l version=$version -n "$SYMFONY_NAMESPACE_NAME" --timeout=300s 2>/dev/null; then
         log_info "✓ Pods listos en $SYMFONY_NAMESPACE_NAME"
         return 0
     else

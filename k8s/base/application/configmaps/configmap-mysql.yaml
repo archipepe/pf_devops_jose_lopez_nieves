@@ -369,6 +369,10 @@ data:
       UNIQUE KEY `UNIQ_8D93D649E7927C74` (`email`)
     ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+    -- Se añade como salvaguarda para poder iniciar sesión en caso de que los secrets no se puedan crear
+    INSERT IGNORE INTO `user` (`id`, `email`, `roles`, `password`, `first_name`) VALUES
+      (1, 'abraca_admin@example.com', '[]', '$2y$13$lZdA9zsVf2tDABjBQruQZe0pbyxbLI8OorvQUjU25dDByFIvlGnha', 'Keagan');
+
     /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
     /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
     /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;

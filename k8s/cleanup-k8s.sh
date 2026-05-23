@@ -62,7 +62,7 @@ cleanup_deployment() {
 
         review_images
 
-        rm -f "$DEPLOYED_LOCAL_RESOURCES_FILE" "$BLUE_GREEN_CONFIG_FILE"
+        rm -f "$DEPLOYED_LOCAL_RESOURCES_FILE"
 
         log_info "================================"
         log_info "✓ LIMPIEZA COMPLETADA"
@@ -110,7 +110,7 @@ cleanup_deployment() {
                 log_warn "Revisa: VPC, NAT Gateways, Elastic IPs, Security Groups, EKS Node Group, instancias EC2, volúmenes EC2 y EFS..."
 
                 # Limpiar archivos locales
-                rm -f "$DEPLOYED_AWS_RESOURCES_FILE" "$BLUE_GREEN_CONFIG_FILE"
+                rm -f "$DEPLOYED_AWS_RESOURCES_FILE"
 
                 log_info "================================"
                 log_info "✓ LIMPIEZA COMPLETADA"
