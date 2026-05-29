@@ -96,7 +96,7 @@ cleanup_deployment() {
 
                 cd "$SCRIPT_DIR/../infra/bootstrap"
                 log_info "Ejecutando: terraform destroy (bootstrap)"
-                terraform destroy -auto-approve
+                # terraform destroy -auto-approve
                 cd - > /dev/null
 
                 # Limpiar clúster del kubeconfig

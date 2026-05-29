@@ -10,8 +10,8 @@ resources:
   - secrets/secret-database-symfony.yaml
   - secrets/secret-mysql.yaml
   - secrets/secret-user-queries.yaml
-  - volumes/pvc-mysql.yaml
-  - volumes/pvc-symfony.yaml
+  # - volumes/pvc-mysql.yaml
+  # - volumes/pvc-symfony.yaml
   - deployments/deployment-symfony.yaml
   - ingresses/ingress-symfony.yaml
   

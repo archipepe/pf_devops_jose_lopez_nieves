@@ -11,8 +11,8 @@ resources:
   - externalsecrets/externalsecret-database-symfony.yaml
   - externalsecrets/externalsecret-mysql.yaml
   - externalsecrets/externalsecret-user-queries.yaml
-  - volumes/pvc-mysql.yaml
-  - volumes/pvc-symfony.yaml
+  # - volumes/pvc-mysql.yaml
+  # - volumes/pvc-symfony.yaml
   - deployments/deployment-symfony.yaml
   - deployments/deployment-green-symfony.yaml
   - ingresses/ingress-symfony.yaml

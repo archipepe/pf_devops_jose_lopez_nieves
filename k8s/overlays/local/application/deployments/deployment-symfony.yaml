@@ -18,10 +18,10 @@ spec:
         app: symfony-app
         version: v1
     spec:
-      volumes:
-        - name: app-logs
-          persistentVolumeClaim:
-            claimName: symfony-pvc
+      # volumes:
+      #   - name: app-logs
+      #     persistentVolumeClaim:
+      #       claimName: symfony-pvc
 
       containers:
         - name: php-nginx-container
@@ -95,9 +95,9 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 2
-          volumeMounts:
-            - name: app-logs
-              mountPath: /var/www/html/var/log
+          # volumeMounts:
+          #   - name: app-logs
+          #     mountPath: /var/www/html/var/log
           ports:
             - containerPort: 80
               name: http

@@ -285,7 +285,7 @@ deploy_local() {
     build_and_push_images
     wait_for_ingress_controller
     log_info "Desplegando aplicación con Kustomize..."
-    apply_k8s_resources "$KUSTOMIZATION_LOCAL_PATH"
+    apply_k8s_resources "overlays/local/application/"
     verify_services
     add_ingress_to_hosts
     
@@ -306,23 +306,23 @@ deploy_local() {
 create_terraform_bootstrap_infra() {
     # Bootstrap infra    
     cd "$SCRIPT_DIR/../infra/bootstrap"
-    terraform init
-    terraform apply -auto-approve
+    # terraform init
+    # terraform apply -auto-approve
 }
 
 create_terraform_main_infra() {
     # Obtener output del bucket
-    local bucket_name=$(terraform output -raw bucket_name)
+    # local bucket_name=$(terraform output -raw bucket_name)
     cd - > /dev/null
     
     # Main infra
     cd "$SCRIPT_DIR/../infra/main"
-    terraform init \
-        -backend-config="bucket=$bucket_name" \
-        -backend-config="key=main/terraform.tfstate" \
-        -backend-config="region=eu-west-1" \
-        -backend-config="dynamodb_table=terraform-lock" \
-        -backend-config="encrypt=true"
+    terraform init # \
+    #     -backend-config="bucket=$bucket_name" \
+    #     -backend-config="key=main/terraform.tfstate" \
+    #     -backend-config="region=eu-west-1" \
+    #     -backend-config="dynamodb_table=terraform-lock" \
+    #     -backend-config="encrypt=true"
     terraform apply -auto-approve
 }
 
@@ -382,7 +382,7 @@ deploy_aws() {
     build_and_push_images
     
     log_info "Paso 5: Desplegando aplicación con Kustomize..."
-    apply_k8s_resources "$KUSTOMIZATION_AWS_PATH"
+    apply_k8s_resources "overlays/aws/application/"
     
     log_info "Paso 6: Verificando despliegue..."
     verify_services

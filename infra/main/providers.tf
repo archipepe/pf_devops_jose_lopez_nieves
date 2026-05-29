@@ -68,12 +68,12 @@ terraform {
 }
 
 # La inicialización se sobreescribirá por parámetros en el script, pero para eliminar el warning establecemos el backend aquí también
-terraform {
-  backend "s3" {
-    bucket = "bucket-terraform-state-jln-35y728xstkvuwr2l457zw4uqz"
-    key = "main/terraform.tfstate"
-    region = "eu-west-1"
-    dynamodb_table = "terraform-lock"
-    encrypt = true
-  }
-}
+# terraform {
+#   backend "s3" {
+#     bucket = "bucket-terraform-state-jln-35y728xstkvuwr2l457zw4uqz"
+#     key = "main/terraform.tfstate"
+#     region = "eu-west-1"
+#     dynamodb_table = "terraform-lock"
+#     encrypt = true
+#   }
+# }

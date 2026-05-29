@@ -18,9 +18,9 @@ spec:
         version: v1
     spec:
       volumes:
-        - name: mysql-data
-          persistentVolumeClaim:
-            claimName: mysql-pvc
+        # - name: mysql-data
+        #   persistentVolumeClaim:
+        #     claimName: mysql-pvc
         - name: init-sql
           configMap:
             name: mysql-configmap
@@ -63,8 +63,8 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 2
           volumeMounts:
-            - name: mysql-data
-              mountPath: /var/lib/mysql
+            # - name: mysql-data
+            #   mountPath: /var/lib/mysql
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d/01-schema.sql
               subPath: 01-schema.sql
