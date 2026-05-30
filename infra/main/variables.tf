@@ -63,3 +63,9 @@ variable "user_queries" {
   description = "USER_QUERIES"
   default = ""
 }
+
+variable "github_repository" {
+  description = "Repo GitHub"
+  type        = string
+  default     = "archipepe/pf_devops_jose_lopez_nieves"
+}
