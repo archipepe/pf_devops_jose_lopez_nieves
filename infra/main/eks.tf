@@ -29,8 +29,14 @@ module "eks" {
       # instance_types = ["t4g.medium"] # ARM_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
       instance_types = ["t3.medium"] # x86_64: A partir de poner EFS, hay que subir a medium mínimo, ya que se ejecutan más pods
       min_size     = 1
-      max_size     = 2
+      max_size     = 3                # Aumentado a 3 para la demostración del Cluster Autoscaler
       desired_size = 1
+
+      # Tags necesarios para que Cluster Autoscaler identifique este ASG como escalable
+      tags = {
+        "k8s.io/cluster-autoscaler/${local.cluster_name}"       = "owned"
+        "k8s.io/cluster-autoscaler/enabled"                     = "true"
+      }
     }
   }
 }

@@ -64,6 +64,7 @@ enable_addons() {
     minikube addons enable ingress
     minikube addons enable default-storageclass
     minikube addons enable storage-provisioner
+    minikube addons enable metrics-server
     log_info "✓ Addons de Minikube habilitados correctamente."
 }
 

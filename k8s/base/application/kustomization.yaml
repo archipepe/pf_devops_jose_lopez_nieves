@@ -10,3 +10,4 @@ resources:
   - deployments/deployment-mysql.yaml
   - services/service-mysql.yaml
   - services/service-nginx.yaml
+  - hpa/horizontal-pod-autoscaler.yaml
