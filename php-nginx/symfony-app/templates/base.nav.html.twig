@@ -19,7 +19,7 @@
 
 {% if app.user %}
     {% set nombreUsuario = app.user.firstName ? ' ' ~ app.user.firstName : '' %}
-    <span class="usuario-info" title="{{ app.user.email }}">👤{{ nombreUsuario }}</span>
+    <span class="usuario-info" title="{{ app.user.emailAddress }}">👤{{ nombreUsuario }}</span>
     <a class="nav-link" href="{{ path('app_logout') }}">Cerrar sesión</a>
 {% else %}
     <a class="nav-link" href="{{ path('app_login') }}">Iniciar sesión</a>

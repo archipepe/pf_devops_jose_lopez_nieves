@@ -50,7 +50,7 @@ class LoginFormAuthenticator extends AbstractAuthenticator implements Authentica
         return new Passport(
             new UserBadge($email, function($userIdentifier) {
                 // optionally pass a callback to load the User manually
-                $user = $this->userRepository->findOneBy(['email' => $userIdentifier]);
+                $user = $this->userRepository->findOneBy(['email_address' => $userIdentifier]);
                 if (!$user) {
                     throw new UserNotFoundException();
                 }
