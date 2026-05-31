@@ -13,7 +13,7 @@ export DEBUG_TYPE="debug"
 
 ################ CONFIGURACIÓN DE VERSIONES ################
 BASE_IMAGE_VERSION="5.1"
-APP_IMAGE_VERSION="7.1"
+APP_IMAGE_VERSION="7.4-contract-green"
 export APP_IMAGE_TYPE="$PROD_TYPE"
 ############################################################
 
