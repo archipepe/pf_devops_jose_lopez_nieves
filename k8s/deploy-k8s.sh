@@ -391,7 +391,13 @@ deploy_aws() {
     log_info "✓ DESPLIEGUE AWS COMPLETADO"
     log_info "================================"
     
-    local host_url=$(kubectl get ingress -n "$SYMFONY_NAMESPACE_NAME" -o jsonpath='{.items[0].spec.rules[0].host}')    
+    echo "Esperando a que el ALB esté listo..."
+    kubectl wait ingress symfony-ingress -n "$SYMFONY_NAMESPACE_NAME" \
+        --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
+        --timeout=300s
+
+    local host_url=$(kubectl get ingress symfony-ingress -n "$SYMFONY_NAMESPACE_NAME" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
     log_info "Accede a la aplicación en:"
     log_info "  http://$host_url"
     log_info "Accede a la monitorización en:"
