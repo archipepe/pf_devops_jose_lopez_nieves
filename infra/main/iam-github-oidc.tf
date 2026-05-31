@@ -8,11 +8,6 @@ resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = ["sts.amazonaws.com"]
-
-  thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1",  # Thumbprint actual de GitHub OIDC
-    "1c3dd6897fac6b12c2f4b0d3850e4f2575ac1f26"   # Thumbprint de respaldo
-  ]
 }
 
 # IAM Role para GitHub Actions
